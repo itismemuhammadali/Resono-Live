@@ -344,94 +344,12 @@ class LoginView extends HookConsumerWidget {
                       ),
                     ),
                   ),
-                   16.ph,
-                  GestureDetector(
-                    onTap: () => _showMagicLinkDialog(context, ref),
-                    child: Center(
-                      child: Text(
-                        "Sign in with Email Link",
-                        style: TextStyle(
-                          fontFamily: 'Roboto',
-                          color: AppColors.listenerYellow,
-                          fontSize: 14.sp,
-                          fontWeight: FontWeight.w600,
-                          decoration: TextDecoration.underline,
-                          decorationColor: AppColors.listenerYellow,
-                        ),
-                      ),
-                    ),
-                  ),
                   16.ph,
                 ],
               ),
             ),
           ),
         ),
-      ),
-    );
-  }
-
-  void _showMagicLinkDialog(BuildContext context, WidgetRef ref) {
-    final emailController = TextEditingController();
-    final authController = ref.read(authControllerProvider);
-
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: AppColors.listenerChipBg,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16.r)),
-        title: Text(
-          'Sign in with Email Link',
-          style: TextStyle(
-            fontFamily: 'Roboto',
-            color: AppColors.primaryWhite,
-            fontSize: 18.sp,
-            fontWeight: FontWeight.w700,
-          ),
-        ),
-        content: Text(
-          'Enter your email and we\'ll send you a sign-in link.',
-          style: TextStyle(
-            fontFamily: 'Roboto',
-            color: AppColors.santagrey,
-            fontSize: 14.sp,
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(),
-            child: Text(
-              'Cancel',
-              style: TextStyle(color: AppColors.santagrey),
-            ),
-          ),
-          TextButton(
-            onPressed: () async {
-              final email = emailController.text.trim();
-              if (email.isEmpty || !email.contains('@')) return;
-
-              Navigator.of(ctx).pop();
-              final success = await authController.sendMagicLink(email);
-
-              if (context.mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(
-                      success
-                          ? 'Check your email for the sign-in link!'
-                          : (authController.errorMessage ?? 'Failed to send link'),
-                    ),
-                    backgroundColor: success ? AppColors.green500 : AppColors.red500,
-                  ),
-                );
-              }
-            },
-            child: Text(
-              'Send Link',
-              style: TextStyle(color: AppColors.listenerYellow),
-            ),
-          ),
-        ],
       ),
     );
   }
