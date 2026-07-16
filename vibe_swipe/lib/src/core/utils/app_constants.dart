@@ -3,7 +3,7 @@
 ///
 /// Service URLS
 ///
-String SERVICE_URL = 'https://';
+String SERVICE_URL = 'http://177.7.33.210:8000';
 
 ///
 /// Service KEYS

@@ -2,7 +2,7 @@ import 'package:firebase_remote_config/firebase_remote_config.dart';
 
 class RemoteConfigService {
   static const _keyApiBaseUrl = 'python_api_url';
-  static const _fallbackApiBaseUrl = 'http://127.0.0.1:8000';
+  static const _fallbackApiBaseUrl = 'http://177.7.33.210:8000';
 
   late final FirebaseRemoteConfig _remoteConfig;
   bool _initialized = false;

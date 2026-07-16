@@ -11,7 +11,7 @@ class ApiRoutes {
       try {
         return dotenv.get('PYTHON_API_URL');
       } catch (_) {
-        return 'http://127.0.0.1:8000';
+        return 'http://177.7.33.210:8000';
       }
     }
   }
