@@ -21,15 +21,6 @@ void main() async {
     options: DefaultFirebaseOptions.currentPlatform,
   );
 
-  final remoteConfigService = RemoteConfigService();
-  PythonApiService.init(remoteConfigService);
-
-  try {
-    await remoteConfigService.init();
-  } catch (e) {
-    appPrint("Warning: Remote Config init failed, using defaults");
-  }
-
   try {
     await dotenv.load(fileName: "assets/.env");
   } catch (e) {

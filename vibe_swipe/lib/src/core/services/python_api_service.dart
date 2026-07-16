@@ -1,15 +1,19 @@
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 
-import 'remote_config_service.dart';
-
 class PythonApiService {
-  static String get baseUrl => _remoteConfig.apiBaseUrl;
-  static late RemoteConfigService _remoteConfig;
-
-  static void init(RemoteConfigService remoteConfig) {
-    _remoteConfig = remoteConfig;
+  static String get baseUrl {
+    try {
+      return dotenv.get('PYTHON_API_URL');
+    } catch (_) {
+      try {
+        return dotenv.get('BASE_URL');
+      } catch (_) {
+        return 'http://177.7.33.210:8000';
+      }
+    }
   }
 
   final FirebaseAuth _auth = FirebaseAuth.instance;
