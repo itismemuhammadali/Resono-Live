@@ -1,14 +1,30 @@
-import 'package:cloud_functions/cloud_functions.dart';
+import 'dart:convert';
+
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_stripe/flutter_stripe.dart';
-import 'package:firebase_auth/firebase_auth.dart';
+import 'package:http/http.dart' as http;
 import 'package:url_launcher/url_launcher.dart';
+
+import 'python_api_service.dart';
 
 class StripeService {
   final FirebaseAuth _auth = FirebaseAuth.instance;
 
   String? get _userId => _auth.currentUser?.uid;
+
+  Future<Map<String, String>> _headers() async {
+    final user = _auth.currentUser;
+    String? token;
+    if (user != null) {
+      token = await user.getIdToken();
+    }
+    return {
+      'Content-Type': 'application/json',
+      if (token != null) 'Authorization': 'Bearer $token',
+    };
+  }
 
   // ─────────────────────────────────────────────────────────
   // Checkout Session (Web Flow)
@@ -23,15 +39,23 @@ class StripeService {
     final userId = _userId;
     if (userId == null) throw Exception('Not authenticated');
 
-    final callable = FirebaseFunctions.instance.httpsCallable('createCheckoutSession');
-    final result = await callable.call({
-      'amount': amount,
-      'type': type,
-      'artistId': artistId,
-      'performanceId': performanceId,
-    });
+    final response = await http.post(
+      Uri.parse('${PythonApiService.baseUrl}/stripe/create-checkout-session'),
+      headers: await _headers(),
+      body: jsonEncode({
+        'amount': amount,
+        'type': type,
+        'artistId': artistId,
+        'performanceId': performanceId,
+        'userId': userId,
+      }),
+    );
 
-    final data = result.data as Map<String, dynamic>;
+    if (response.statusCode != 200) {
+      throw Exception('Failed to create checkout session: ${response.body}');
+    }
+
+    final data = jsonDecode(response.body);
     return data['checkoutUrl'] as String;
   }
 
@@ -79,10 +103,9 @@ class StripeService {
       if (await canLaunchUrl(uri)) {
         await launchUrl(uri, mode: LaunchMode.inAppWebView);
       }
-      // Don't return true — payment completion is confirmed via webhook.
-      // The caller should poll checkAccess() to detect when access is granted.
       return false;
     } catch (e) {
+      debugPrint('[Stripe] Web payment error: $e');
       return false;
     }
   }
@@ -113,10 +136,6 @@ class StripeService {
       );
 
       await Stripe.instance.presentPaymentSheet();
-
-      // The webhook (payment_intent.succeeded) already writes the Firestore
-      // transaction and updates the artist earnings, so there is nothing to do
-      // here. Simply return true to signal the sheet completed without error.
       return true;
     } catch (e) {
       debugPrint('[Stripe] Native payment error: $e');
@@ -134,15 +153,22 @@ class StripeService {
     required String artistId,
     String? performanceId,
   }) async {
-    final callable = FirebaseFunctions.instance.httpsCallable('createPaymentIntent');
-    final result = await callable.call({
-      'amount': amount,
-      'type': type,
-      'artistId': artistId,
-      'performanceId': performanceId,
-    });
+    final response = await http.post(
+      Uri.parse('${PythonApiService.baseUrl}/stripe/create-payment-intent'),
+      headers: await _headers(),
+      body: jsonEncode({
+        'amount': amount,
+        'type': type,
+        'artistId': artistId,
+        'performanceId': performanceId,
+      }),
+    );
 
-    return Map<String, dynamic>.from(result.data as Map);
+    if (response.statusCode != 200) {
+      throw Exception('Failed to create payment intent: ${response.body}');
+    }
+
+    return Map<String, dynamic>.from(jsonDecode(response.body));
   }
 
   // ─────────────────────────────────────────────────────────
@@ -153,13 +179,16 @@ class StripeService {
     required String userId,
     required String performanceId,
   }) async {
-    final callable = FirebaseFunctions.instance.httpsCallable('checkAccess');
-    final result = await callable.call({
-      'userId': userId,
-      'performanceId': performanceId,
-    });
+    final response = await http.get(
+      Uri.parse('${PythonApiService.baseUrl}/stripe/check-access/$userId/$performanceId'),
+      headers: await _headers(),
+    );
 
-    return Map<String, dynamic>.from(result.data as Map);
+    if (response.statusCode != 200) {
+      throw Exception('Failed to check access: ${response.body}');
+    }
+
+    return Map<String, dynamic>.from(jsonDecode(response.body));
   }
 
   Future<bool> checkTipStatus({
@@ -167,13 +196,14 @@ class StripeService {
     required String artistId,
   }) async {
     try {
-      final callable = FirebaseFunctions.instance.httpsCallable('checkTipStatus');
-      final result = await callable.call({
-        'userId': userId,
-        'artistId': artistId,
-      });
+      final response = await http.get(
+        Uri.parse('${PythonApiService.baseUrl}/stripe/check-tip-status/$userId/$artistId'),
+        headers: await _headers(),
+      );
 
-      final data = result.data as Map<String, dynamic>;
+      if (response.statusCode != 200) return false;
+
+      final data = jsonDecode(response.body);
       return data['hasTipped'] == true;
     } catch (_) {
       return false;
@@ -185,12 +215,16 @@ class StripeService {
   // ─────────────────────────────────────────────────────────
 
   Future<Map<String, dynamic>> getTransactionHistory(String artistId) async {
-    final callable = FirebaseFunctions.instance.httpsCallable('getTransactionHistory');
-    final result = await callable.call({
-      'artistId': artistId,
-    });
+    final response = await http.get(
+      Uri.parse('${PythonApiService.baseUrl}/stripe/transaction-history/$artistId'),
+      headers: await _headers(),
+    );
 
-    return Map<String, dynamic>.from(result.data as Map);
+    if (response.statusCode != 200) {
+      throw Exception('Failed to get transaction history: ${response.body}');
+    }
+
+    return Map<String, dynamic>.from(jsonDecode(response.body));
   }
 
   // ─────────────────────────────────────────────────────────
@@ -198,11 +232,16 @@ class StripeService {
   // ─────────────────────────────────────────────────────────
 
   Future<Map<String, dynamic>> checkoutComplete(String sessionId) async {
-    final callable = FirebaseFunctions.instance.httpsCallable('checkoutComplete');
-    final result = await callable.call({
-      'sessionId': sessionId,
-    });
+    final response = await http.post(
+      Uri.parse('${PythonApiService.baseUrl}/stripe/checkout-complete'),
+      headers: await _headers(),
+      body: jsonEncode({'sessionId': sessionId}),
+    );
 
-    return Map<String, dynamic>.from(result.data as Map);
+    if (response.statusCode != 200) {
+      throw Exception('Failed to complete checkout: ${response.body}');
+    }
+
+    return Map<String, dynamic>.from(jsonDecode(response.body));
   }
 }
