@@ -85,6 +85,13 @@ class AgoraService {
   }
 
   Future<String?> _fetchToken({required String channelName, int uid = 0, int expireTime = 3600, String role = 'publisher', String? performanceId}) async {
+    // Use temp token from .env if available
+    final tempToken = dotenv.tryGet('AGORA_TEMP_TOKEN');
+    if (tempToken != null && tempToken.isNotEmpty) {
+      debugPrint('[AgoraService] Using temp token from .env');
+      return tempToken;
+    }
+
     // In test mode, Agora allows null tokens — skip fetching
     if (isTestMode) {
       debugPrint('[AgoraService] Test mode — using null token');
