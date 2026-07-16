@@ -1,0 +1,44 @@
+# Dependencies
+node_modules/
+.venv/
+__pycache__/
+**/__pycache__/
+
+# Environment files
+.env
+.env.local
+backend/.env
+backend/serviceAccountKey.json
+vibe_swipe/.env
+
+# Build output
+build/
+dist/
+*.pyc
+*.pyo
+
+# IDE
+.idea/
+.vscode/
+*.iml
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Firebase
+vibe_swipe/.firebaserc
+
+# Misc
+.cache/
+*.tmp
+*.temp
+backend/test_token.txt
+
+# Web build
+vibe_swipe_web/Bryan-Beattie

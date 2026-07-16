@@ -1,0 +1,153 @@
+import 'package:vibe_swipe/src/core/utils/app_exports.dart';
+import '../../domain/entities/earning_entities.dart';
+
+final artistEarningsControllerProvider =
+    ChangeNotifierProvider.autoDispose<ArtistEarningsController>(
+      (ref) => ArtistEarningsController(),
+    );
+
+class ArtistEarningsController extends ChangeNotifier with Buffers {
+  final _stripeService = StripeService();
+
+  double _grossEarnings = 0.0;
+  double get grossEarnings => _grossEarnings;
+
+  double _platformFee = 0.0;
+  double get platformFee => _platformFee;
+
+  double _netEarnings = 0.0;
+  double get netEarnings => _netEarnings;
+
+  bool _isLoading = false;
+  bool get isLoading => _isLoading;
+
+  List<PerformanceEarning> _performanceEarnings = [];
+  List<PerformanceEarning> get performanceEarnings => _performanceEarnings;
+
+  List<PayoutRecord> _pendingPayouts = [];
+  List<PayoutRecord> get pendingPayouts => _pendingPayouts;
+
+  List<PayoutRecord> _paidPayouts = [];
+  List<PayoutRecord> get paidPayouts => _paidPayouts;
+
+  List<Map<String, dynamic>> _recentTips = [];
+  List<Map<String, dynamic>> get recentTips => _recentTips;
+
+  ArtistEarningsController() {
+    fetchEarnings();
+  }
+
+  Future<void> fetchEarnings() async {
+    final userId = locator<FirebaseAuthService>().getUid();
+    if (userId == null) return;
+
+    _isLoading = true;
+    notifyListeners();
+
+    try {
+      final data = await _stripeService.getTransactionHistory(userId);
+
+      _grossEarnings = (data['grossEarnings'] ?? 0).toDouble() / 100;
+      _platformFee = (data['platformFee'] ?? 0).toDouble() / 100;
+      _netEarnings = (data['netEarnings'] ?? 0).toDouble() / 100;
+
+      final transactions = data['transactions'] as List? ?? [];
+
+      final Map<String, PerformanceEarning> earningsByPerf = {};
+      final Map<String, PayoutRecord> pendingBySource = {};
+      final Map<String, PayoutRecord> paidBySource = {};
+
+      for (final tx in transactions) {
+        final type = tx['type'] ?? '';
+        final amount = ((tx['amount'] ?? 0) as num).toDouble() / 100;
+        final fee = ((tx['platformFee'] ?? 0) as num).toDouble() / 100;
+        final net = ((tx['netAmount'] ?? 0) as num).toDouble() / 100;
+        final perfId = tx['performanceId'] ?? 'general';
+        final createdAt = tx['createdAt'];
+        DateTime date = DateTime.now();
+        if (createdAt is num) {
+          date = DateTime.fromMillisecondsSinceEpoch((createdAt * 1000).toInt());
+        }
+
+        if (type == 'tip') {
+          if (!earningsByPerf.containsKey(perfId)) {
+            earningsByPerf[perfId] = PerformanceEarning(
+              performanceTitle: 'Tips & Donations',
+              date: date,
+              grossAmount: 0,
+              platformFee: 0,
+              netAmount: 0,
+              viewerCount: 0,
+              tipCount: 0,
+            );
+          }
+          final existing = earningsByPerf[perfId]!;
+          earningsByPerf[perfId] = PerformanceEarning(
+            performanceTitle: existing.performanceTitle,
+            date: date.isAfter(existing.date) ? date : existing.date,
+            grossAmount: existing.grossAmount + amount,
+            platformFee: existing.platformFee + fee,
+            netAmount: existing.netAmount + net,
+            viewerCount: existing.viewerCount,
+            tipCount: existing.tipCount + 1,
+          );
+        } else if (type == 'paid_access') {
+          final source = perfId.isNotEmpty ? perfId : 'Performance';
+          if (!earningsByPerf.containsKey(perfId)) {
+            earningsByPerf[perfId] = PerformanceEarning(
+              performanceTitle: source,
+              date: date,
+              grossAmount: 0,
+              platformFee: 0,
+              netAmount: 0,
+              viewerCount: 0,
+              tipCount: 0,
+            );
+          }
+          final existing = earningsByPerf[perfId]!;
+          earningsByPerf[perfId] = PerformanceEarning(
+            performanceTitle: existing.performanceTitle,
+            date: date.isAfter(existing.date) ? date : existing.date,
+            grossAmount: existing.grossAmount + amount,
+            platformFee: existing.platformFee + fee,
+            netAmount: existing.netAmount + net,
+            viewerCount: existing.viewerCount + 1,
+            tipCount: existing.tipCount,
+          );
+        }
+      }
+
+      _performanceEarnings = earningsByPerf.values.toList()
+        ..sort((a, b) => b.date.compareTo(a.date));
+
+      _recentTips = transactions
+          .where((tx) => tx['type'] == 'tip')
+          .take(4)
+          .map((tx) => {
+                'from': tx['userId'] ?? 'Anonymous',
+                'amount': ((tx['amount'] ?? 0) as num).toDouble() / 100,
+                'time': _formatTime(tx['createdAt']),
+              })
+          .toList();
+    } catch (e) {
+      appPrint('[Earnings] Error fetching earnings: $e');
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  String _formatTime(dynamic createdAt) {
+    if (createdAt is num) {
+      final date = DateTime.fromMillisecondsSinceEpoch((createdAt * 1000).toInt());
+      final diff = DateTime.now().difference(date);
+      if (diff.inMinutes < 60) return '${diff.inMinutes}m ago';
+      if (diff.inHours < 24) return '${diff.inHours}h ago';
+      return '${diff.inDays}d ago';
+    }
+    return 'recently';
+  }
+
+  double get pendingTotal => _pendingPayouts.fold(0.0, (s, p) => s + p.amount);
+  double get paidTotal => _paidPayouts.fold(0.0, (s, p) => s + p.amount);
+}

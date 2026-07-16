@@ -1,0 +1,3 @@
+@echo off
+echo Starting Flutter app on Chrome...
+flutter run -d chrome

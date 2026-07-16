@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <!--
+    If you are serving your web app in a path other than the root, change the
+    href value below to reflect the base path you are serving from.
+
+    The path provided below has to start and end with a slash "/" in order for
+    it to work correctly.
+
+    For more details:
+    * https://developer.mozilla.org/en-US/docs/Web/HTML/Element/base
+
+    This is a placeholder for base href that will be replaced by the value of
+    the `--base-href` argument provided to `flutter build`.
+  -->
+  <base href="$FLUTTER_BASE_HREF">
+
+  <meta charset="UTF-8">
+  <meta content="IE=Edge" http-equiv="X-UA-Compatible">
+  <meta name="description" content="A new Flutter project.">
+
+  <!-- iOS meta tags & icons -->
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  <meta name="apple-mobile-web-app-title" content="vibe_swipe">
+  <link rel="apple-touch-icon" href="icons/Icon-192.png">
+
+  <!-- Favicon -->
+  <link rel="icon" type="image/png" href="favicon.png"/>
+
+  <title>vibe_swipe</title>
+  <link rel="manifest" href="manifest.json">
+
+  <!-- Agora RTC SDK for Web -->
+  <script src="https://download.agora.io/sdk/release/AgoraRTC_N-4.22.0.js"></script>
+  <!-- Iris Web Bridge (required by agora_rtc_engine) -->
+  <script src="https://download.agora.io/sdk/release/iris-web-rtc_n450_w4220_0.8.6.js"></script>
+
+  <style>
+    /* Hide Firebase emulator warning banner */
+    body > div[style*="position: fixed"],
+    body > div[style*="position:fixed"] {
+      display: none !important;
+    }
+  </style>
+</head>
+<body>
+  <script>
+    function removeEmulatorBanner() {
+      var walker = document.createTreeWalker(document.body, NodeFilter.SHOW_ELEMENT);
+      var toRemove = [];
+      while (walker.nextNode()) {
+        var el = walker.currentNode;
+        var ownText = '';
+        for (var i = 0; i < el.childNodes.length; i++) {
+          if (el.childNodes[i].nodeType === 3) ownText += el.childNodes[i].textContent;
+        }
+        if (ownText.indexOf('emulator') !== -1 || ownText.indexOf('Emulator') !== -1) {
+          toRemove.push(el);
+        }
+      }
+      for (var j = 0; j < toRemove.length; j++) toRemove[j].remove();
+    }
+    removeEmulatorBanner();
+    setTimeout(removeEmulatorBanner, 500);
+    setTimeout(removeEmulatorBanner, 1500);
+    setTimeout(removeEmulatorBanner, 3000);
+    setTimeout(removeEmulatorBanner, 5000);
+    new MutationObserver(function() { removeEmulatorBanner(); }).observe(document.body, { childList: true, subtree: true });
+  </script>
+  <!--
+    You can customize the "flutter_bootstrap.js" script.
+    This is useful to provide a custom configuration to the Flutter loader
+    or to give the user feedback during the initialization process.
+
+    For more details:
+    * https://docs.flutter.dev/platform-integration/web/initialization
+  -->
+  <script src="flutter_bootstrap.js" async></script>
+</body>
+</html>

@@ -1,0 +1,39 @@
+default_platform(:ios)
+
+platform :ios do
+  desc "Build and sign IPA"
+  lane :beta do
+    create_keychain(
+      name: "fastlane_keychain",
+      password: ENV["MATCH_PASSWORD"],
+      default_keychain: true,
+      unlock: true,
+      timeout: 3600,
+      add_to_search_list: true
+    )
+    match(
+      type: "development",
+      readonly: true,
+      git_url: ENV["MATCH_GIT_URL"],
+      keychain_name: "fastlane_keychain",
+      keychain_password: ENV["MATCH_PASSWORD"]
+    )
+    match(
+      type: "appstore",
+      readonly: true,
+      git_url: ENV["MATCH_GIT_URL"],
+      keychain_name: "fastlane_keychain",
+      keychain_password: ENV["MATCH_PASSWORD"]
+    )
+    build_app(
+      workspace: "Runner.xcworkspace",
+      scheme: "Runner",
+      export_method: "app-store",
+      export_options: {
+        provisioningProfiles: {
+          ENV["BUNDLE_ID"] => "match AppStore #{ENV["BUNDLE_ID"]}"
+        }
+      }
+    )
+  end
+end

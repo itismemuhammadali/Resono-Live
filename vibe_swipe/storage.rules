@@ -1,0 +1,38 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    // Allow authenticated users to read all files
+    match /{allPaths=**} {
+      allow read: if request.auth != null;
+    }
+
+    // Artist uploads - profile pictures, performance videos
+    match /artists/{userId}/{allPaths=**} {
+      allow read: if request.auth != null;
+      allow create, update, delete: if request.auth != null && request.auth.uid == userId;
+    }
+
+    // User uploads - profile pictures
+    match /users/{userId}/{allPaths=**} {
+      allow read: if request.auth != null;
+      allow create, update, delete: if request.auth != null && request.auth.uid == userId;
+    }
+
+    // Performance videos
+    match /performances/{performanceId}/{allPaths=**} {
+      allow read: if request.auth != null;
+      allow create, update, delete: if request.auth != null;
+    }
+
+    // Community posts/images
+    match /posts/{postId}/{allPaths=**} {
+      allow read: if request.auth != null;
+      allow create, update, delete: if request.auth != null;
+    }
+
+    // Default deny all other access
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

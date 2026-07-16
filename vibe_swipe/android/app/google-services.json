@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "367306858996",
+    "project_id": "vibe-swipe-llc",
+    "storage_bucket": "vibe-swipe-llc.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:367306858996:android:527dede5a1759419fc59a1",
+        "android_client_info": {
+          "package_name": "com.sliconsystems.vibe_swipe"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCKH-WWt_6KzINZmLfrfpZE3fHY0-nSjm0"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

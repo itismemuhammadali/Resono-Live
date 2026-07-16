@@ -1,0 +1,16 @@
+// Firebase Cloud Functions — VibeSwipe
+//
+// This file exports all Cloud Functions.
+// Functions are organized by service in separate files.
+//
+// Deployment: firebase deploy --only functions
+
+export { generateAgoraToken } from "./agora";
+export {
+  stripeWebhook,
+  createPaymentIntent,
+  createCheckoutSession,
+  checkAccess,
+  checkTipStatus,
+  getTransactionHistory,
+} from "./stripe";

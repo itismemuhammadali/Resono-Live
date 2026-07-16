@@ -1,0 +1,7 @@
+flask==3.1.1
+flask-cors==5.0.1
+firebase-admin==7.1.0
+python-dotenv==1.1.0
+gunicorn==23.0.0
+agora-token-builder==1.0.0
+stripe>=11.0.0
