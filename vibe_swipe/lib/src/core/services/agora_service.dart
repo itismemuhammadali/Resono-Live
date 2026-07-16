@@ -106,13 +106,13 @@ class AgoraService {
       final response = await http.post(
         Uri.parse('$baseUrl/agora/token'),
         headers: headers,
-        body: {
+        body: jsonEncode({
           'channelName': channelName,
           'uid': uid,
           'role': role,
           'expireTime': expireTime,
           if (performanceId != null) 'performanceId': performanceId,
-        },
+        }),
       );
 
       if (response.statusCode == 200) {
