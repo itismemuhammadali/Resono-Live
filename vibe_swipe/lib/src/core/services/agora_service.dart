@@ -1,10 +1,13 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:agora_rtc_engine/agora_rtc_engine.dart';
-import 'package:cloud_functions/cloud_functions.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:http/http.dart' as http;
+
+import 'python_api_service.dart';
 
 class AgoraService {
   RtcEngine? _engine;
@@ -24,6 +27,18 @@ class AgoraService {
   int _currentUid = 0;
   int _tokenExpirySeconds = 3600; // default 1 hour
   static const int _refreshBufferSeconds = 300; // refresh 5 min before expiry
+
+  Future<Map<String, String>> _getHeaders() async {
+    final user = FirebaseAuth.instance.currentUser;
+    String? token;
+    if (user != null) {
+      token = await user.getIdToken();
+    }
+    return {
+      'Content-Type': 'application/json',
+      if (token != null) 'Authorization': 'Bearer $token',
+    };
+  }
 
   // Event callbacks — set by the calling view
   void Function(RtcConnection connection, int remoteUid, int elapsed)? onUserJoined;
@@ -85,35 +100,32 @@ class AgoraService {
   }
 
   Future<String?> _fetchToken({required String channelName, int uid = 0, int expireTime = 3600, String role = 'publisher', String? performanceId}) async {
-    // Use temp token from .env if available
-    final tempToken = dotenv.tryGet('AGORA_TEMP_TOKEN');
-    if (tempToken != null && tempToken.isNotEmpty) {
-      debugPrint('[AgoraService] Using temp token from .env');
-      return tempToken;
-    }
-
-    // In test mode, Agora allows null tokens — skip fetching
-    if (isTestMode) {
-      debugPrint('[AgoraService] Test mode — using null token');
-      return null;
-    }
-
     try {
-      final callable = FirebaseFunctions.instance.httpsCallable('generateAgoraToken');
-      final result = await callable.call({
-        'channelName': channelName,
-        'uid': uid,
-        'role': role,
-        'expireTime': expireTime,
-        if (performanceId != null) 'performanceId': performanceId,
-      });
+      final baseUrl = PythonApiService.baseUrl;
+      final headers = await _getHeaders();
+      final response = await http.post(
+        Uri.parse('$baseUrl/agora/token'),
+        headers: headers,
+        body: {
+          'channelName': channelName,
+          'uid': uid,
+          'role': role,
+          'expireTime': expireTime,
+          if (performanceId != null) 'performanceId': performanceId,
+        },
+      );
 
-      final data = result.data as Map<String, dynamic>;
-      debugPrint('[AgoraService] Token fetched successfully, expires in ${data['expiresIn']}s');
-      _tokenExpirySeconds = data['expiresIn'] as int? ?? expireTime;
-      return data['token'] as String?;
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        debugPrint('[AgoraService] Token fetched from backend, expires in ${data['expiresIn']}s');
+        _tokenExpirySeconds = data['expiresIn'] as int? ?? expireTime;
+        return data['token'] as String?;
+      } else {
+        debugPrint('[AgoraService] Backend returned ${response.statusCode}: ${response.body}');
+        return null;
+      }
     } catch (e) {
-      debugPrint('[AgoraService] Error fetching token: $e');
+      debugPrint('[AgoraService] Error fetching token from backend: $e');
       return null;
     }
   }
