@@ -14,6 +14,7 @@ list(APPEND FLUTTER_PLUGIN_LIST
   flutter_secure_storage_windows
   iris_method_channel
   permission_handler_windows
+  share_plus
   url_launcher_windows
 )
 

@@ -1,42 +1,31 @@
-# Fix: Set Up Systemd Service
+# Deploy Web Portal to VPS
 
-## Step 1 — Create service file
-
-```bash
-nano /etc/systemd/system/vibeswipe.service
-```
-
-## Step 2 — Paste this content (replace whatever is there)
-
-```
-[Unit]
-Description=VibeSwipe Flask API
-After=network.target
-
-[Service]
-User=root
-WorkingDirectory=/root/vibe-swipe/backend
-ExecStart=/root/vibe-swipe/backend/venv/bin/gunicorn --bind 0.0.0.0:8000 --workers 4 --timeout 120 app:app
-Restart=always
-RestartSec=5
-Environment=PYTHONUNBUFFERED=1
-
-[Install]
-WantedBy=multi-user.target
-```
-
-## Step 3 — Save and exit
-
-Press `Ctrl+O`, then `Enter`, then `Ctrl+X`
-
-## Step 4 — Enable and start
+## Step 1 — Install Node.js on server (Hostinger terminal)
 
 ```bash
-systemctl daemon-reload && systemctl enable vibeswipe && systemctl start vibeswipe && systemctl status vibeswipe
+curl -fsSL https://deb.nodesource.com/setup_20.x | bash - && apt install -y nodejs
 ```
 
-## Step 5 — Verify
+## Step 2 — Upload web project (run on YOUR Windows PowerShell)
+
+```powershell
+scp -r "C:\Users\iamsh\Desktop\Company Project\VipeSwipe\vibe_swipe_web\Bryan-Beattie" root@177.7.33.210:/root/vibe_swipe_web
+```
+
+Enter root password when prompted.
+
+## Step 3 — Install and build on server (Hostinger terminal)
 
 ```bash
-curl http://177.7.33.210:8000/
+cd /root/vibe_swipe_web/Bryan-Beattie && npm install && npm run build && nohup npm run start -- -p 3001 > /var/log/vibeswipe_web.log 2>&1 &
 ```
+
+## Step 4 — Open port (Hostinger terminal)
+
+```bash
+ufw allow 3001/tcp && ufw reload
+```
+
+## Verify
+
+Open **http://177.7.33.210:3001** in your browser.

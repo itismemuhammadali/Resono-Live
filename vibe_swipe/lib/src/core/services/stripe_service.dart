@@ -101,7 +101,11 @@ class StripeService {
 
       final uri = Uri.parse(checkoutUrl);
       if (await canLaunchUrl(uri)) {
-        await launchUrl(uri, mode: LaunchMode.inAppWebView);
+        await launchUrl(
+          uri,
+          mode: LaunchMode.platformDefault,
+          webOnlyWindowName: '_self',
+        );
       }
       return false;
     } catch (e) {
@@ -125,7 +129,8 @@ class StripeService {
       );
 
       final clientSecret = paymentIntentData['clientSecret'];
-      if (clientSecret == null) return false;
+      final paymentIntentId = paymentIntentData['paymentIntentId'];
+      if (clientSecret == null || paymentIntentId == null) return false;
 
       await Stripe.instance.initPaymentSheet(
         paymentSheetParameters: SetupPaymentSheetParameters(
@@ -136,6 +141,23 @@ class StripeService {
       );
 
       await Stripe.instance.presentPaymentSheet();
+
+      // Call confirm-payment immediately on native to write the transaction
+      final userId = _userId;
+      if (userId != null) {
+        try {
+          await confirmPayment(
+            paymentIntentId: paymentIntentId,
+            userId: userId,
+            artistId: artistId,
+            amount: amount,
+            type: type,
+            performanceId: performanceId,
+          );
+        } catch (confirmError) {
+          debugPrint('[Stripe] confirmPayment error (non-fatal, webhook fallback): $confirmError');
+        }
+      }
       return true;
     } catch (e) {
       debugPrint('[Stripe] Native payment error: $e');
@@ -240,6 +262,34 @@ class StripeService {
 
     if (response.statusCode != 200) {
       throw Exception('Failed to complete checkout: ${response.body}');
+    }
+
+    return Map<String, dynamic>.from(jsonDecode(response.body));
+  }
+
+  Future<Map<String, dynamic>> confirmPayment({
+    required String paymentIntentId,
+    required String userId,
+    required String artistId,
+    required double amount,
+    required String type,
+    String? performanceId,
+  }) async {
+    final response = await http.post(
+      Uri.parse('${PythonApiService.baseUrl}/stripe/confirm-payment'),
+      headers: await _headers(),
+      body: jsonEncode({
+        'paymentIntentId': paymentIntentId,
+        'userId': userId,
+        'artistId': artistId,
+        'amount': amount,
+        'type': type,
+        'performanceId': performanceId,
+      }),
+    );
+
+    if (response.statusCode != 200) {
+      throw Exception('Failed to confirm payment: ${response.body}');
     }
 
     return Map<String, dynamic>.from(jsonDecode(response.body));

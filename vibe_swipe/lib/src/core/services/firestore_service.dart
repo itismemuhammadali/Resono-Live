@@ -358,6 +358,25 @@ class FirestoreService {
     }
   }
 
+  Future<void> joinPerformance({required String performanceId}) async {
+    try {
+      await _api.post('/performances/$performanceId/join');
+      appPrint('[API] Joined performance $performanceId');
+    } catch (e) {
+      appPrint('[API] Error joining performance: $e');
+    }
+  }
+
+  Future<void> leavePerformance({required String performanceId}) async {
+    try {
+      await _api.post('/performances/$performanceId/leave');
+      appPrint('[API] Left performance $performanceId');
+    } catch (e) {
+      appPrint('[API] Error leaving performance: $e');
+    }
+  }
+
+
   Future<Map<String, dynamic>?> getPerformanceLikeSaveState({required String performanceId}) async {
     try {
       final data = await _api.get('/performances/$performanceId/state');

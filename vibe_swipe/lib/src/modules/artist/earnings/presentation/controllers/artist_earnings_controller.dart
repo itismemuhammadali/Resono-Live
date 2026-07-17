@@ -33,6 +33,11 @@ class ArtistEarningsController extends ChangeNotifier with Buffers {
   List<Map<String, dynamic>> _recentTips = [];
   List<Map<String, dynamic>> get recentTips => _recentTips;
 
+  Map<String, dynamic> _payoutWallet = {};
+  Map<String, dynamic> get payoutWallet => _payoutWallet;
+
+  bool get isWalletConfigured => _payoutWallet.isNotEmpty && _payoutWallet['payoutMethod'] != null;
+
   ArtistEarningsController() {
     fetchEarnings();
   }
@@ -45,6 +50,11 @@ class ArtistEarningsController extends ChangeNotifier with Buffers {
     notifyListeners();
 
     try {
+      final userData = await locator<FirestoreService>().getUserData(userId);
+      if (userData != null) {
+        _payoutWallet = Map<String, dynamic>.from(userData['payoutWallet'] ?? {});
+      }
+
       final data = await _stripeService.getTransactionHistory(userId);
 
       _grossEarnings = (data['grossEarnings'] ?? 0).toDouble() / 100;
@@ -150,4 +160,26 @@ class ArtistEarningsController extends ChangeNotifier with Buffers {
 
   double get pendingTotal => _pendingPayouts.fold(0.0, (s, p) => s + p.amount);
   double get paidTotal => _paidPayouts.fold(0.0, (s, p) => s + p.amount);
+
+  Future<void> saveWalletDetails(Map<String, dynamic> walletData) async {
+    final userId = locator<FirebaseAuthService>().getUid();
+    if (userId == null) return;
+
+    _isLoading = true;
+    notifyListeners();
+
+    try {
+      await locator<FirestoreService>().updateUserData(userId, {
+        'payoutWallet': walletData,
+      });
+      _payoutWallet = walletData;
+      notifyListeners();
+    } catch (e) {
+      appPrint('[Earnings] Error saving wallet: $e');
+      rethrow;
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
 }

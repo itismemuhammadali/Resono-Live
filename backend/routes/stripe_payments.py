@@ -83,6 +83,20 @@ def confirm_payment():
         if not payment_intent_id or not user_id or not artist_id or not amount:
             return jsonify({"error": "paymentIntentId, userId, artistId, and amount are required"}), 400
 
+        db = get_firestore_client()
+        # Check if transaction already exists
+        existing = (
+            db.collection("transactions")
+            .where("paymentIntentId", "==", payment_intent_id)
+            .limit(1)
+            .get()
+        )
+        if list(existing):
+            return jsonify({
+                "success": True,
+                "status": "already_confirmed"
+            })
+
         intent = stripe.PaymentIntent.retrieve(payment_intent_id)
         if intent.status != "succeeded":
             return jsonify({"error": "Payment not successful", "status": intent.status}), 400
@@ -90,8 +104,6 @@ def confirm_payment():
         amount_cents = int(float(amount) * 100)
         platform_fee = int(amount_cents * (settings.PLATFORM_FEE_PERCENT / 100))
         net_amount = amount_cents - platform_fee
-
-        db = get_firestore_client()
         tx_ref = db.collection("transactions").document()
         tx_ref.set({
             "userId": user_id,

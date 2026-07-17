@@ -23,6 +23,10 @@ class ListenerCommunityController extends ChangeNotifier with Buffers {
   String _username = '';
   String get username => _username;
 
+  String _avatarUrl = '';
+  String get avatarUrl => _avatarUrl;
+
+
   static const postCategories = [
     'General Discussion',
     'Artist Talk',
@@ -77,6 +81,7 @@ class ListenerCommunityController extends ChangeNotifier with Buffers {
       final data = await locator<FirestoreService>().getUserData(uid);
       if (data != null) {
         _username = (data['username'] ?? data['name'] ?? 'Listener').toString();
+        _avatarUrl = (data['profileImageUrl'] ?? data['avatarUrl'] ?? data['profileImage'] ?? '').toString();
         notifyListeners();
       }
     } catch (e) {
@@ -117,7 +122,9 @@ class ListenerCommunityController extends ChangeNotifier with Buffers {
         authorId: uid,
         authorName: _username,
         authorRole: 'listener',
+        authorAvatarUrl: _avatarUrl,
       );
+
 
       titleController.clear();
       contentController.clear();
@@ -246,7 +253,9 @@ class ListenerCommunityController extends ChangeNotifier with Buffers {
         authorId: uid,
         authorName: _username,
         authorRole: 'listener',
+        authorAvatarUrl: _avatarUrl,
       );
+
       replyController.clear();
     } catch (e) {
       appPrint('[Community] Error posting reply: $e');
@@ -272,9 +281,13 @@ class ListenerCommunityController extends ChangeNotifier with Buffers {
           ? CommunityFirestoreService.watchPost(_currentPostId)
           : const Stream.empty();
 
-  void initDiscussion(String postId) {
+  String _discussionAuthorAvatar = '';
+  String get discussionAuthorAvatar => _discussionAuthorAvatar;
+
+  void initDiscussion(String postId, {String initialAvatar = ''}) {
     if (_currentPostId == postId) return;
     _currentPostId = postId;
+    _discussionAuthorAvatar = initialAvatar;
 
     _commentsSubscription?.cancel();
     final uid = locator<FirebaseAuthService>().getUid();
@@ -298,12 +311,14 @@ class ListenerCommunityController extends ChangeNotifier with Buffers {
 
     _currentPostSubscription?.cancel();
     _currentPostSubscription = CommunityFirestoreService.watchPost(postId).listen(
-      (post) {
+      (post) async {
         if (post == null) return;
         _discussionLikeCount = post.likesCount;
         if (uid != null) {
           _isDiscussionLiked = post.likedBy.contains(uid);
         }
+        final avatar = await _getAuthorAvatar(post.authorId);
+        _discussionAuthorAvatar = avatar;
         notifyListeners();
       },
       onError: (e) {
@@ -311,6 +326,7 @@ class ListenerCommunityController extends ChangeNotifier with Buffers {
       },
     );
   }
+
 
   void setDiscussionLikeStatus(bool isLiked) {
     _isDiscussionLiked = isLiked;

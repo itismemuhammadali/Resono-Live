@@ -12,6 +12,7 @@ class LivePerformanceVideoSection extends StatelessWidget {
     required this.isLive,
     this.videoController,
     this.liveChild,
+    this.isFullScreen = false,
   });
 
   final PerformanceFeaturedEntity featured;
@@ -21,11 +22,14 @@ class LivePerformanceVideoSection extends StatelessWidget {
   final bool isLive;
   final VideoPlayerController? videoController;
   final Widget? liveChild;
+  final bool isFullScreen;
 
   @override
   Widget build(BuildContext context) {
     return ClipRRect(
-      borderRadius: BorderRadius.vertical(bottom: Radius.circular(20.r)),
+      borderRadius: isFullScreen
+          ? BorderRadius.zero
+          : BorderRadius.vertical(bottom: Radius.circular(20.r)),
       child: SizedBox(
         width: double.infinity,
         height: double.infinity,
@@ -65,28 +69,30 @@ class LivePerformanceVideoSection extends StatelessWidget {
             ),
 
             // Top row: Back button (left) + LIVE badge (right)
-            Positioned(
-              top: 30.h,
-              left: 20.w,
-              right: 20.w,
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const CircularBackButton(),
-                  if (featured.isLive) const _LiveBadge(),
-                ],
+            if (!isFullScreen)
+              Positioned(
+                top: 30.h,
+                left: 20.w,
+                right: 20.w,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const CircularBackButton(),
+                    if (featured.isLive) const _LiveBadge(),
+                  ],
+                ),
               ),
-            ),
 
             // Watching count pill — below back button
-            Positioned(
-              top: 90.h,
-              left: 20.w,
-              child: _WatchingCount(count: featured.viewCount),
-            ),
+            if (!isFullScreen)
+              Positioned(
+                top: 90.h,
+                left: 20.w,
+                child: _WatchingCount(count: featured.viewCount),
+              ),
 
             // Center play button — only for pre-recorded content
-            if (!isLive)
+            if (!isLive && !isFullScreen)
               Center(
                 child: GestureDetector(
                   onTap: onPlayPause,
@@ -111,8 +117,9 @@ class LivePerformanceVideoSection extends StatelessWidget {
               ),
 
             // Bottom: Artist info card + progress bar
-            Positioned(
-              bottom: 20.h,
+            if (!isFullScreen)
+              Positioned(
+                bottom: 20.h,
               left: 0,
               right: 0,
               child: Column(

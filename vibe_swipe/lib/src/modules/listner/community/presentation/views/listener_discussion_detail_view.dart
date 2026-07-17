@@ -1,4 +1,6 @@
 import 'package:vibe_swipe/src/core/utils/app_exports.dart';
+import 'package:share_plus/share_plus.dart';
+import 'package:vibe_swipe/src/core/services/community_firestore_service.dart';
 import '../controllers/listener_create_post_controller.dart';
 import '../widgets/discussion_original_post.dart';
 import '../widgets/discussion_reply_card.dart';
@@ -43,8 +45,9 @@ class _ListenerDiscussionDetailViewState
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final controller = ref.read(listenerCommunityControllerProvider.notifier);
       if (widget.postId != null && widget.postId!.isNotEmpty) {
-        controller.initDiscussion(widget.postId!);
+        controller.initDiscussion(widget.postId!, initialAvatar: widget.authorAvatarUrl ?? '');
       }
+
     });
   }
 
@@ -62,6 +65,16 @@ class _ListenerDiscussionDetailViewState
     _commentController.clear();
   }
 
+  void _sharePost(BuildContext context, String currentTitle) {
+    final postId = widget.postId ?? '';
+    if (postId.isNotEmpty) {
+      Share.share(
+        "Check out this discussion on VibeSwipe: '$currentTitle'\n"
+        "https://vibeswipe.page.link/discussion-detail?postId=$postId",
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final controller = ref.watch(listenerCommunityControllerProvider);
@@ -71,7 +84,15 @@ class _ListenerDiscussionDetailViewState
       body: SafeArea(
         child: Column(
           children: [
-            const ListenerPageHeader(title: 'Discussion'),
+            ListenerPageHeader(
+              title: 'Discussion',
+              trailing: IconButton(
+                icon: const Icon(Icons.share_outlined, color: AppColors.primaryWhite),
+                onPressed: () {
+                  _sharePost(context, widget.title);
+                },
+              ),
+            ),
             Expanded(
               child: SingleChildScrollView(
                 padding: EdgeInsets.symmetric(horizontal: 20.w),
@@ -79,17 +100,36 @@ class _ListenerDiscussionDetailViewState
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     20.ph,
-                    DiscussionOriginalPost(
-                      title: widget.title,
-                      author: widget.author,
-                      timeAgo: widget.timeAgo,
-                      tag: widget.tag,
-                      replies: controller.discussionComments.length,
-                      likes: controller.discussionLikeCount,
-                      body: widget.body,
-                      authorAvatarUrl: widget.authorAvatarUrl,
-                      isLiked: controller.isDiscussionLiked,
-                      onLikeTap: () => controller.toggleDiscussionLike(),
+                    StreamBuilder<CommunityPost?>(
+                      stream: controller.currentPostStream,
+                      builder: (context, snapshot) {
+                        final post = snapshot.data;
+                        final displayTitle = post?.title ?? widget.title;
+                        final displayBody = post?.content ?? widget.body;
+                        final displayAuthor = post?.authorName ?? widget.author;
+                        final displayTime = post?.timeAgo ?? widget.timeAgo;
+                        final displayTag = post?.category ?? widget.tag;
+                        final displayAvatar = (controller.discussionAuthorAvatar.isNotEmpty)
+                            ? controller.discussionAuthorAvatar
+                            : ((post?.authorAvatarUrl != null && post!.authorAvatarUrl.isNotEmpty)
+                                ? post.authorAvatarUrl
+                                : widget.authorAvatarUrl);
+
+
+                        return DiscussionOriginalPost(
+                          title: displayTitle,
+                          author: displayAuthor,
+                          timeAgo: displayTime,
+                          tag: displayTag,
+                          replies: controller.discussionComments.length,
+                          likes: controller.discussionLikeCount,
+                          body: displayBody,
+                          authorAvatarUrl: displayAvatar,
+                          isLiked: controller.isDiscussionLiked,
+                          onLikeTap: () => controller.toggleDiscussionLike(),
+                          onShareTap: () => _sharePost(context, displayTitle),
+                        );
+                      },
                     ),
                     24.ph,
                     Text(

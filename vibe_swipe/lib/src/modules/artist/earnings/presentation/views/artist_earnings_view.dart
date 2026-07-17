@@ -9,27 +9,39 @@ class ArtistEarningsView extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final controller = ref.watch(artistEarningsControllerProvider);
 
-    return SafeArea(
-      bottom: false,
-      child: SingleChildScrollView(
-        padding: EdgeInsets.symmetric(horizontal: 20.w),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            24.ph,
-            Text(
-              'Earnings',
-              style: TextStyle(
-                fontFamily: 'Roboto',
-                fontSize: 28.sp,
-                fontWeight: FontWeight.w700,
-                color: AppColors.primaryWhite,
-              ),
-            ),
-            20.ph,
-            _MetricsPanel(controller: controller),
-            24.ph,
-            _SectionTitle(title: 'Earnings by Performance'),
+    return Scaffold(
+      backgroundColor: AppColors.listenerDashboardBg,
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios_new_rounded, color: AppColors.primaryWhite),
+          onPressed: () => AppRouterGo.back(),
+        ),
+        title: Text(
+          'Earnings',
+          style: TextStyle(
+            fontFamily: 'Roboto',
+            fontSize: 20.sp,
+            fontWeight: FontWeight.w700,
+            color: AppColors.primaryWhite,
+          ),
+        ),
+        centerTitle: true,
+      ),
+      body: SafeArea(
+        bottom: false,
+        child: SingleChildScrollView(
+          padding: EdgeInsets.symmetric(horizontal: 20.w),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              12.ph,
+              _MetricsPanel(controller: controller),
+              20.ph,
+              _WalletStatusCard(controller: controller),
+              24.ph,
+              _SectionTitle(title: 'Earnings by Performance'),
             12.ph,
             ...controller.performanceEarnings.map(
               (e) => Padding(
@@ -65,8 +77,9 @@ class ArtistEarningsView extends ConsumerWidget {
           ],
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 }
 
 class _MetricsPanel extends StatelessWidget {
@@ -353,6 +366,118 @@ class _EmptyPayouts extends StatelessWidget {
             color: AppColors.santagrey,
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _WalletStatusCard extends StatelessWidget {
+  const _WalletStatusCard({required this.controller});
+  final ArtistEarningsController controller;
+
+  @override
+  Widget build(BuildContext context) {
+    final configured = controller.isWalletConfigured;
+    final wallet = controller.payoutWallet;
+    final method = wallet['payoutMethod'] ?? '';
+
+    String title = 'Payout Wallet';
+    String subtitle = 'Not configured';
+    IconData icon = Icons.warning_amber_rounded;
+    Color iconColor = AppColors.listenerYellow;
+
+    if (configured) {
+      if (method == 'bank') {
+        final bankName = wallet['bankName'] ?? 'Bank Account';
+        final accNum = wallet['accountNumber'] ?? '';
+        final masked = accNum.length > 4 ? accNum.substring(accNum.length - 4) : accNum;
+        title = bankName;
+        subtitle = 'Account ending in ****$masked';
+        icon = Icons.account_balance_rounded;
+        iconColor = AppColors.primaryGreen;
+      } else if (method == 'paypal') {
+        final email = wallet['paypalEmail'] ?? 'PayPal';
+        title = 'PayPal';
+        subtitle = email;
+        icon = Icons.payment_rounded;
+        iconColor = AppColors.primaryGreen;
+      } else if (method == 'crypto') {
+        final addr = wallet['cryptoAddress'] ?? '';
+        final network = wallet['cryptoNetwork'] ?? 'Crypto';
+        final masked = addr.length > 8 ? '${addr.substring(0, 6)}...${addr.substring(addr.length - 4)}' : addr;
+        title = 'Crypto - $network';
+        subtitle = masked;
+        icon = Icons.currency_bitcoin_rounded;
+        iconColor = AppColors.primaryGreen;
+      }
+    }
+
+    return Container(
+      padding: EdgeInsets.all(16.w),
+      decoration: BoxDecoration(
+        color: AppColors.listenerChipBg,
+        borderRadius: BorderRadius.circular(16.r),
+        border: Border.all(
+          color: configured ? AppColors.listenerChipBorder : AppColors.listenerYellow.withValues(alpha: 0.3),
+        ),
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: EdgeInsets.all(10.w),
+            decoration: BoxDecoration(
+              color: iconColor.withValues(alpha: 0.1),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(icon, color: iconColor, size: 24.sp),
+          ),
+          16.pw,
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: TextStyle(
+                    fontFamily: 'Roboto',
+                    fontSize: 16.sp,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.primaryWhite,
+                  ),
+                ),
+                4.ph,
+                Text(
+                  configured ? subtitle : 'Set up payout method to receive earnings',
+                  style: TextStyle(
+                    fontFamily: 'Roboto',
+                    fontSize: 12.sp,
+                    color: AppColors.santagrey,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          ElevatedButton(
+            onPressed: () => AppRouterGo.push(artistWalletSetupView),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: configured ? AppColors.listenerChipBorder : AppColors.listenerYellow,
+              foregroundColor: configured ? AppColors.primaryWhite : AppColors.primaryblack,
+              padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10.r),
+              ),
+              elevation: 0,
+            ),
+            child: Text(
+              configured ? 'Manage' : 'Set Up',
+              style: TextStyle(
+                fontFamily: 'Roboto',
+                fontSize: 13.sp,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

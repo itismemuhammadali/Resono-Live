@@ -14,6 +14,9 @@ import '../widgets/live_performance_action_bar.dart';
 import '../widgets/live_performance_video_section.dart';
 import '../widgets/paid_access_gate.dart';
 import '../widgets/super_chat_bottom_sheet.dart';
+import 'package:vibe_swipe/src/modules/artist/performances/presentation/widgets/super_chat_ticker.dart';
+import 'package:vibe_swipe/src/modules/listner/performances/domain/entities/live_chat_message.dart';
+import 'package:vibe_swipe/src/core/services/live_chat_service.dart';
 
 class ListenerLivePerformanceView extends ConsumerStatefulWidget {
   const ListenerLivePerformanceView({super.key, required this.featured});
@@ -35,10 +38,17 @@ class _ListenerLivePerformanceViewState extends ConsumerState<ListenerLivePerfor
   bool _agoraInitialized = false;
   bool _accessCheckCompleted = false;
   StreamSubscription? _performanceSubscription;
+  int _activeViewersCount = 0;
+
+  List<LiveChatMessage> _pinnedSuperChats = [];
+  StreamSubscription? _superChatsSubscription;
+  LiveChatMessage? _latestSuperChatForAlert;
+  Timer? _alertTimer;
 
   @override
   void initState() {
     super.initState();
+    _activeViewersCount = int.tryParse(widget.featured.viewCount) ?? 0;
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref.read(listenerPerformancesControllerProvider.notifier).setCurrentPerformance(widget.featured.id, artistId: widget.featured.artistId);
       if (widget.featured.videoUrl.isNotEmpty) {
@@ -46,7 +56,56 @@ class _ListenerLivePerformanceViewState extends ConsumerState<ListenerLivePerfor
       }
       _checkAccess();
       _watchPerformanceStatus();
+      _listenToSuperChats();
     });
+  }
+
+  void _listenToSuperChats() {
+    _superChatsSubscription = LiveChatService.watchMessagesForOverlay(widget.featured.id).listen((messages) {
+      if (!mounted) return;
+      final superChats = messages.where((m) => m.isSuperChat).toList();
+      final now = DateTime.now();
+      final activePinned = <LiveChatMessage>[];
+
+      for (final sc in superChats) {
+        final elapsed = now.difference(sc.createdAt).inSeconds;
+        if (elapsed < sc.tierDurationSeconds) {
+          activePinned.add(sc);
+        }
+      }
+
+      // Check if there is a new super chat for celebration alert
+      if (superChats.isNotEmpty) {
+        final newest = superChats.first;
+        final isNew = _latestSuperChatForAlert == null || _latestSuperChatForAlert!.id != newest.id;
+        final isRecent = now.difference(newest.createdAt).inSeconds < 10;
+        if (isNew && isRecent) {
+          _latestSuperChatForAlert = newest;
+          _alertTimer?.cancel();
+          _alertTimer = Timer(const Duration(seconds: 4), () {
+            if (mounted) {
+              setState(() {
+                _latestSuperChatForAlert = null;
+              });
+            }
+          });
+        }
+      }
+
+      setState(() {
+        _pinnedSuperChats = activePinned;
+      });
+    });
+  }
+
+  void _dismissSuperChat(String messageId) {
+    setState(() {
+      _pinnedSuperChats = _pinnedSuperChats.where((m) => m.id != messageId).toList();
+    });
+  }
+
+  void _joinLivePerformance() {
+    locator<FirestoreService>().joinPerformance(performanceId: widget.featured.id);
   }
 
   void _watchPerformanceStatus() {
@@ -56,6 +115,13 @@ class _ListenerLivePerformanceViewState extends ConsumerState<ListenerLivePerfor
       if (!mounted) return;
       final data = snapshot.data() as Map<String, dynamic>?;
       if (data == null) return;
+
+      final viewersCount = data['viewers_count'] ?? data['viewCount'] ?? 0;
+      if (viewersCount is int) {
+        setState(() {
+          _activeViewersCount = viewersCount;
+        });
+      }
 
       final status = data['status'] ?? 'upcoming';
       if (status == 'ended' && !_streamEnded) {
@@ -104,8 +170,10 @@ class _ListenerLivePerformanceViewState extends ConsumerState<ListenerLivePerfor
             userId: userId,
             performanceId: widget.featured.id,
           );
+          _joinLivePerformance();
           _initAgora();
         } else if (!_isPaidPerformance) {
+          _joinLivePerformance();
           _initAgora();
         }
         // If isPaid && !hasAccess — show the paywall. Do NOT call _initAgora.
@@ -116,6 +184,7 @@ class _ListenerLivePerformanceViewState extends ConsumerState<ListenerLivePerfor
       if (mounted) {
         setState(() => _accessCheckCompleted = true);
         if (!_isPaidPerformance) {
+          _joinLivePerformance();
           _initAgora();
         }
       }
@@ -124,7 +193,10 @@ class _ListenerLivePerformanceViewState extends ConsumerState<ListenerLivePerfor
 
   @override
   void dispose() {
+    locator<FirestoreService>().leavePerformance(performanceId: widget.featured.id);
     _performanceSubscription?.cancel();
+    _superChatsSubscription?.cancel();
+    _alertTimer?.cancel();
     _agoraService.onUserJoined = null;
     _agoraService.onUserOffline = null;
     _agoraService.onJoinChannelSuccess = null;
@@ -193,6 +265,7 @@ class _ListenerLivePerformanceViewState extends ConsumerState<ListenerLivePerfor
           _agoraService.leaveChannel();
           _agoraInitialized = false;
         }
+        _joinLivePerformance();
         _initAgora();
       }
     });
@@ -207,153 +280,333 @@ class _ListenerLivePerformanceViewState extends ConsumerState<ListenerLivePerfor
 
     return Scaffold(
       backgroundColor: AppColors.listenerDashboardBg,
-      resizeToAvoidBottomInset: false,
-      body: Column(
+      resizeToAvoidBottomInset: true,
+      body: Stack(
+        fit: StackFit.expand,
         children: [
-          // Video area — always uses LivePerformanceVideoSection as the container
-          SizedBox(
-            height: MediaQuery.of(context).size.height * 0.60,
-            width: double.infinity,
-            child: Stack(
-              children: [
-                showStream
-                    ? LivePerformanceVideoSection(
-                        featured: widget.featured,
-                        isPlaying: controller.isPlaying,
-                        isVideoInitialized: controller.isVideoInitialized,
-                        onPlayPause: notifier.togglePlay,
-                        isLive: _isAgoraLive,
-                        videoController: controller.videoController,
-                        liveChild: _isAgoraLive && _remoteUid != null && _agoraService.engine != null
-                            ? AgoraVideoView(
-                                controller: _agoraService.remoteVideoController(_remoteUid!),
-                              )
-                            : null,
-                      )
-                    : PaidAccessGate(
-                        title: widget.featured.title,
-                        artistName: widget.featured.artist,
-                        artistId: widget.featured.artistId,
-                        performanceId: widget.featured.id,
-                        price: _ticketPrice,
-                      ),
-                // Stream ended overlay
-                if (_streamEnded)
-                  Positioned.fill(
-                    child: Container(
-                      color: AppColors.primaryblack.withValues(alpha: 0.85),
-                      child: Center(
-                        child: Padding(
-                          padding: EdgeInsets.symmetric(horizontal: 32.w),
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(
-                                Icons.videocam_off_outlined,
-                                color: AppColors.primaryWhite.withValues(alpha: 0.5),
-                                size: 48.sp,
-                              ),
-                              16.ph,
-                              Text(
-                                'The live stream has ended.\nThank you for watching!',
-                                textAlign: TextAlign.center,
-                                maxLines: 3,
-                                overflow: TextOverflow.ellipsis,
-                                style: TextStyle(
-                                  fontFamily: 'Roboto',
-                                  fontSize: 16.sp,
-                                  fontWeight: FontWeight.w500,
-                                  color: AppColors.primaryWhite.withValues(alpha: 0.7),
-                                  height: 1.5,
-                                ),
-                              ),
-                              24.ph,
-                              PrimaryElevatedButton(
-                                onTap: () => AppRouterGo.back(),
-                                text: 'Go Back',
-                                width: 200.w,
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
+          // 1. Video / Stream is the base layer (takes full screen)
+          Positioned.fill(
+            child: showStream
+                ? LivePerformanceVideoSection(
+                    featured: widget.featured,
+                    isPlaying: controller.isPlaying,
+                    isVideoInitialized: controller.isVideoInitialized,
+                    onPlayPause: notifier.togglePlay,
+                    isLive: _isAgoraLive,
+                    videoController: controller.videoController,
+                    isFullScreen: true,
+                    liveChild: _isAgoraLive && _remoteUid != null && _agoraService.engine != null
+                        ? AgoraVideoView(
+                            controller: _agoraService.remoteVideoController(_remoteUid!),
+                          )
+                        : null,
+                  )
+                : PaidAccessGate(
+                    title: widget.featured.title,
+                    artistName: widget.featured.artist,
+                    artistId: widget.featured.artistId,
+                    performanceId: widget.featured.id,
+                    price: _ticketPrice,
                   ),
+          ),
 
-
-              ],
+          // 2. Gradient overlay at top for visibility of top row
+          Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            height: 140.h,
+            child: IgnorePointer(
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [
+                      Colors.black.withValues(alpha: 0.7),
+                      Colors.transparent,
+                    ],
+                  ),
+                ),
+              ),
             ),
           ),
 
-          // Chat messages area
+          // 3. Top Floating Row (Header)
           if (showStream && !_streamEnded)
-            Expanded(
-              child: Column(
+            Positioned(
+              top: MediaQuery.of(context).padding.top + 10.h,
+              left: 16.w,
+              right: 16.w,
+              child: Row(
                 children: [
-                  // Title and description
-                  Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 20.w),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                  const CircularBackButton(),
+                  12.pw,
+                  // Artist profile / name
+                  Expanded(
+                    child: Row(
                       children: [
-                        12.ph,
-                        Text(
-                          widget.featured.title,
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
-                            fontFamily: 'Roboto',
-                            fontSize: 18.sp,
-                            fontWeight: FontWeight.w700,
-                            color: AppColors.primaryWhite,
+                        Container(
+                          width: 36.w,
+                          height: 36.w,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            border: Border.all(color: AppColors.primaryWhite.withValues(alpha: 0.3), width: 1),
+                          ),
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(18.r),
+                            child: NetworkSnap(
+                              imageUrl: widget.featured.artistImageUrl,
+                              width: 36.w,
+                              height: 36.w,
+                              fit: BoxFit.cover,
+                              errorWidget: (_, __, ___) => Container(
+                                decoration: const BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  gradient: LinearGradient(
+                                    colors: [Color(0xFFFF8C42), Color(0xFFFF6B35)],
+                                  ),
+                                ),
+                                child: Icon(Icons.person, size: 18.sp, color: AppColors.primaryWhite),
+                              ),
+                            ),
                           ),
                         ),
-                        8.ph,
-                        Text(
-                          description,
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
-                            fontFamily: 'Roboto',
-                            fontSize: 12.sp,
-                            fontWeight: FontWeight.w400,
-                            color: AppColors.primaryWhite.withValues(alpha: 0.55),
-                            height: 1.4,
+                        10.pw,
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                widget.featured.artist,
+                                style: TextStyle(
+                                  fontFamily: 'Roboto',
+                                  fontSize: 14.sp,
+                                  fontWeight: FontWeight.w600,
+                                  color: AppColors.primaryWhite,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              Text(
+                                widget.featured.genre,
+                                style: TextStyle(
+                                  fontFamily: 'Roboto',
+                                  fontSize: 10.sp,
+                                  color: AppColors.primaryWhite.withValues(alpha: 0.6),
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ],
                           ),
                         ),
                       ],
                     ),
                   ),
-                  8.ph,
-                  // Live chat messages
-                  Expanded(
-                    child: LiveChatMessagesList(
-                      performanceId: widget.featured.id,
+                  12.pw,
+                  // LIVE badge
+                  if (widget.featured.isLive)
+                    Container(
+                      padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 4.h),
+                      decoration: BoxDecoration(
+                        color: AppColors.listenerLiveRed,
+                        borderRadius: BorderRadius.circular(4.r),
+                      ),
+                      child: Text(
+                        'LIVE',
+                        style: TextStyle(
+                          fontFamily: 'Roboto',
+                          fontSize: 10.sp,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.primaryWhite,
+                        ),
+                      ),
+                    ),
+                  8.pw,
+                  // Watching Count
+                  Container(
+                    padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
+                    decoration: BoxDecoration(
+                      color: Colors.black.withValues(alpha: 0.5),
+                      borderRadius: BorderRadius.circular(4.r),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.visibility_outlined, color: AppColors.primaryWhite, size: 12.sp),
+                        4.pw,
+                        Text(
+                          '$_activeViewersCount',
+                          style: TextStyle(
+                            fontFamily: 'Roboto',
+                            fontSize: 10.sp,
+                            fontWeight: FontWeight.w500,
+                            color: AppColors.primaryWhite,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ],
               ),
             ),
 
-          // Chat input
-          if (showStream && !_streamEnded)
-            LiveChatInput(
-              onSend: (text) => _sendChatMessage(text),
-              onSuperChat: () => _showSuperChatSheet(),
+          // 4. Active Super Chat Ticker (pinned under top row)
+          if (showStream && !_streamEnded && _pinnedSuperChats.isNotEmpty)
+            Positioned(
+              top: MediaQuery.of(context).padding.top + 64.h,
+              left: 0,
+              right: 0,
+              child: SuperChatTicker(
+                pinnedSuperChats: _pinnedSuperChats,
+                onDismiss: _dismissSuperChat,
+              ),
             ),
 
-          // Action bar
-          if (showStream && !_streamEnded)
-            LivePerformanceActionBar(
-              isLiked: controller.isLiked,
-              isSaved: controller.isSaved,
-              isFollowing: controller.isFollowing,
-              onLike: notifier.togglePlay,
-              onSave: notifier.toggleSave,
-              onFollow: notifier.toggleFollow,
-              onTip: () => _showSuperChatSheet(),
+          // 5. Celebration alerts (floats below Ticker)
+          if (showStream && !_streamEnded && _latestSuperChatForAlert != null)
+            Positioned(
+              top: MediaQuery.of(context).padding.top + (_pinnedSuperChats.isNotEmpty ? 140.h : 64.h),
+              left: 16.w,
+              right: 16.w,
+              child: _SuperChatCelebrationAlert(message: _latestSuperChatForAlert!),
             ),
-          12.ph,
+
+          // 6. Bottom Floating Panel (Title, Chat Messages, Input, Actions)
+          if (showStream && !_streamEnded)
+            Positioned(
+              bottom: 0,
+              left: 0,
+              right: 0,
+              child: Container(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.bottomCenter,
+                    end: Alignment.topCenter,
+                    colors: [
+                      Colors.black.withValues(alpha: 0.95),
+                      Colors.black.withValues(alpha: 0.8),
+                      Colors.black.withValues(alpha: 0.3),
+                      Colors.transparent,
+                    ],
+                    stops: const [0.0, 0.4, 0.7, 1.0],
+                  ),
+                ),
+                padding: EdgeInsets.only(
+                  bottom: MediaQuery.of(context).padding.bottom + 8.h,
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Title and Description floating on stream
+                    Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 20.w),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            widget.featured.title,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              fontFamily: 'Roboto',
+                              fontSize: 16.sp,
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.primaryWhite,
+                            ),
+                          ),
+                          4.ph,
+                          Text(
+                            description,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              fontFamily: 'Roboto',
+                              fontSize: 11.sp,
+                              fontWeight: FontWeight.w400,
+                              color: AppColors.primaryWhite.withValues(alpha: 0.6),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    12.ph,
+
+                    // Chat messages list
+                    SizedBox(
+                      height: 240.h,
+                      child: LiveChatMessagesList(
+                        performanceId: widget.featured.id,
+                      ),
+                    ),
+                    8.ph,
+
+                    // Chat Input
+                    LiveChatInput(
+                      onSend: (text) => _sendChatMessage(text),
+                      onSuperChat: () => _showSuperChatSheet(),
+                    ),
+
+                    // Action buttons
+                    LivePerformanceActionBar(
+                      isLiked: controller.isLiked,
+                      isSaved: controller.isSaved,
+                      isFollowing: controller.isFollowing,
+                      onLike: notifier.togglePlay,
+                      onSave: notifier.toggleSave,
+                      onFollow: notifier.toggleFollow,
+                      onTip: () => _showSuperChatSheet(),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+
+          // Stream ended overlay
+          if (_streamEnded)
+            Positioned.fill(
+              child: Container(
+                color: AppColors.primaryblack.withValues(alpha: 0.85),
+                child: Center(
+                  child: Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 32.w),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.videocam_off_outlined,
+                          color: AppColors.primaryWhite.withValues(alpha: 0.5),
+                          size: 48.sp,
+                        ),
+                        16.ph,
+                        Text(
+                          'The live stream has ended.\nThank you for watching!',
+                          textAlign: TextAlign.center,
+                          maxLines: 3,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontFamily: 'Roboto',
+                            fontSize: 16.sp,
+                            fontWeight: FontWeight.w500,
+                            color: AppColors.primaryWhite.withValues(alpha: 0.7),
+                            height: 1.5,
+                          ),
+                        ),
+                        24.ph,
+                        PrimaryElevatedButton(
+                          onTap: () => AppRouterGo.back(),
+                          text: 'Go Back',
+                          width: 200.w,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
         ],
       ),
     );
@@ -375,6 +628,109 @@ class _ListenerLivePerformanceViewState extends ConsumerState<ListenerLivePerfor
       artistId: widget.featured.artistId,
       artistName: widget.featured.artist,
       performanceId: widget.featured.id,
+    );
+  }
+}
+
+class _SuperChatCelebrationAlert extends StatelessWidget {
+  const _SuperChatCelebrationAlert({required this.message});
+  final LiveChatMessage message;
+
+  @override
+  Widget build(BuildContext context) {
+    List<Color> colors;
+    switch (message.tier) {
+      case SuperChatTier.tier3:
+        colors = [AppColors.superChatTier3Start, AppColors.superChatTier3End];
+        break;
+      case SuperChatTier.tier2:
+        colors = [AppColors.superChatTier2Start, AppColors.superChatTier2End];
+        break;
+      case SuperChatTier.tier1:
+      default:
+        colors = [AppColors.superChatTier1Start, AppColors.superChatTier1End];
+        break;
+    }
+
+    return Container(
+      padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: colors,
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(16.r),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.3), width: 1),
+        boxShadow: [
+          BoxShadow(
+            color: colors.first.withValues(alpha: 0.5),
+            blurRadius: 16,
+            spreadRadius: 2,
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          Text('✨', style: TextStyle(fontSize: 22.sp)),
+          12.pw,
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  'NEW SUPER CHAT RECEIVED!',
+                  style: TextStyle(
+                    fontFamily: 'Roboto',
+                    fontSize: 10.sp,
+                    fontWeight: FontWeight.w800,
+                    color: Colors.white.withValues(alpha: 0.85),
+                    letterSpacing: 1.2,
+                  ),
+                ),
+                4.ph,
+                RichText(
+                  text: TextSpan(
+                    style: TextStyle(
+                      fontFamily: 'Roboto',
+                      fontSize: 13.sp,
+                      color: Colors.white,
+                    ),
+                    children: [
+                      TextSpan(
+                        text: message.senderName,
+                        style: const TextStyle(fontWeight: FontWeight.w800),
+                      ),
+                      const TextSpan(text: ' sent '),
+                      TextSpan(
+                        text: '\$${message.donationAmount.toStringAsFixed(2)}',
+                        style: const TextStyle(fontWeight: FontWeight.w900, color: AppColors.superChatGold),
+                      ),
+                    ],
+                  ),
+                ),
+                if (message.text.isNotEmpty) ...[
+                  4.ph,
+                  Text(
+                    '"${message.text}"',
+                    style: TextStyle(
+                      fontFamily: 'Roboto',
+                      fontSize: 12.sp,
+                      fontStyle: FontStyle.italic,
+                      color: Colors.white.withValues(alpha: 0.9),
+                    ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+              ],
+            ),
+          ),
+          12.pw,
+          Text('🎉', style: TextStyle(fontSize: 22.sp)),
+        ],
+      ),
     );
   }
 }

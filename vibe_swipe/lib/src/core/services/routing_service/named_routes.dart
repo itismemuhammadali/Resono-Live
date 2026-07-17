@@ -54,6 +54,7 @@ import '../../../modules/artist/community/presentation/views/artist_create_post_
 import '../../../modules/artist/community/presentation/views/artist_post_detail_view.dart';
 import '../../../modules/artist/community/presentation/views/artist_topic_detail_view.dart';
 import '../../../modules/artist/earnings/presentation/views/artist_earnings_view.dart';
+import '../../../modules/artist/earnings/presentation/views/artist_wallet_setup_view.dart';
 import '../../../modules/artist/community/presentation/views/artist_discussion_detail_view.dart';
 import '../../../modules/artist/community/domain/entities/community_post_entity.dart';
 import '../../../modules/artist/community/domain/entities/community_topic_entity.dart';
@@ -235,19 +236,31 @@ class AppRouterGo {
       GoRoute(
         path: listenerDiscussionDetailView,
         pageBuilder: (context, state) {
-          final extra = state.extra as Map<String, dynamic>;
+          final extra = state.extra as Map<String, dynamic>?;
+          final queryParams = state.uri.queryParameters;
+
+          final title = extra?['title'] as String? ?? queryParams['title'] ?? 'Discussion';
+          final author = extra?['author'] as String? ?? queryParams['author'] ?? '';
+          final timeAgo = extra?['timeAgo'] as String? ?? queryParams['timeAgo'] ?? '';
+          final tag = extra?['tag'] as String? ?? queryParams['tag'] ?? '';
+          final replies = (extra?['replies'] as int?) ?? int.tryParse(queryParams['replies'] ?? '') ?? 0;
+          final likes = (extra?['likes'] as int?) ?? int.tryParse(queryParams['likes'] ?? '') ?? 0;
+          final body = extra?['body'] as String? ?? queryParams['body'] ?? '';
+          final authorAvatarUrl = extra?['authorAvatarUrl'] as String? ?? queryParams['authorAvatarUrl'];
+          final postId = extra?['postId'] as String? ?? queryParams['postId'] ?? '';
+
           return NoTransitionPage(
             key: state.pageKey,
             child: ListenerDiscussionDetailView(
-              title: extra['title'] as String,
-              author: extra['author'] as String,
-              timeAgo: extra['timeAgo'] as String,
-              tag: extra['tag'] as String,
-              replies: extra['replies'] as int,
-              likes: extra['likes'] as int,
-              body: extra['body'] as String,
-              authorAvatarUrl: extra['authorAvatarUrl'] as String?,
-              postId: extra['postId'] as String?,
+              title: title,
+              author: author,
+              timeAgo: timeAgo,
+              tag: tag,
+              replies: replies,
+              likes: likes,
+              body: body,
+              authorAvatarUrl: authorAvatarUrl,
+              postId: postId,
             ),
           );
         },
@@ -480,6 +493,12 @@ class AppRouterGo {
         path: artistEarningsView,
         pageBuilder: (context, state) => const NoTransitionPage(
           child: ArtistEarningsView(),
+        ),
+      ),
+      GoRoute(
+        path: artistWalletSetupView,
+        pageBuilder: (context, state) => const NoTransitionPage(
+          child: ArtistWalletSetupView(),
         ),
       ),
       GoRoute(

@@ -8,6 +8,7 @@ class UpcomingPerformanceActionButtons extends StatelessWidget {
     required this.likesCount,
     required this.onLike,
     required this.onSave,
+    required this.onShare,
   });
 
   final bool isLiked;
@@ -15,6 +16,7 @@ class UpcomingPerformanceActionButtons extends StatelessWidget {
   final int likesCount;
   final VoidCallback onLike;
   final VoidCallback onSave;
+  final VoidCallback onShare;
 
   @override
   Widget build(BuildContext context) {
@@ -49,13 +51,14 @@ class UpcomingPerformanceActionButtons extends StatelessWidget {
             icon: Icons.share_outlined,
             label: 'Share',
             color: AppColors.primaryWhite,
-            onTap: () {},
+            onTap: onShare,
           ),
         ),
       ],
     );
   }
 }
+
 
 // ─── Action Button ────────────────────────────────────────────────────────────
 

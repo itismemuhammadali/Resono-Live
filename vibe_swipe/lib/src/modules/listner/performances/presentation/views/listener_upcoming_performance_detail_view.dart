@@ -1,4 +1,5 @@
 import 'package:vibe_swipe/src/core/utils/app_exports.dart';
+import 'package:share_plus/share_plus.dart';
 import '../../domain/entities/performance_upcoming_entity.dart';
 import '../controllers/listener_performances_controller.dart';
 import '../widgets/upcoming_performance_video_section.dart';
@@ -31,7 +32,19 @@ class _ListenerUpcomingPerformanceDetailViewState extends ConsumerState<Listener
     });
   }
 
+  void _sharePerformance() {
+    final id = widget.performance.id;
+    final title = widget.performance.title;
+    if (id.isNotEmpty) {
+      Share.share(
+        "Check out this performance on VibeSwipe: '$title'\n"
+        "https://vibeswipe.page.link/performance-detail?performanceId=$id",
+      );
+    }
+  }
+
   @override
+
   Widget build(BuildContext context) {
     final controller = ref.watch(listenerPerformancesControllerProvider);
     final notifier = ref.read(listenerPerformancesControllerProvider.notifier);
@@ -119,6 +132,7 @@ class _ListenerUpcomingPerformanceDetailViewState extends ConsumerState<Listener
                       likesCount: controller.likesCount,
                       onLike: notifier.toggleLike,
                       onSave: notifier.toggleSave,
+                      onShare: _sharePerformance,
                     ),
                     16.ph,
                     Divider(color: AppColors.listenerBackButtonBorder),

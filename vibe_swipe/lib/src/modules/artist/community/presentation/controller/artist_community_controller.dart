@@ -28,6 +28,10 @@ class ArtistCommunityController extends ChangeNotifier with Buffers {
   String _artistName = '';
   String get artistName => _artistName;
 
+  String _artistAvatarUrl = '';
+  String get artistAvatarUrl => _artistAvatarUrl;
+
+
   StreamSubscription<List<CommunityPost>>? _postsSubscription;
   List<CommunityPostEntity> _yourPosts = [];
   List<CommunityPostEntity> get yourPosts => _yourPosts;
@@ -79,12 +83,14 @@ class ArtistCommunityController extends ChangeNotifier with Buffers {
       final data = await locator<FirestoreService>().getUserData(uid);
       if (data != null) {
         _artistName = (data['artistName'] ?? data['name'] ?? '').toString();
+        _artistAvatarUrl = (data['profileImageUrl'] ?? data['avatarUrl'] ?? data['profileImage'] ?? '').toString();
         notifyListeners();
       }
     } catch (e) {
       appPrint('[Community] Error fetching artist name: $e');
     }
   }
+
 
   ArtistPostLinkType _linkType = ArtistPostLinkType.none;
   ArtistPostLinkType get linkType => _linkType;
@@ -134,7 +140,9 @@ class ArtistCommunityController extends ChangeNotifier with Buffers {
         authorId: uid,
         authorName: _artistName,
         authorRole: 'artist',
+        authorAvatarUrl: _artistAvatarUrl,
       );
+
 
       titleController.clear();
       contentController.clear();

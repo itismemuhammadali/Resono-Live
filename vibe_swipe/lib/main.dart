@@ -1,5 +1,6 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:flutter_stripe/flutter_stripe.dart';
 import 'firebase_options.dart';
 import 'src/core/utils/app_exports.dart';
 import 'src/core/services/deep_link_service.dart';
@@ -23,6 +24,13 @@ void main() async {
 
   try {
     await dotenv.load(fileName: "assets/.env");
+    final stripeKey = dotenv.maybeGet('STRIPE_PUBLISHABLE_KEY');
+    if (stripeKey != null) {
+      Stripe.publishableKey = stripeKey;
+      appPrint("[Stripe] Initialized with key: ${stripeKey.substring(0, 8)}...");
+    } else {
+      appPrint("[Stripe] Warning: STRIPE_PUBLISHABLE_KEY not found in .env");
+    }
   } catch (e) {
     appPrint("Warning: .env file not found, proceeding without it");
   }

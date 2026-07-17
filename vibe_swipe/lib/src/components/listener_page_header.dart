@@ -1,10 +1,11 @@
 import 'package:vibe_swipe/src/core/utils/app_exports.dart';
 
 class ListenerPageHeader extends StatelessWidget {
-  const ListenerPageHeader({super.key, required this.title, this.onBack});
+  const ListenerPageHeader({super.key, required this.title, this.onBack, this.trailing});
 
   final String title;
   final VoidCallback? onBack;
+  final Widget? trailing;
 
   @override
   Widget build(BuildContext context) {
@@ -19,7 +20,7 @@ class ListenerPageHeader extends StatelessWidget {
               height: 40.w,
               decoration: BoxDecoration(
                 color: AppColors.primaryWhite.withValues(alpha: 0.05),
-                borderRadius: 18.circular,
+                borderRadius: BorderRadius.circular(18.r),
                 border: Border.all(
                   color: AppColors.primaryWhite.withValues(alpha: 0.10),
                   width: 1.09.w,
@@ -46,6 +47,10 @@ class ListenerPageHeader extends StatelessWidget {
               ),
             ),
           ),
+          if (trailing != null) ...[
+            16.pw,
+            trailing!,
+          ],
         ],
       ),
     );

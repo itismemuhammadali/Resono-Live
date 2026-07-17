@@ -60,6 +60,15 @@ def join_performance(performance_id):
     return jsonify(result)
 
 
+@performances_bp.route("/<performance_id>/leave", methods=["POST"])
+@require_auth
+def leave_performance(performance_id):
+    uid = request.user["uid"]
+    result = db.leave_performance(performance_id, uid)
+    return jsonify(result)
+
+
+
 @performances_bp.route("/<performance_id>/like", methods=["POST"])
 @require_auth
 def like_performance(performance_id):

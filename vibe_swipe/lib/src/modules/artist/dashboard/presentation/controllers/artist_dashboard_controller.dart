@@ -2,7 +2,6 @@ import 'package:vibe_swipe/src/core/utils/app_exports.dart';
 import '../../../../listner/dashboard/domain/entities/tab_item.dart';
 import '../../../analytics/presentation/views/artist_analytics_view.dart';
 import '../../../community/presentation/views/artist_community_view.dart';
-import '../../../earnings/presentation/views/artist_earnings_view.dart';
 import '../../../home/presentation/views/artist_home_view.dart';
 import '../../../performances/presentation/views/artist_performances_view.dart';
 import '../../../profile/presentation/views/artist_profile_view.dart';
@@ -25,7 +24,6 @@ class ArtistDashboardController extends ChangeNotifier with Buffers {
     ArtistPerformancesView(),
     ArtistCommunityView(),
     ArtistAnalyticsView(),
-    ArtistEarningsView(),
     ArtistProfileView(),
   ];
 
@@ -49,11 +47,6 @@ class ArtistDashboardController extends ChangeNotifier with Buffers {
       selectedIcon: AppAssetsPng.artistAnalyticsSelectedIcn,
       unselectedIcon: AppAssetsPng.artistAnalyticsUnselectedIcn,
       label: 'Analytics',
-    ),
-    TabItem(
-      selectedIcon: AppAssetsPng.profileSelectedIcn,
-      unselectedIcon: AppAssetsPng.profileUnselectedIcn,
-      label: 'Earnings',
     ),
     TabItem(
       selectedIcon: AppAssetsPng.profileSelectedIcn,

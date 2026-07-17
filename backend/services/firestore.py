@@ -448,6 +448,19 @@ class FirestoreService:
             )
         return {"joined": True}
 
+    def leave_performance(self, performance_id: str, viewer_id: str) -> dict:
+        viewers_ref = (
+            self._performances.document(performance_id).collection("viewers")
+        )
+        existing = viewers_ref.document(viewer_id).get()
+        if existing.exists:
+            viewers_ref.document(viewer_id).delete()
+            self._performances.document(performance_id).update(
+                {"viewers_count": firestore.Increment(-1)}
+            )
+        return {"left": True}
+
+
     def like_performance(self, performance_id: str, user_id: str) -> dict:
         likes_ref = self._performances.document(performance_id).collection("likes")
         existing = likes_ref.document(user_id).get()

@@ -35,40 +35,41 @@ class LiveChatMessageBubble extends StatelessWidget {
     final colors = _getTierColors();
 
     return Container(
-      margin: EdgeInsets.symmetric(vertical: 6.h, horizontal: 12.w),
+      margin: EdgeInsets.symmetric(vertical: 4.h, horizontal: 12.w),
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: colors,
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
+        color: Colors.black.withValues(alpha: 0.5),
+        borderRadius: BorderRadius.circular(14.r),
+        border: Border.all(
+          color: colors.first,
+          width: 1.2.w,
         ),
-        borderRadius: BorderRadius.circular(16.r),
         boxShadow: [
           BoxShadow(
-            color: colors.first.withValues(alpha: 0.4),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
-          ),
-          BoxShadow(
-            color: colors.last.withValues(alpha: 0.2),
-            blurRadius: 20,
-            offset: const Offset(0, 8),
+            color: colors.first.withValues(alpha: 0.25),
+            blurRadius: 10,
+            spreadRadius: 1,
+            offset: const Offset(0, 2),
           ),
         ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
         children: [
           Container(
-            padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 10.h),
+            padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
             decoration: BoxDecoration(
-              color: Colors.black.withValues(alpha: 0.2),
-              borderRadius: BorderRadius.vertical(top: Radius.circular(16.r)),
+              gradient: LinearGradient(
+                colors: colors,
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              borderRadius: BorderRadius.vertical(top: Radius.circular(12.r)),
             ),
             child: Row(
               children: [
                 CircleAvatar(
-                  radius: 16.r,
+                  radius: 12.r,
                   backgroundColor: Colors.white.withValues(alpha: 0.2),
                   backgroundImage: message.senderAvatar.isNotEmpty
                       ? NetworkImage(message.senderAvatar)
@@ -79,33 +80,28 @@ class LiveChatMessageBubble extends StatelessWidget {
                               ? message.senderName[0].toUpperCase()
                               : '?',
                           style: TextStyle(
-                            fontSize: 14.sp,
+                            fontSize: 11.sp,
                             color: Colors.white,
                             fontWeight: FontWeight.w700,
                           ),
                         )
                       : null,
                 ),
-                10.pw,
+                8.pw,
                 Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        message.senderName,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 13.sp,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                    ],
+                  child: Text(
+                    message.senderName,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 12.sp,
+                      fontWeight: FontWeight.w700,
+                    ),
                   ),
                 ),
                 Container(
-                  padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 4.h),
+                  padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 3.h),
                   decoration: BoxDecoration(
                     color: Colors.white,
                     borderRadius: BorderRadius.circular(20.r),
@@ -113,13 +109,13 @@ class LiveChatMessageBubble extends StatelessWidget {
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(Icons.star, color: colors.first, size: 14.sp),
-                      4.pw,
+                      Icon(Icons.star, color: colors.first, size: 12.sp),
+                      3.pw,
                       Text(
                         '\$${message.donationAmount.toStringAsFixed(2)}',
                         style: TextStyle(
                           color: colors.first,
-                          fontSize: 13.sp,
+                          fontSize: 11.sp,
                           fontWeight: FontWeight.w800,
                         ),
                       ),
@@ -130,16 +126,16 @@ class LiveChatMessageBubble extends StatelessWidget {
             ),
           ),
           Padding(
-            padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 10.h),
+            padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
             child: Text(
               message.text,
               maxLines: 4,
               overflow: TextOverflow.ellipsis,
               style: TextStyle(
                 color: Colors.white,
-                fontSize: 15.sp,
+                fontSize: 13.sp,
                 fontWeight: FontWeight.w500,
-                height: 1.3,
+                height: 1.35,
               ),
             ),
           ),
@@ -150,53 +146,69 @@ class LiveChatMessageBubble extends StatelessWidget {
 
   Widget _buildRegularBubble() {
     return Container(
-      margin: EdgeInsets.symmetric(vertical: 2.h, horizontal: 12.w),
+      margin: EdgeInsets.symmetric(vertical: 3.h, horizontal: 12.w),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
         children: [
           CircleAvatar(
-            radius: 14.r,
+            radius: 12.r,
             backgroundImage: message.senderAvatar.isNotEmpty
                 ? NetworkImage(message.senderAvatar)
                 : null,
-            backgroundColor: AppColors.listenerChipBg,
+            backgroundColor: AppColors.listenerAvatarBg,
             child: message.senderAvatar.isEmpty
                 ? Text(
                     message.senderName.isNotEmpty
                         ? message.senderName[0].toUpperCase()
                         : '?',
                     style: TextStyle(
-                      fontSize: 12.sp,
+                      fontSize: 10.sp,
+                      fontWeight: FontWeight.bold,
                       color: AppColors.primaryWhite,
                     ),
                   )
                 : null,
           ),
           8.pw,
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  message.senderName,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    color: AppColors.primaryWhite.withValues(alpha: 0.6),
-                    fontSize: 12.sp,
-                    fontWeight: FontWeight.w500,
-                  ),
+          Flexible(
+            child: Container(
+              padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
+              decoration: BoxDecoration(
+                color: Colors.black.withValues(alpha: 0.4),
+                borderRadius: BorderRadius.only(
+                  topRight: Radius.circular(14.r),
+                  bottomLeft: Radius.circular(14.r),
+                  bottomRight: Radius.circular(14.r),
                 ),
-                Text(
-                  message.text,
-                  maxLines: 3,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    color: AppColors.primaryWhite,
-                    fontSize: 14.sp,
-                  ),
+                border: Border.all(
+                  color: AppColors.primaryWhite.withValues(alpha: 0.05),
+                  width: 0.5,
                 ),
-              ],
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    message.senderName,
+                    style: TextStyle(
+                      color: AppColors.listenerYellow,
+                      fontSize: 11.sp,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  3.ph,
+                  Text(
+                    message.text,
+                    style: TextStyle(
+                      color: AppColors.primaryWhite,
+                      fontSize: 13.sp,
+                      fontWeight: FontWeight.w400,
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         ],

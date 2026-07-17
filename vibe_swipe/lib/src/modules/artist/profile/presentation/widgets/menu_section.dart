@@ -24,6 +24,11 @@ class MenuSection extends ConsumerWidget {
         onTap: () => dashboard.onTabTapped(3),
       ),
       _MenuItem(
+        emoji: '💰',
+        label: 'Earnings',
+        onTap: () => AppRouterGo.push(artistEarningsView),
+      ),
+      _MenuItem(
         asset: 'assets/icons/png/artist_profile_notification_icn.png',
         label: 'Notification Settings',
         onTap: () => AppRouterGo.push(artistNotificationSettingsView),
@@ -54,8 +59,9 @@ class MenuSection extends ConsumerWidget {
 }
 
 class _MenuItem {
-  const _MenuItem({required this.asset, required this.label, this.onTap});
-  final String asset;
+  const _MenuItem({this.asset, this.emoji, required this.label, this.onTap});
+  final String? asset;
+  final String? emoji;
   final String label;
   final VoidCallback? onTap;
 }
@@ -81,7 +87,21 @@ class _MenuItemTile extends StatelessWidget {
         ),
         child: Row(
           children: [
-            Image.asset(item.asset),
+            if (item.emoji != null)
+              SizedBox(
+                width: 24.w,
+                height: 24.h,
+                child: Center(
+                  child: Text(
+                    item.emoji!,
+                    style: TextStyle(
+                      fontSize: 20.sp,
+                    ),
+                  ),
+                ),
+              )
+            else if (item.asset != null)
+              Image.asset(item.asset!),
             16.pw,
             Expanded(
               child: Text(

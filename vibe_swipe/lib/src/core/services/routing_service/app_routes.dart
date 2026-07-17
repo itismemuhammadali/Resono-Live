@@ -50,3 +50,4 @@ const String artistNotificationsView = '/artist-notifications';
 const String artistPrivacySettingsView = '/artist-privacy-settings';
 const String artistHelpSupportView = '/artist-help-support';
 const String artistEarningsView = '/artist-earnings';
+const String artistWalletSetupView = '/artist-wallet-setup';
