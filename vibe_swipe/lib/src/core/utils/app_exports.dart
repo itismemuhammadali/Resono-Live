@@ -56,7 +56,7 @@ export '../services/firestore_service.dart';
 export '../services/python_api_service.dart';
 export '../services/remote_config_service.dart';
 export '../services/stripe_service.dart';
-// export '../services/agora_service.dart';  // Removed - iOS build incompatibility
+export '../services/agora_service.dart';
 export '../services/deep_link_service.dart';
 export '../services/local_db_service/secure_storage.dart';
 export '../exceptions/exceptions.dart';

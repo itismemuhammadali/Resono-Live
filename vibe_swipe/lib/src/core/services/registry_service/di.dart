@@ -1,4 +1,4 @@
-// import 'package:vibe_swipe/src/core/services/agora_service.dart';  // Removed - iOS build incompatibility
+import 'package:vibe_swipe/src/core/services/agora_service.dart';
 import 'package:vibe_swipe/src/core/services/local_db_service/secure_storage.dart';
 import 'package:vibe_swipe/src/core/services/python_api_service.dart';
 import 'package:vibe_swipe/src/core/utils/app_exports.dart';
@@ -22,5 +22,5 @@ void setupLocator() {
   locator.registerLazySingleton<FirebaseAuthService>(() => FirebaseAuthService());
   locator.registerLazySingleton<FirestoreService>(() => FirestoreService());
   locator.registerLazySingleton<PythonApiService>(() => PythonApiService());
-  // locator.registerLazySingleton<AgoraService>(() => AgoraService());  // Removed - iOS build incompatibility
+  locator.registerLazySingleton<AgoraService>(() => AgoraService());
 }
