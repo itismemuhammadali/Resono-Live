@@ -62,7 +62,7 @@ dependencies:
   video_player: ^2.11.1
   chewie: ^1.14.1
   agora_rtc_engine: ^6.1.0
-  flutter_stripe: ^13.1.0
+  flutter_stripe: ^8.0.0
   url_launcher: ^6.3.1
   app_links: ^6.1.1
   share_plus: ^7.2.1
