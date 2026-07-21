@@ -4,6 +4,8 @@ import '../widgets/artist_hero_section.dart';
 import '../widgets/artist_info_card.dart';
 import '../widgets/artist_performances_sheet.dart';
 import '../widgets/artist_top_songs_section.dart';
+import '../../home/presentation/widgets/sponsored_ad_widgets.dart';
+
 
 class ArtistProfileView extends ConsumerStatefulWidget {
   const ArtistProfileView({super.key, required this.args});
@@ -229,8 +231,11 @@ class _ArtistProfileViewState extends ConsumerState<ArtistProfileView> {
                           ),
                           28.ph,
                           ArtistTopSongsSection(songs: _artist!.topSongs),
+                          24.ph,
+                          const SponsoredAdBanner(placement: 'Artist Profile'),
                         ],
                       ),
+
                     ),
                   ),
                 ],

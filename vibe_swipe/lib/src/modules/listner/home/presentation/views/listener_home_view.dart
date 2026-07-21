@@ -8,6 +8,8 @@ import '../widgets/home_filter_chips.dart';
 import '../widgets/home_card_stack.dart';
 import '../widgets/home_action_buttons.dart';
 import '../../../../../components/like_confetti_overlay.dart';
+import '../widgets/sponsored_ad_widgets.dart';
+
 
 class ListenerHomeView extends ConsumerStatefulWidget {
   const ListenerHomeView({super.key});
@@ -102,7 +104,9 @@ class _ListenerHomeViewState extends ConsumerState<ListenerHomeView> {
                 ],
               ),
             ),
+            const SponsoredAdBanner(placement: 'Home Banner'),
             10.ph,
+
             Expanded(
               child: LikeConfettiOverlay(
                 showConfetti: _showConfetti,

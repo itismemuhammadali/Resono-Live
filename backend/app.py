@@ -16,6 +16,7 @@ from routes.artists import artists_bp
 from routes.agora import agora_bp
 from routes.stripe_payments import stripe_bp
 from routes.admin import admin_bp
+from routes.campaigns import campaigns_bp
 
 
 class DateTimeJSONProvider(DefaultJSONProvider):
@@ -53,6 +54,7 @@ def create_app():
     app.register_blueprint(agora_bp)
     app.register_blueprint(stripe_bp)
     app.register_blueprint(admin_bp)
+    app.register_blueprint(campaigns_bp)
 
     @app.before_request
     def handle_options():
