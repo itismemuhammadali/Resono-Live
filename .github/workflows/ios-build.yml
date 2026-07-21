@@ -12,7 +12,7 @@ jobs:
     runs-on: macos-latest
     
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
     
     - name: Set up Flutter
       uses: subosito/flutter-action@v2
@@ -31,7 +31,7 @@ jobs:
       run: flutter build ios --release --no-codesign
     
     - name: Upload iOS build artifacts
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: ios-release-build
         path: vibe_swipe/build/ios/iphoneos/
@@ -48,7 +48,7 @@ jobs:
         cd ../../../
     
     - name: Upload IPA
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: vibe-swipe-ipa
         path: vibe_swipe/build/ios/ipa/vibe_swipe.ipa
