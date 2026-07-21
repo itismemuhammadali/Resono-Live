@@ -1,0 +1,55 @@
+name: iOS Build
+
+on:
+  push:
+    branches: [ master, main, develop ]
+  pull_request:
+    branches: [ master, main, develop ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: macos-latest
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Set up Flutter
+      uses: subosito/flutter-action@v2
+      with:
+        flutter-version: '3.13.0'
+        channel: 'stable'
+    
+    - name: Get dependencies
+      working-directory: ./vibe_swipe
+      run: |
+        flutter pub get
+        cd ios && pod install && cd ..
+    
+    - name: Build iOS (No Code Sign)
+      working-directory: ./vibe_swipe
+      run: flutter build ios --release --no-codesign
+    
+    - name: Upload iOS build artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: ios-release-build
+        path: vibe_swipe/build/ios/iphoneos/
+        retention-days: 30
+    
+    - name: Create IPA for distribution
+      working-directory: ./vibe_swipe
+      run: |
+        mkdir -p build/ios/ipa
+        cd build/ios/iphoneos
+        mkdir -p Payload
+        mv Runner.app Payload/
+        zip -r ../ipa/vibe_swipe.ipa Payload
+        cd ../../../
+    
+    - name: Upload IPA
+      uses: actions/upload-artifact@v3
+      with:
+        name: vibe-swipe-ipa
+        path: vibe_swipe/build/ios/ipa/vibe_swipe.ipa
+        retention-days: 30
