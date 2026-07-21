@@ -4,7 +4,7 @@ import '../widgets/artist_hero_section.dart';
 import '../widgets/artist_info_card.dart';
 import '../widgets/artist_performances_sheet.dart';
 import '../widgets/artist_top_songs_section.dart';
-import '../../home/presentation/widgets/sponsored_ad_widgets.dart';
+import 'package:vibe_swipe/src/modules/listner/home/presentation/widgets/sponsored_ad_widgets.dart';
 
 
 class ArtistProfileView extends ConsumerStatefulWidget {
