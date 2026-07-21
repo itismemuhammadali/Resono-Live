@@ -3,7 +3,6 @@
 #
 
 list(APPEND FLUTTER_PLUGIN_LIST
-  agora_rtc_engine
   app_links
   cloud_firestore
   file_selector_windows
@@ -12,7 +11,6 @@ list(APPEND FLUTTER_PLUGIN_LIST
   firebase_remote_config
   firebase_storage
   flutter_secure_storage_windows
-  iris_method_channel
   permission_handler_windows
   share_plus
   url_launcher_windows

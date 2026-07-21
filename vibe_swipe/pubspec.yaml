@@ -61,7 +61,7 @@ dependencies:
   flutter_local_notifications: ^22.0.1
   video_player: ^2.11.1
   chewie: ^1.14.1
-  agora_rtc_engine: ^6.0.0
+  # agora_rtc_engine: ^6.0.0  # Removed due to iOS build issues
   flutter_stripe: ^13.1.0
   url_launcher: ^6.3.1
   app_links: ^6.1.1
