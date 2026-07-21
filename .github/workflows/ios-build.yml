@@ -23,7 +23,7 @@ jobs:
       working-directory: ./vibe_swipe
       run: |
         flutter pub get
-        cd ios && pod install && cd ..
+        cd ios && rm -rf Pods Podfile.lock && pod install && cd ..
     
     - name: Build iOS (No Code Sign)
       working-directory: ./vibe_swipe
