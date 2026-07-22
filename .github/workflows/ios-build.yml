@@ -25,6 +25,18 @@ jobs:
     - name: Disable SPM globally
       run: flutter config --no-enable-swift-package-manager
     
+    - name: Create .env file from secrets
+      working-directory: ./vibe_swipe
+      run: |
+        cat > assets/.env << EOF
+        STRIPE_PUBLISHABLE_KEY=${{ secrets.STRIPE_PUBLISHABLE_KEY }}
+        PYTHON_API_URL=${{ secrets.PYTHON_API_URL }}
+        BASE_URL=${{ secrets.BASE_URL }}
+        AGORA_APP_ID=${{ secrets.AGORA_APP_ID }}
+        AGORA_CHANNEL_NAME=${{ secrets.AGORA_CHANNEL_NAME }}
+        AGORA_TEST_MODE=${{ secrets.AGORA_TEST_MODE }}
+        EOF
+    
     - name: Get dependencies
       working-directory: ./vibe_swipe
       run: |
