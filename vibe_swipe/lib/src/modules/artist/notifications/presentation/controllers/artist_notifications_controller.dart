@@ -38,8 +38,34 @@ class ArtistNotificationsController extends ChangeNotifier {
       (snapshot) {
         _notifications = snapshot.docs.map((doc) {
           final data = doc.data();
+          final typeStr = data['type'] ?? '';
+          String iconAsset;
+          switch (typeStr) {
+            case 'new_follower':
+              iconAsset = 'assets/icons/png/artist_notification_new_followers_icn.png';
+              break;
+            case 'post_comment':
+            case 'post_like':
+            case 'performance_like':
+              iconAsset = 'assets/icons/png/artist_notification_track_comments_icn.png';
+              break;
+            case 'tip_received':
+            case 'payout_processed':
+            case 'payment_confirmed':
+              iconAsset = 'assets/icons/png/artist_notification_track_performance_icn.png';
+              break;
+            case 'live_stream_started':
+            case 'scheduled_session_reminder':
+              iconAsset = 'assets/icons/png/artist_notification_compaign_icn.png';
+              break;
+            case 'payment_failed':
+              iconAsset = 'assets/icons/png/artist_notification_platform_marketing_icn.png';
+              break;
+            default:
+              iconAsset = data['iconAsset'] ?? 'assets/icons/png/artist_notification_complete_icn.png';
+          }
           return ArtistNotificationEntity(
-            iconAsset: data['iconAsset'] ?? 'assets/icons/png/artist_notification_complete_icn.png',
+            iconAsset: iconAsset,
             iconColor: AppColors.iconGreen,
             title: data['title'] ?? '',
             timeAgo: _formatTimeAgo(data['createdAt']),

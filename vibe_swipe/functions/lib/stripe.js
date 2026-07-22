@@ -26,6 +26,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.getTransactionHistory = exports.checkTipStatus = exports.checkAccess = exports.createCheckoutSession = exports.createPaymentIntent = exports.stripeWebhook = void 0;
 const functions = __importStar(require("firebase-functions"));
 const admin = __importStar(require("firebase-admin"));
+const notifications_1 = require("./notifications");
 // Initialize if not already done
 if (!admin.apps.length) {
     admin.initializeApp();
@@ -149,6 +150,23 @@ async function handleCheckoutSessionCompleted(session) {
             pendingPayout: admin.firestore.FieldValue.increment(netAmount),
         });
     }
+    // Send payment notification to listener
+    const amountDollars = (amountCents / 100).toFixed(2);
+    await (0, notifications_1.sendNotification)(userId, {
+        type: "payment_confirmed",
+        title: "Payment Confirmed",
+        body: `Your ${paymentType === "tip" ? "tip" : "access payment"} of $${amountDollars} was confirmed`,
+        data: { performanceId, artistId, type: paymentType },
+    });
+    // Send tip received notification to artist
+    if (paymentType === "tip" && artistId) {
+        await (0, notifications_1.sendNotification)(artistId, {
+            type: "tip_received",
+            title: "Tip Received",
+            body: `You received a $${amountDollars} tip`,
+            data: { userId, performanceId },
+        });
+    }
     functions.logger.info(`Transaction created: ${txRef.id}`);
 }
 async function handlePaymentIntentSucceeded(intent) {
@@ -201,6 +219,23 @@ async function handlePaymentIntentSucceeded(intent) {
             pendingPayout: admin.firestore.FieldValue.increment(netAmount),
         });
     }
+    // Send payment notification to listener (native payment flow)
+    const amountDollars = (amountCents / 100).toFixed(2);
+    await (0, notifications_1.sendNotification)(userId, {
+        type: "payment_confirmed",
+        title: "Payment Confirmed",
+        body: `Your ${paymentType === "tip" ? "tip" : "access payment"} of $${amountDollars} was confirmed`,
+        data: { performanceId, artistId, type: paymentType },
+    });
+    // Send tip received notification to artist
+    if (paymentType === "tip" && artistId) {
+        await (0, notifications_1.sendNotification)(artistId, {
+            type: "tip_received",
+            title: "Tip Received",
+            body: `You received a $${amountDollars} tip`,
+            data: { userId, performanceId },
+        });
+    }
     functions.logger.info(`Transaction created: ${txRef.id}`);
 }
 async function handlePaymentIntentFailed(intent) {
@@ -213,6 +248,19 @@ async function handlePaymentIntentFailed(intent) {
         .get();
     for (const tx of txs.docs) {
         await tx.ref.update({ status: "failed" });
+        // Send payment failed notification to user
+        const txData = tx.data();
+        if (txData.userId) {
+            await (0, notifications_1.sendNotification)(txData.userId, {
+                type: "payment_failed",
+                title: "Payment Failed",
+                body: "Your payment could not be processed. Please try again.",
+                data: {
+                    performanceId: txData.performanceId || "",
+                    artistId: txData.artistId || "",
+                },
+            });
+        }
     }
 }
 // ─────────────────────────────────────────────────────────────

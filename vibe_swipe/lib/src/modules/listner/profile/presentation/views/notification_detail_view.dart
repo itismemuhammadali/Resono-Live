@@ -10,38 +10,84 @@ class NotificationDetailView extends StatelessWidget {
   IconData get _icon {
     switch (notification.type) {
       case NotificationType.newSong:
+      case NotificationType.newPerformance:
         return Icons.music_note_rounded;
       case NotificationType.promotion:
+      case NotificationType.paymentConfirmed:
+      case NotificationType.paymentFailed:
+      case NotificationType.payoutProcessed:
         return Icons.card_giftcard_rounded;
       case NotificationType.feature:
-        return Icons.notifications_rounded;
+      case NotificationType.sessionReminder:
       case NotificationType.trending:
-        return Icons.trending_up_rounded;
+        return Icons.notifications_rounded;
+      case NotificationType.liveStream:
+        return Icons.live_tv_rounded;
+      case NotificationType.newFollower:
+        return Icons.person_add_rounded;
+      case NotificationType.postComment:
+      case NotificationType.postLike:
+        return Icons.forum_rounded;
+      case NotificationType.performanceLike:
+        return Icons.favorite_rounded;
+      case NotificationType.tipReceived:
+        return Icons.attach_money_rounded;
     }
   }
 
   String get _categoryLabel {
     switch (notification.type) {
       case NotificationType.newSong:
+      case NotificationType.newPerformance:
         return 'New Release';
       case NotificationType.promotion:
         return 'Promotion';
       case NotificationType.feature:
-        return 'New Feature';
       case NotificationType.trending:
-        return 'Trending';
+        return 'New Feature';
+      case NotificationType.liveStream:
+        return 'Live Now';
+      case NotificationType.sessionReminder:
+        return 'Session Reminder';
+      case NotificationType.newFollower:
+        return 'New Follower';
+      case NotificationType.postComment:
+        return 'Comment';
+      case NotificationType.postLike:
+      case NotificationType.performanceLike:
+        return 'Like';
+      case NotificationType.tipReceived:
+        return 'Tip Received';
+      case NotificationType.paymentConfirmed:
+        return 'Payment Confirmed';
+      case NotificationType.paymentFailed:
+        return 'Payment Failed';
+      case NotificationType.payoutProcessed:
+        return 'Payout Processed';
     }
   }
 
   Color get _accentColor {
     switch (notification.type) {
       case NotificationType.newSong:
+      case NotificationType.newPerformance:
       case NotificationType.promotion:
         return AppColors.listenerYellow;
       case NotificationType.feature:
-        return AppColors.huegrey;
       case NotificationType.trending:
+      case NotificationType.sessionReminder:
+        return AppColors.huegrey;
+      case NotificationType.liveStream:
+      case NotificationType.newFollower:
+      case NotificationType.postComment:
+      case NotificationType.postLike:
+      case NotificationType.performanceLike:
+      case NotificationType.tipReceived:
+      case NotificationType.paymentConfirmed:
         return const Color(0xFF4ECDC4);
+      case NotificationType.paymentFailed:
+      case NotificationType.payoutProcessed:
+        return const Color(0xFFFF6B6B);
     }
   }
 

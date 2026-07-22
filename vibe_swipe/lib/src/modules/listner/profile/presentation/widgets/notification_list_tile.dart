@@ -14,13 +14,27 @@ class NotificationListTile extends StatelessWidget {
   String get _assetPath {
     switch (notification.type) {
       case NotificationType.newSong:
+      case NotificationType.newPerformance:
         return AppAssetsPng.notifNewSongIcn;
       case NotificationType.promotion:
+      case NotificationType.paymentConfirmed:
+      case NotificationType.paymentFailed:
+      case NotificationType.payoutProcessed:
         return AppAssetsPng.notifPromotionIcn;
       case NotificationType.feature:
-        return AppAssetsPng.notifFeatureIcn;
+      case NotificationType.sessionReminder:
       case NotificationType.trending:
-        return AppAssetsPng.notifTrendingIcn;
+        return AppAssetsPng.notifFeatureIcn;
+      case NotificationType.liveStream:
+        return AppAssetsPng.profileNotificationTabIcn;
+      case NotificationType.newFollower:
+        return 'assets/icons/png/artist_notification_new_followers_icn.png';
+      case NotificationType.postComment:
+      case NotificationType.postLike:
+      case NotificationType.performanceLike:
+        return 'assets/icons/png/artist_notification_track_comments_icn.png';
+      case NotificationType.tipReceived:
+        return 'assets/icons/png/artist_notification_track_performance_icn.png';
     }
   }
 

@@ -176,6 +176,39 @@ class ListenerProfileController extends ChangeNotifier with Buffers {
             case 'trending':
               type = NotificationType.trending;
               break;
+            case 'live_stream_started':
+              type = NotificationType.liveStream;
+              break;
+            case 'scheduled_session_reminder':
+              type = NotificationType.sessionReminder;
+              break;
+            case 'new_follower':
+              type = NotificationType.newFollower;
+              break;
+            case 'new_performance_upload':
+              type = NotificationType.newPerformance;
+              break;
+            case 'post_comment':
+              type = NotificationType.postComment;
+              break;
+            case 'post_like':
+              type = NotificationType.postLike;
+              break;
+            case 'performance_like':
+              type = NotificationType.performanceLike;
+              break;
+            case 'tip_received':
+              type = NotificationType.tipReceived;
+              break;
+            case 'payment_confirmed':
+              type = NotificationType.paymentConfirmed;
+              break;
+            case 'payment_failed':
+              type = NotificationType.paymentFailed;
+              break;
+            case 'payout_processed':
+              type = NotificationType.payoutProcessed;
+              break;
             default:
               type = NotificationType.newSong;
           }
@@ -183,7 +216,7 @@ class ListenerProfileController extends ChangeNotifier with Buffers {
             id: doc.id,
             title: data['title'] ?? '',
             body: data['body'] ?? '',
-            fullBody: data['fullBody'] ?? '',
+            fullBody: data['fullBody'] ?? data['body'] ?? '',
             time: _formatTimeAgo(data['createdAt']),
             type: type,
             isRead: data['isRead'] ?? false,

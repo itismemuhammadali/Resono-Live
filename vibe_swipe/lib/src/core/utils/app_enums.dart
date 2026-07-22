@@ -7,7 +7,23 @@ enum PerformanceMenuAction { edit, startLive, delete }
 
 enum UserRole { artist, listener }
 
-enum NotificationType { newSong, promotion, feature, trending }
+enum NotificationType {
+  newSong,
+  promotion,
+  feature,
+  trending,
+  liveStream,
+  sessionReminder,
+  newFollower,
+  newPerformance,
+  postComment,
+  postLike,
+  performanceLike,
+  tipReceived,
+  paymentConfirmed,
+  paymentFailed,
+  payoutProcessed,
+}
 
 enum ArtistPostLinkType { none, track, performance }
 

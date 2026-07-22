@@ -1,10 +1,13 @@
 // ignore_for_file: use_build_context_synchronously
 
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:vibe_swipe/src/core/utils/app_exports.dart';
+import 'notification_navigation_service.dart';
 
 class NotificationService {
   static Future<NotificationSettings>? _permissionRequestInFlight;
@@ -32,13 +35,17 @@ class NotificationService {
 
     FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
       appPrint("App opened from notification: ${message.messageId}");
+      NotificationNavigationService.handleNotificationTap(message.data);
     });
 
     final RemoteMessage? initialMessage =
         await FirebaseMessaging.instance.getInitialMessage();
     if (initialMessage != null) {
       appPrint("App launched from terminated state via notification");
+      NotificationNavigationService.pendingNotificationData = initialMessage.data;
     }
+
+    await saveTokenToFirestore();
   }
 
   Future<void> _initLocalNotifications() async {
@@ -152,5 +159,32 @@ class NotificationService {
   Future<void> unsubscribeFromTopic(String topic) async {
     await _messaging.unsubscribeFromTopic(topic);
     appPrint("Unsubscribed from topic: $topic");
+  }
+
+  Future<void> saveTokenToFirestore() async {
+    try {
+      final token = await _messaging.getToken();
+      if (token == null) return;
+
+      final uid = FirebaseAuth.instance.currentUser?.uid;
+      if (uid == null) return;
+
+      await FirebaseFirestore.instance
+          .collection('users')
+          .doc(uid)
+          .set({'fcmToken': token}, SetOptions(merge: true));
+
+      _messaging.onTokenRefresh.listen((newToken) async {
+        final currentUid = FirebaseAuth.instance.currentUser?.uid;
+        if (currentUid != null) {
+          await FirebaseFirestore.instance
+              .collection('users')
+              .doc(currentUid)
+              .set({'fcmToken': newToken}, SetOptions(merge: true));
+        }
+      });
+    } catch (e) {
+      appPrint("Failed to save FCM token: $e");
+    }
   }
 }

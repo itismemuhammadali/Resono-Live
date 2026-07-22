@@ -23,7 +23,7 @@ var __importStar = (this && this.__importStar) || function (mod) {
     return result;
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.auth = exports.db = void 0;
+exports.messaging = exports.auth = exports.db = void 0;
 const admin = __importStar(require("firebase-admin"));
 // Initialize Firebase Admin SDK once
 // Cloud Functions automatically uses the project's service account
@@ -32,5 +32,6 @@ if (!admin.apps.length) {
 }
 exports.db = admin.firestore();
 exports.auth = admin.auth();
+exports.messaging = admin.messaging();
 exports.default = admin;
 //# sourceMappingURL=firebase-admin.js.map
