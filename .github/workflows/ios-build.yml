@@ -11,6 +11,9 @@ jobs:
   build:
     runs-on: macos-latest
     
+    env:
+      FLUTTER_XCODE_SWIFT_PACKAGE_MANAGER_ENABLED: 0
+    
     steps:
     - uses: actions/checkout@v4
     
@@ -19,11 +22,14 @@ jobs:
       with:
         channel: 'stable'
     
+    - name: Disable SPM globally
+      run: flutter config --no-enable-swift-package-manager
+    
     - name: Get dependencies
       working-directory: ./vibe_swipe
       run: |
         flutter pub get
-        cd ios && rm -rf Pods Podfile.lock && pod install && cd ..
+        cd ios && rm -rf Pods Podfile.lock .symlinks && pod install --repo-update && cd ..
     
     - name: Build iOS (No Code Sign)
       working-directory: ./vibe_swipe
