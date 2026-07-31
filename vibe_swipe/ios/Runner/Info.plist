@@ -82,9 +82,10 @@
 			<key>CFBundleURLSchemes</key>
 			<array>
 				<string>vibeswipe</string>
+				<string>com.googleusercontent.apps.367306858996-oepl42avutap73h38qejqco3klqo40vp</string>
 			</array>
 			<key>CFBundleURLName</key>
-			<string>com.sliconsystems.vibe_swipe</string>
+			<string>com.vibeswipellc.vibeswipe</string>
 		</dict>
 	</array>
 </dict>

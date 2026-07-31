@@ -1,4 +1,8 @@
+import 'dart:io' show Platform;
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:google_sign_in/google_sign_in.dart';
+import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 import '../utils/app_logger.dart';
 
 class FirebaseAuthService {
@@ -96,6 +100,90 @@ class FirebaseAuthService {
   Future<void> updateDisplayName(String name) async {
     await _auth.currentUser?.updateDisplayName(name);
   }
+
+  Future<UserCredential> signInWithGoogle() async {
+    try {
+      final GoogleSignInAccount? googleUser = await GoogleSignIn().signIn();
+      if (googleUser == null) {
+        throw FirebaseAuthException(
+          code: 'ERROR_ABORTED_BY_USER',
+          message: 'Sign in aborted by user',
+        );
+      }
+      final GoogleSignInAuthentication googleAuth =
+          await googleUser.authentication;
+
+      final OAuthCredential credential = GoogleAuthProvider.credential(
+        accessToken: googleAuth.accessToken,
+        idToken: googleAuth.idToken,
+      );
+
+      final userCredential = await _auth.signInWithCredential(credential);
+      appPrint('[FirebaseAuth] Google Sign-In success: ${userCredential.user?.uid}');
+      return userCredential;
+    } on FirebaseAuthException catch (e) {
+      appPrint('[FirebaseAuth] Google Sign-In error: ${e.code} - ${e.message}');
+      rethrow;
+    } catch (e) {
+      appPrint('[FirebaseAuth] Google Sign-In unexpected error: $e');
+      rethrow;
+    }
+  }
+
+  Future<UserCredential> signInWithApple() async {
+    try {
+      WebAuthenticationOptions? webOptions;
+      if (!kIsWeb && Platform.isAndroid) {
+        webOptions = WebAuthenticationOptions(
+          clientId: 'com.vibeswipellc.vibeswipe.service',
+          redirectUri: Uri.parse(
+            'https://vibe-swipe-llc.firebaseapp.com/__/auth/handler',
+          ),
+        );
+      }
+
+      final appleCredential = await SignInWithApple.getAppleIDCredential(
+        scopes: [
+          AppleIDAuthorizationScopes.email,
+          AppleIDAuthorizationScopes.fullName,
+        ],
+        webAuthenticationOptions: webOptions,
+      );
+
+      final OAuthCredential credential = OAuthProvider('apple.com').credential(
+        idToken: appleCredential.identityToken,
+        accessToken: appleCredential.authorizationCode,
+      );
+
+      final userCredential = await _auth.signInWithCredential(credential);
+      appPrint('[FirebaseAuth] Apple Sign-In success: ${userCredential.user?.uid}');
+      return userCredential;
+    } on FirebaseAuthException catch (e) {
+      appPrint('[FirebaseAuth] Apple Sign-In error: ${e.code} - ${e.message}');
+      rethrow;
+    } catch (e) {
+      appPrint('[FirebaseAuth] Apple Sign-In unexpected error: $e');
+      rethrow;
+    }
+  }
+
+  Future<void> sendEmailVerification() async {
+    final user = _auth.currentUser;
+    if (user != null && !user.emailVerified) {
+      await user.sendEmailVerification();
+      appPrint('[FirebaseAuth] Email verification sent to ${user.email}');
+    }
+  }
+
+  Future<void> reloadUser() async {
+    final user = _auth.currentUser;
+    if (user != null) {
+      await user.reload();
+      appPrint('[FirebaseAuth] User reloaded. Email verified status: ${user.emailVerified}');
+    }
+  }
+
+  bool get isEmailVerified => _auth.currentUser?.emailVerified ?? false;
 
   String? getUid() => _auth.currentUser?.uid;
 }

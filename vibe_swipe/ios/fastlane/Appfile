@@ -1,3 +1,3 @@
-app_identifier(ENV["BUNDLE_ID"])
-apple_id(ENV["APPLE_ID"])
-team_id(ENV["TEAM_ID"])
+app_identifier("com.vibeswipellc.vibeswipe")
+apple_id(ENV["APPLE_ID"] || "bryan@vibeswipe.com")
+team_id("37P5TUK792")

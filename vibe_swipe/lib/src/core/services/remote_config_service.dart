@@ -29,6 +29,6 @@ class RemoteConfigService {
 
     _initialized = true;
 
-    _remoteConfig.fetchAndActivate().catchError((_) {});
+    _remoteConfig.fetchAndActivate().catchError((_) => false);
   }
 }

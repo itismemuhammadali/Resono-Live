@@ -1,6 +1,8 @@
+import 'dart:io' show Platform;
 import 'package:flutter/cupertino.dart';
 import '../../../../core/utils/app_exports.dart';
 import '../../presentation/controllers/authentication_controller.dart';
+import '../../presentation/widgets/email_verification_dialog.dart';
 import '../../../../components/primary_elevated_button.dart';
 import '../../../../components/custom_textfield.dart';
 import '../../../../components/auth_logo_header.dart';
@@ -17,14 +19,25 @@ class LoginView extends HookConsumerWidget {
 
     void onSignIn() async {
       if (formKey.currentState!.validate()) {
-        final success = await ref.read(authControllerProvider).signIn(
+        final controller = ref.read(authControllerProvider);
+        final success = await controller.signIn(
               email: emailController.text.trim(),
               password: passwordController.text,
             );
         if (success && context.mounted) {
-          AppConfig.userRole == UserRole.artist
-              ? AppRouterGo.pushReplacement(artistDashboardView)
-              : AppRouterGo.pushReplacement(listenerDashboardView);
+          final target = AppConfig.userRole == UserRole.artist
+              ? artistDashboardView
+              : listenerDashboardView;
+
+          if (!controller.isEmailVerified) {
+            EmailVerificationDialog.show(
+              context,
+              email: emailController.text.trim(),
+              targetRoute: target,
+            );
+          } else {
+            AppRouterGo.pushReplacement(target);
+          }
         }
       }
     }
@@ -260,7 +273,16 @@ class LoginView extends HookConsumerWidget {
                     children: [
                       Expanded(
                         child: PrimaryElevatedButton(
-                          onTap: () {},
+                          onTap: () async {
+                            authController.clearError();
+                            final success = await ref.read(authControllerProvider).signInWithGoogle();
+                            if (success && context.mounted) {
+                              final target = AppConfig.userRole == UserRole.artist
+                                  ? artistDashboardView
+                                  : listenerDashboardView;
+                              context.go(target);
+                            }
+                          },
                           text: "Google",
                           backgroundColor: AppColors.transparent,
                           textColor: AppColors.primaryWhite,
@@ -286,7 +308,20 @@ class LoginView extends HookConsumerWidget {
                       16.pw,
                       Expanded(
                         child: PrimaryElevatedButton(
-                          onTap: () {},
+                          onTap: () async {
+                            authController.clearError();
+                            if (Platform.isAndroid) {
+                              _showAppleIosOnlyBottomSheet(context, ref);
+                              return;
+                            }
+                            final success = await ref.read(authControllerProvider).signInWithApple();
+                            if (success && context.mounted) {
+                              final target = AppConfig.userRole == UserRole.artist
+                                  ? artistDashboardView
+                                  : listenerDashboardView;
+                              context.go(target);
+                            }
+                          },
                           text: "Apple",
                           backgroundColor: AppColors.transparent,
                           textColor: AppColors.primaryWhite,
@@ -353,4 +388,91 @@ class LoginView extends HookConsumerWidget {
       ),
     );
   }
+}
+
+void _showAppleIosOnlyBottomSheet(BuildContext context, WidgetRef ref) {
+  showModalBottomSheet(
+    context: context,
+    backgroundColor: AppColors.listenerDashboardBg,
+    shape: RoundedRectangleBorder(
+      borderRadius: BorderRadius.vertical(top: Radius.circular(24.r)),
+    ),
+    builder: (context) {
+      return Padding(
+        padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 28.h),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 64.w,
+              height: 64.w,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: AppColors.listenerChipBorder.withValues(alpha: 0.3),
+              ),
+              child: Icon(
+                Icons.apple,
+                size: 36.sp,
+                color: AppColors.primaryWhite,
+              ),
+            ),
+            16.ph,
+            Text(
+              "Apple Sign-In is iOS Only",
+              style: TextStyle(
+                fontFamily: 'Roboto',
+                fontSize: 20.sp,
+                fontWeight: FontWeight.w700,
+                color: AppColors.primaryWhite,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            12.ph,
+            Text(
+              "Apple Sign-In is designed for Apple devices. On Android, please sign in using Google or your Email address.",
+              style: TextStyle(
+                fontFamily: 'Roboto',
+                fontSize: 14.sp,
+                color: AppColors.santagrey,
+                height: 1.4,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            28.ph,
+            PrimaryElevatedButton(
+              onTap: () async {
+                Navigator.pop(context);
+                final authController = ref.read(authControllerProvider);
+                authController.clearError();
+                final success = await authController.signInWithGoogle();
+                if (success && context.mounted) {
+                  final target = AppConfig.userRole == UserRole.artist
+                      ? artistDashboardView
+                      : listenerDashboardView;
+                  context.go(target);
+                }
+              },
+              text: "Continue with Google",
+              backgroundColor: AppColors.listenerYellow,
+              textColor: AppColors.primaryblack,
+              radius: 12,
+            ),
+            12.ph,
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: Text(
+                "Got it",
+                style: TextStyle(
+                  fontFamily: 'Roboto',
+                  fontSize: 14.sp,
+                  color: AppColors.santagrey,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+    },
+  );
 }

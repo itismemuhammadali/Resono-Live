@@ -40,21 +40,21 @@ class AuthController extends ChangeNotifier with Buffers {
 
   static const List<Map<String, String>> _listenerOnboarding = [
     {
-      "title": "Discover Music Instantly",
+      "title": "Live Stream & Performances",
       "subtitle":
-          "Explore new tracks in seconds with short previews\ntailored just for you.",
+          "Watch real-time artist broadcasts, live video sessions,\nand exclusive stage performances.",
       "image": "assets/images/png/discover_music_instantly.png",
     },
     {
-      "title": "Swipe. Listen. Decide.",
+      "title": "Swipe & Discover Music",
       "subtitle":
-          "Quickly react to songs with a simple swipe and shape\nyour personal music feed.",
+          "Preview fresh tracks with a simple swipe. Like\nwhat you hear and curate your personalized vibe.",
       "image": "assets/images/png/swipe_listen_decide.png",
     },
     {
-      "title": "Your Taste, Your Feed",
+      "title": "Community & Super Chat",
       "subtitle":
-          "Every tap improves your experience. Get music\nrecommendations that match your vibe.",
+          "Join genre discussions, interact with top artists,\nand support creators with Super Chat.",
       "image": "assets/images/png/your_taste_your_feed.png",
     },
   ];
@@ -109,6 +109,8 @@ class AuthController extends ChangeNotifier with Buffers {
         role: AppConfig.userRole,
       );
 
+      await _authService.sendEmailVerification();
+
       await _authHandler.setupUser(credential.user, true);
       final token = await credential.user!.getIdToken();
       await _authHandler.storeToken(token, true);
@@ -126,6 +128,28 @@ class AuthController extends ChangeNotifier with Buffers {
       return false;
     }
   }
+
+  Future<bool> resendVerificationEmail() async {
+    try {
+      await _authService.sendEmailVerification();
+      return true;
+    } catch (e) {
+      appPrint('[Auth] Error resending verification email: $e');
+      return false;
+    }
+  }
+
+  Future<bool> checkEmailVerified() async {
+    try {
+      await _authService.reloadUser();
+      return _authService.isEmailVerified;
+    } catch (e) {
+      appPrint('[Auth] Error reloading user status: $e');
+      return false;
+    }
+  }
+
+  bool get isEmailVerified => _authService.isEmailVerified;
 
   Future<bool> signIn({
     required String email,
@@ -227,6 +251,86 @@ class AuthController extends ChangeNotifier with Buffers {
       appPrint('[Auth] Magic link sign-in error: $e');
       _setLoading(false);
       _setError('Magic link sign-in failed. Please try again.');
+      return false;
+    }
+  }
+
+  Future<bool> signInWithGoogle() async {
+    _setLoading(true);
+    _setError(null);
+    try {
+      final credential = await _authService.signInWithGoogle();
+      final uid = credential.user!.uid;
+
+      final roleStr = await _firestoreService.getUserRole(uid);
+      if (roleStr != null) {
+        AppConfig.userRole = roleStr == 'artist' ? UserRole.artist : UserRole.listener;
+      } else {
+        await _firestoreService.createUserData(
+          uid: uid,
+          name: credential.user!.displayName ?? 'User',
+          email: credential.user!.email ?? '',
+          role: AppConfig.userRole,
+        );
+      }
+
+      await _authHandler.setupUser(credential.user, true);
+      final token = await credential.user!.getIdToken();
+      await _authHandler.storeToken(token, true);
+
+      _setLoading(false);
+      return true;
+    } on fb.FirebaseAuthException catch (e) {
+      _setLoading(false);
+      if (e.code == 'ERROR_ABORTED_BY_USER') return false;
+      _setError(_mapAuthError(e.code));
+      return false;
+    } catch (e) {
+      appPrint('[Auth] Google Sign-In error: $e');
+      _setLoading(false);
+      _setError('Google Sign-In failed. Please try again.');
+      return false;
+    }
+  }
+
+  Future<bool> signInWithApple() async {
+    _setLoading(true);
+    _setError(null);
+    try {
+      final credential = await _authService.signInWithApple();
+      final uid = credential.user!.uid;
+
+      final roleStr = await _firestoreService.getUserRole(uid);
+      if (roleStr != null) {
+        AppConfig.userRole = roleStr == 'artist' ? UserRole.artist : UserRole.listener;
+      } else {
+        await _firestoreService.createUserData(
+          uid: uid,
+          name: credential.user!.displayName ?? 'User',
+          email: credential.user!.email ?? '',
+          role: AppConfig.userRole,
+        );
+      }
+
+      await _authHandler.setupUser(credential.user, true);
+      final token = await credential.user!.getIdToken();
+      await _authHandler.storeToken(token, true);
+
+      _setLoading(false);
+      return true;
+    } on fb.FirebaseAuthException catch (e) {
+      _setLoading(false);
+      if (e.code == 'ERROR_ABORTED_BY_USER') return false;
+      _setError(_mapAuthError(e.code));
+      return false;
+    } catch (e) {
+      appPrint('[Auth] Apple Sign-In error: $e');
+      _setLoading(false);
+      final err = e.toString().toLowerCase();
+      if (err.contains('canceled') || err.contains('cancelled')) {
+        return false;
+      }
+      _setError('Apple Sign-In is natively supported on iOS devices.');
       return false;
     }
   }

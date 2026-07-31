@@ -1,39 +1,56 @@
 default_platform(:ios)
 
 platform :ios do
-  desc "Build and sign IPA"
+  desc "Authenticate with App Store Connect API Key"
+  private_lane :api_key do
+    app_store_connect_api_key(
+      key_id: "6GHS637UY4",
+      issuer_id: "4f87439e-aa32-4808-85d6-427d3e151835",
+      key_filepath: "/Users/muhammadali3000/development/vibe-swipe/AuthKey_6GHS637UY4.p8",
+      duration: 1200,
+      in_house: false
+    )
+  end
+
+  desc "Build IPA and Upload to TestFlight"
   lane :beta do
-    create_keychain(
-      name: "fastlane_keychain",
-      password: ENV["MATCH_PASSWORD"],
-      default_keychain: true,
-      unlock: true,
-      timeout: 3600,
-      add_to_search_list: true
-    )
-    match(
-      type: "development",
-      readonly: true,
-      git_url: ENV["MATCH_GIT_URL"],
-      keychain_name: "fastlane_keychain",
-      keychain_password: ENV["MATCH_PASSWORD"]
-    )
-    match(
-      type: "appstore",
-      readonly: true,
-      git_url: ENV["MATCH_GIT_URL"],
-      keychain_name: "fastlane_keychain",
-      keychain_password: ENV["MATCH_PASSWORD"]
-    )
+    api_key
+    
+    if ENV["MATCH_GIT_URL"] && !ENV["MATCH_GIT_URL"].empty?
+      create_keychain(
+        name: "fastlane_keychain",
+        password: ENV["MATCH_PASSWORD"] || "secret",
+        default_keychain: true,
+        unlock: true,
+        timeout: 3600,
+        add_to_search_list: true
+      )
+      match(
+        type: "appstore",
+        readonly: true,
+        git_url: ENV["MATCH_GIT_URL"],
+        keychain_name: "fastlane_keychain",
+        keychain_password: ENV["MATCH_PASSWORD"] || "secret"
+      )
+    end
+
     build_app(
       workspace: "Runner.xcworkspace",
       scheme: "Runner",
       export_method: "app-store",
-      export_options: {
-        provisioningProfiles: {
-          ENV["BUNDLE_ID"] => "match AppStore #{ENV["BUNDLE_ID"]}"
-        }
-      }
+      xcargs: "-allowProvisioningUpdates"
+    )
+
+    upload_to_testflight(
+      skip_waiting_for_build_processing: true
+    )
+  end
+
+  desc "Upload existing build to TestFlight"
+  lane :upload do
+    api_key
+    upload_to_testflight(
+      skip_waiting_for_build_processing: true
     )
   end
 end

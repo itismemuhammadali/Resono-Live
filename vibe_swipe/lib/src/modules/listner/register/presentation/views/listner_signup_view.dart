@@ -1,9 +1,9 @@
-import 'package:flutter/cupertino.dart';
 import '../../../../../core/utils/app_exports.dart';
 import '../../../../../components/primary_elevated_button.dart';
 import '../../../../../components/custom_textfield.dart';
 import '../../../../../components/auth_logo_header.dart';
 import '../../../../authentication/presentation/controllers/authentication_controller.dart';
+import '../../../../authentication/presentation/widgets/email_verification_dialog.dart';
 
 class ListnerSignupView extends HookConsumerWidget {
   const ListnerSignupView({super.key});
@@ -25,7 +25,11 @@ class ListnerSignupView extends HookConsumerWidget {
               password: passwordController.text,
             );
         if (success && context.mounted) {
-          AppRouterGo.push(profileSetupView);
+          EmailVerificationDialog.show(
+            context,
+            email: emailController.text.trim(),
+            targetRoute: profileSetupView,
+          );
         }
       }
     }
@@ -74,9 +78,9 @@ class ListnerSignupView extends HookConsumerWidget {
                     Container(
                       padding: EdgeInsets.all(12.w),
                       decoration: BoxDecoration(
-                        color: Colors.red.withOpacity(0.15),
+                        color: Colors.red.withValues(alpha: 0.15),
                         borderRadius: BorderRadius.circular(8.r),
-                        border: Border.all(color: Colors.red.withOpacity(0.3)),
+                        border: Border.all(color: Colors.red.withValues(alpha: 0.3)),
                       ),
                       child: Text(
                         authController.errorMessage!,

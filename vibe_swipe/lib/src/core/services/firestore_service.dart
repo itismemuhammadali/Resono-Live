@@ -18,44 +18,73 @@ class FirestoreService {
     required UserRole role,
   }) async {
     try {
-      await _api.post('/users/me', body: {
+      await FirebaseFirestore.instance.collection('users').doc(uid).set({
+        'uid': uid,
         'name': name,
         'email': email,
         'role': role.name,
-      });
-      appPrint('[API] User doc created for $uid (${role.name})');
+        'createdAt': FieldValue.serverTimestamp(),
+      }, SetOptions(merge: true));
+
+      try {
+        await _api.post('/users/me', body: {
+          'name': name,
+          'email': email,
+          'role': role.name,
+        });
+      } catch (apiErr) {
+        appPrint('[API] Note: Backend API user creation skipped/failed: $apiErr');
+      }
+      appPrint('[Firestore] User doc created for $uid (${role.name})');
     } catch (e) {
-      appPrint('[API] Error creating user doc: $e');
+      appPrint('[Firestore] Error creating user doc: $e');
       rethrow;
     }
   }
 
   Future<void> updateUserData(String uid, Map<String, dynamic> data) async {
     try {
-      await _api.put('/users/me', body: data);
-      appPrint('[API] User doc updated for $uid');
+      await FirebaseFirestore.instance
+          .collection('users')
+          .doc(uid)
+          .set(data, SetOptions(merge: true));
+
+      try {
+        await _api.put('/users/me', body: data);
+      } catch (apiErr) {
+        appPrint('[API] Note: Backend API update user skipped/failed: $apiErr');
+      }
+      appPrint('[Firestore] User doc updated for $uid');
     } catch (e) {
-      appPrint('[API] Error updating user doc: $e');
+      appPrint('[Firestore] Error updating user doc: $e');
       rethrow;
     }
   }
 
   Future<Map<String, dynamic>?> getUserData(String uid) async {
     try {
+      final doc = await FirebaseFirestore.instance.collection('users').doc(uid).get();
+      if (doc.exists && doc.data() != null) {
+        return doc.data();
+      }
       final data = await _api.get('/users/me');
       return data;
     } catch (e) {
-      appPrint('[API] Error getting user data: $e');
+      appPrint('[Firestore/API] Error getting user data: $e');
       return null;
     }
   }
 
   Future<String?> getUserRole(String uid) async {
     try {
+      final doc = await FirebaseFirestore.instance.collection('users').doc(uid).get();
+      if (doc.exists && doc.data() != null && doc.data()!['role'] != null) {
+        return doc.data()!['role'] as String;
+      }
       final data = await _api.get('/users/me/role');
       return data['role'] as String?;
     } catch (e) {
-      appPrint('[API] Error getting user role: $e');
+      appPrint('[Firestore/API] Error getting user role: $e');
       return null;
     }
   }

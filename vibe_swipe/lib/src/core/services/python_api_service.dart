@@ -5,15 +5,15 @@ import 'dart:convert';
 
 class PythonApiService {
   static String get baseUrl {
-    try {
-      return dotenv.get('PYTHON_API_URL');
-    } catch (_) {
-      try {
-        return dotenv.get('BASE_URL');
-      } catch (_) {
-        return 'http://177.7.33.210:8000';
-      }
+    final pythonUrl = dotenv.maybeGet('PYTHON_API_URL');
+    if (pythonUrl != null && pythonUrl.trim().isNotEmpty) {
+      return pythonUrl;
     }
+    final baseUrlVal = dotenv.maybeGet('BASE_URL');
+    if (baseUrlVal != null && baseUrlVal.trim().isNotEmpty) {
+      return baseUrlVal;
+    }
+    return 'http://177.7.33.210:8000';
   }
 
   final FirebaseAuth _auth = FirebaseAuth.instance;

@@ -30,16 +30,18 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   );
 
   final localNotifications = FlutterLocalNotificationsPlugin();
-  await localNotifications.initialize(const InitializationSettings(
-    android: AndroidInitializationSettings('@mipmap/ic_launcher'),
-    iOS: DarwinInitializationSettings(),
-  ));
+  await localNotifications.initialize(
+    settings: const InitializationSettings(
+      android: AndroidInitializationSettings('@mipmap/ic_launcher'),
+      iOS: DarwinInitializationSettings(),
+    ),
+  );
 
   await localNotifications.show(
-    message.hashCode,
-    message.notification?.title,
-    message.notification?.body,
-    details,
+    id: message.hashCode,
+    title: message.notification?.title,
+    body: message.notification?.body,
+    notificationDetails: details,
     payload: jsonEncode(message.data),
   );
 }

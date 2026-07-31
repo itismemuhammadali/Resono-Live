@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:vibe_swipe/src/core/services/routing_service/app_routes.dart';
 import 'package:vibe_swipe/src/core/services/routing_service/named_routes.dart';
 
 class NotificationNavigationService {

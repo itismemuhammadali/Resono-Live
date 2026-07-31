@@ -2,6 +2,7 @@ import 'package:flutter/cupertino.dart';
 import '../../../../../core/utils/app_exports.dart';
 import '../../../../../components/primary_elevated_button.dart';
 import '../../../../authentication/presentation/controllers/authentication_controller.dart';
+import '../../../../authentication/presentation/widgets/email_verification_dialog.dart';
 import '../../../../authentication/presentation/widgets/auth_back_button.dart';
 import '../widgets/artist_signup_header.dart';
 import '../widgets/artist_labeled_field.dart';
@@ -27,7 +28,11 @@ class ArtistSignupView extends HookConsumerWidget {
               password: passwordController.text,
             );
         if (success && context.mounted) {
-          AppRouterGo.push(artistSetupView);
+          EmailVerificationDialog.show(
+            context,
+            email: emailController.text.trim(),
+            targetRoute: artistSetupView,
+          );
         }
       }
     }

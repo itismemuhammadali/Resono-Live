@@ -42,3 +42,12 @@ backend/test_token.txt
 
 # Web build
 vibe_swipe_web/Bryan-Beattie
+
+# Credentials & Build Artifacts
+*.p8
+*.ipa
+*.dSYM.zip
+.mimocode/
+GoogleService-Info (1).plist
+**/report.xml
+
