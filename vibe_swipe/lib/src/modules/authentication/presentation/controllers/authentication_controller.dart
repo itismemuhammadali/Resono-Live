@@ -22,19 +22,22 @@ class AuthController extends ChangeNotifier with Buffers {
 
   static const List<Map<String, String>> _artistOnboarding = [
     {
-      "title": "Share Your Sound",
-      "subtitle": "Upload your music and let the world discover your unique style.",
+      "title": "Share Your Sound & Go Live",
+      "subtitle": "Upload your music, host live performances, and let the world discover your unique style.",
       "image": "assets/images/png/share_your_sound.png",
+      "feature": "LIVE STREAMING",
     },
     {
       "title": "Reach Real Listeners",
-      "subtitle": "Connect with fans who actually vibe with your music.",
+      "subtitle": "Connect with fans who actually vibe with your music through our swipe discovery.",
       "image": "assets/images/png/reach_real_listeners.png",
+      "feature": "MUSIC DISCOVERY",
     },
     {
-      "title": "Track Your Growth",
-      "subtitle": "See how your music performs and grow your audience smarter.",
+      "title": "Community & Super Chat",
+      "subtitle": "Interact directly with your fans, build your community, and earn with Super Chat.",
       "image": "assets/images/png/track_your_growth.png",
+      "feature": "SUPER CHAT",
     },
   ];
 
@@ -44,18 +47,21 @@ class AuthController extends ChangeNotifier with Buffers {
       "subtitle":
           "Watch real-time artist broadcasts, live video sessions,\nand exclusive stage performances.",
       "image": "assets/images/png/discover_music_instantly.png",
+      "feature": "LIVE STREAMING",
     },
     {
       "title": "Swipe & Discover Music",
       "subtitle":
           "Preview fresh tracks with a simple swipe. Like\nwhat you hear and curate your personalized vibe.",
       "image": "assets/images/png/swipe_listen_decide.png",
+      "feature": "MUSIC DISCOVERY",
     },
     {
       "title": "Community & Super Chat",
       "subtitle":
           "Join genre discussions, interact with top artists,\nand support creators with Super Chat.",
       "image": "assets/images/png/your_taste_your_feed.png",
+      "feature": "SUPER CHAT",
     },
   ];
 

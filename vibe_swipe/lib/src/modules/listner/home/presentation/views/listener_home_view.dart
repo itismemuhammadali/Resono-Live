@@ -8,7 +8,7 @@ import '../widgets/home_filter_chips.dart';
 import '../widgets/home_card_stack.dart';
 import '../widgets/home_action_buttons.dart';
 import '../../../../../components/like_confetti_overlay.dart';
-import '../widgets/sponsored_ad_widgets.dart';
+import '../../../../../components/meta_ad_placement_widget.dart';
 
 
 class ListenerHomeView extends ConsumerStatefulWidget {
@@ -104,7 +104,11 @@ class _ListenerHomeViewState extends ConsumerState<ListenerHomeView> {
                 ],
               ),
             ),
-            const SponsoredAdBanner(placement: 'Home Banner'),
+            const MetaAdPlacementWidget(
+              type: MetaAdPlacementType.banner,
+              placementName: 'Listener Home',
+              isTestMode: true,
+            ),
             10.ph,
 
             Expanded(

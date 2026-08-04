@@ -39,6 +39,7 @@ class OnboardingView extends HookConsumerWidget {
               title: controller.onboardingData[index]['title']!,
               subtitle: controller.onboardingData[index]['subtitle']!,
               image: controller.onboardingData[index]['image'],
+              feature: controller.onboardingData[index]['feature'],
             ),
           ),
           Positioned(

@@ -6,6 +6,7 @@ import '../widgets/community_featured_section.dart';
 import '../widgets/community_genre_communities_section.dart';
 import '../widgets/community_trending_section.dart';
 import '../widgets/community_new_releases_section.dart';
+import '../../../../../components/meta_ad_placement_widget.dart';
 
 class ListenerCommunityView extends ConsumerWidget {
   const ListenerCommunityView({super.key});
@@ -67,6 +68,12 @@ class ListenerCommunityView extends ConsumerWidget {
                     24.ph,
                   ],
                   CommunityFeaturedSection(post: featured),
+                  24.ph,
+                  const MetaAdPlacementWidget(
+                    type: MetaAdPlacementType.inlineFeed,
+                    placementName: 'Community Feed',
+                    isTestMode: true,
+                  ),
                   24.ph,
                   CommunityGenreCommunitiesSection(communities: genres),
                   24.ph,

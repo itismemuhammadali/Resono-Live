@@ -17,6 +17,7 @@ import '../widgets/super_chat_bottom_sheet.dart';
 import 'package:vibe_swipe/src/modules/artist/performances/presentation/widgets/super_chat_ticker.dart';
 import 'package:vibe_swipe/src/modules/listner/performances/domain/entities/live_chat_message.dart';
 import 'package:vibe_swipe/src/core/services/live_chat_service.dart';
+import '../../../../../components/meta_ad_placement_widget.dart';
 
 class ListenerLivePerformanceView extends ConsumerStatefulWidget {
   const ListenerLivePerformanceView({super.key, required this.featured});
@@ -472,6 +473,18 @@ class _ListenerLivePerformanceViewState extends ConsumerState<ListenerLivePerfor
               left: 16.w,
               right: 16.w,
               child: _SuperChatCelebrationAlert(message: _latestSuperChatForAlert!),
+            ),
+
+          // 5.5. Meta Ad stream overlay (floats on top right or top below header)
+          if (showStream && !_streamEnded)
+            Positioned(
+              top: MediaQuery.of(context).padding.top + 70.h,
+              right: 16.w,
+              child: const MetaAdPlacementWidget(
+                type: MetaAdPlacementType.streamOverlay,
+                placementName: 'Live Stream Overlay',
+                isTestMode: true,
+              ),
             ),
 
           // 6. Bottom Floating Panel (Title, Chat Messages, Input, Actions)

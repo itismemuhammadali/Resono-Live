@@ -5,6 +5,7 @@ import '../widgets/artist_home_app_bar.dart';
 import '../widgets/artist_stats_grid.dart';
 import '../widgets/quick_actions_section.dart';
 import '../widgets/recent_activity_section.dart';
+import '../../../../../components/meta_ad_placement_widget.dart';
 
 class ArtistHomeView extends ConsumerWidget {
   const ArtistHomeView({super.key});
@@ -31,6 +32,12 @@ class ArtistHomeView extends ConsumerWidget {
                   const QuickActionsSection(),
                   24.ph,
                   ActiveCampaignsSection(campaigns: controller.campaigns),
+                  24.ph,
+                  const MetaAdPlacementWidget(
+                    type: MetaAdPlacementType.mediumRectangle,
+                    placementName: 'Artist Dashboard',
+                    isTestMode: true,
+                  ),
                   24.ph,
                   RecentActivitySection(activities: controller.recentActivity),
                   32.ph,
