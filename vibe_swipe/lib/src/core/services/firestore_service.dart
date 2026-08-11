@@ -243,6 +243,7 @@ class FirestoreService {
           .update({
         'status': 'live',
         'channelName': channelName,
+        'current_live_viewers': 0,
         'liveStartedAt': FieldValue.serverTimestamp(),
       });
       appPrint('[Firestore] Live performance started: $performanceId');
@@ -259,6 +260,7 @@ class FirestoreService {
           .doc(performanceId)
           .update({
         'status': 'ended',
+        'current_live_viewers': 0,
         'liveEndedAt': FieldValue.serverTimestamp(),
       });
       appPrint('[Firestore] Live performance ended: $performanceId');
@@ -388,6 +390,15 @@ class FirestoreService {
   }
 
   Future<void> joinPerformance({required String performanceId}) async {
+    // Always update Firestore directly for accurate real-time viewer count.
+    // current_live_viewers tracks active live listeners (goes up/down)
+    // viewers_count tracks cumulative total views (only goes up)
+    try {
+      await FirebaseFirestore.instance.collection('performances').doc(performanceId).update({
+        'current_live_viewers': FieldValue.increment(1),
+        'viewers_count': FieldValue.increment(1),
+      });
+    } catch (_) {}
     try {
       await _api.post('/performances/$performanceId/join');
       appPrint('[API] Joined performance $performanceId');
@@ -397,6 +408,12 @@ class FirestoreService {
   }
 
   Future<void> leavePerformance({required String performanceId}) async {
+    // Decrement active live viewers count when leaving (do NOT reduce total viewers_count)
+    try {
+      await FirebaseFirestore.instance.collection('performances').doc(performanceId).update({
+        'current_live_viewers': FieldValue.increment(-1),
+      });
+    } catch (_) {}
     try {
       await _api.post('/performances/$performanceId/leave');
       appPrint('[API] Left performance $performanceId');

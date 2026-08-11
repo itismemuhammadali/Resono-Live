@@ -140,24 +140,28 @@ class TippingController extends ChangeNotifier with Buffers {
         return true;
       }
 
-      // On web, processPayment returns false (checkout launched in browser).
+      // On web ONLY: processPayment returns false (checkout launched in browser).
       // Poll checkAccess until the webhook confirms payment.
-      for (var i = 0; i < 30; i++) {
-        await Future.delayed(const Duration(seconds: 2));
-        try {
-          final result = await _stripeService.checkAccess(
-            userId: userId,
-            performanceId: performanceId,
-          );
-          if (result['hasAccess'] == true) {
-            _hasPaid = true;
-            notifyListeners();
-            return true;
+      if (kIsWeb) {
+        for (var i = 0; i < 30; i++) {
+          await Future.delayed(const Duration(seconds: 2));
+          try {
+            final result = await _stripeService.checkAccess(
+              userId: userId,
+              performanceId: performanceId,
+            );
+            if (result['hasAccess'] == true) {
+              _hasPaid = true;
+              notifyListeners();
+              return true;
+            }
+          } catch (_) {
+            // Keep polling
           }
-        } catch (_) {
-          // Keep polling
         }
       }
+
+      // Native: payment was cancelled or failed — do NOT grant access.
       return false;
     } catch (e) {
       _paymentError = e.toString();

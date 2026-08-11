@@ -57,18 +57,23 @@ void main() async {
 
   try {
     await dotenv.load(fileName: "assets/.env");
-    final stripeKey = dotenv.maybeGet('STRIPE_PUBLISHABLE_KEY');
-    if (stripeKey != null) {
-      Stripe.publishableKey = stripeKey;
-      appPrint("[Stripe] Initialized with key: ${stripeKey.substring(0, 8)}...");
-    } else {
-      appPrint("[Stripe] Warning: STRIPE_PUBLISHABLE_KEY not found in .env");
-    }
   } catch (e) {
-    appPrint("Warning: .env file not found, proceeding without it");
+    appPrint("Warning: .env file not found, proceeding with RemoteConfig fallbacks");
   }
 
   setupLocator();
+
+  // Initialize Firebase Remote Config (fetches all keys & URLs directly from Firebase Remote Config)
+  final remoteConfig = locator<RemoteConfigService>();
+  await remoteConfig.init();
+
+  final stripeKey = remoteConfig.stripePublishableKey;
+  if (stripeKey.isNotEmpty) {
+    Stripe.publishableKey = stripeKey;
+    appPrint("[Stripe] Initialized from RemoteConfig with key: ${stripeKey.substring(0, stripeKey.length > 8 ? 8 : stripeKey.length)}...");
+  } else {
+    appPrint("[Stripe] Warning: STRIPE_PUBLISHABLE_KEY not found in RemoteConfig or .env");
+  }
 
   try {
     await deepLinkService.init();

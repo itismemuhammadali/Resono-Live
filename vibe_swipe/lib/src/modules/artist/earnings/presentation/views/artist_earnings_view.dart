@@ -1,4 +1,5 @@
 import 'package:vibe_swipe/src/core/utils/app_exports.dart';
+import 'package:vibe_swipe/src/components/in_app_alert.dart';
 import '../controllers/artist_earnings_controller.dart';
 import '../../domain/entities/earning_entities.dart';
 
@@ -38,6 +39,8 @@ class ArtistEarningsView extends ConsumerWidget {
             children: [
               12.ph,
               _MetricsPanel(controller: controller),
+              20.ph,
+              _WithdrawSection(controller: controller),
               20.ph,
               _WalletStatusCard(controller: controller),
               24.ph,
@@ -371,45 +374,206 @@ class _EmptyPayouts extends StatelessWidget {
   }
 }
 
+class _WithdrawSection extends ConsumerWidget {
+  const _WithdrawSection({required this.controller});
+  final ArtistEarningsController controller;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final balance = controller.pendingPayoutBalance;
+    final canWithdraw = controller.stripePayoutsEnabled && balance >= 10.0;
+    
+    return Container(
+      padding: EdgeInsets.all(16.w),
+      decoration: BoxDecoration(
+        color: AppColors.listenerChipBg,
+        borderRadius: BorderRadius.circular(16.r),
+        border: Border.all(color: AppColors.listenerChipBorder),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Available to Withdraw',
+                style: TextStyle(
+                  fontFamily: 'Roboto',
+                  fontSize: 16.sp,
+                  color: AppColors.santagrey,
+                ),
+              ),
+              Text(
+                '\$${balance.toStringAsFixed(2)}',
+                style: TextStyle(
+                  fontFamily: 'Roboto',
+                  fontSize: 20.sp,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.primaryGreen,
+                ),
+              ),
+            ],
+          ),
+          16.ph,
+          ElevatedButton(
+            onPressed: canWithdraw ? () => _confirmWithdrawal(context, ref, balance) : null,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.listenerYellow,
+              disabledBackgroundColor: AppColors.listenerChipBorder,
+              foregroundColor: AppColors.primaryblack,
+              disabledForegroundColor: AppColors.santagrey,
+              padding: EdgeInsets.symmetric(vertical: 14.h),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12.r),
+              ),
+              elevation: 0,
+            ),
+            child: controller.isLoading
+                ? SizedBox(
+                    width: 20.w,
+                    height: 20.w,
+                    child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primaryblack),
+                  )
+                : Text(
+                    'Withdraw Funds',
+                    style: TextStyle(
+                      fontFamily: 'Roboto',
+                      fontSize: 16.sp,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+          ),
+          if (!controller.stripePayoutsEnabled)
+            Padding(
+              padding: EdgeInsets.only(top: 8.h),
+              child: Text(
+                'Connect your Stripe account to withdraw.',
+                textAlign: TextAlign.center,
+                style: TextStyle(fontSize: 12.sp, color: AppColors.eventRed),
+              ),
+            )
+          else if (balance < 10.0)
+            Padding(
+              padding: EdgeInsets.only(top: 8.h),
+              child: Text(
+                'Minimum withdrawal amount is \$10.00.',
+                textAlign: TextAlign.center,
+                style: TextStyle(fontSize: 12.sp, color: AppColors.santagrey),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  void _confirmWithdrawal(BuildContext context, WidgetRef ref, double amount) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: AppColors.listenerDashboardBg,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24.r)),
+      ),
+      builder: (context) {
+        return Padding(
+          padding: EdgeInsets.all(24.w),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                'Confirm Withdrawal',
+                style: TextStyle(
+                  fontFamily: 'Roboto',
+                  fontSize: 20.sp,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.primaryWhite,
+                ),
+              ),
+              16.ph,
+              Text(
+                'You are about to withdraw \$${amount.toStringAsFixed(2)} to your connected Stripe account. This transfer is typically processed within a few business days.',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontFamily: 'Roboto',
+                  fontSize: 14.sp,
+                  color: AppColors.santagrey,
+                  height: 1.4,
+                ),
+              ),
+              32.ph,
+              Row(
+                children: [
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: () => Navigator.pop(context),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.listenerChipBg,
+                        foregroundColor: AppColors.primaryWhite,
+                        padding: EdgeInsets.symmetric(vertical: 16.h),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12.r),
+                        ),
+                      ),
+                      child: Text('Cancel', style: TextStyle(fontSize: 16.sp, fontWeight: FontWeight.w600)),
+                    ),
+                  ),
+                  16.pw,
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: () async {
+                        Navigator.pop(context);
+                        final success = await ref.read(artistEarningsControllerProvider.notifier).requestWithdrawal(amount);
+                        if (success) {
+                          InAppAlert.show(context, message: 'Withdrawal initiated successfully!', isSuccess: true);
+                        } else {
+                          InAppAlert.show(context, message: 'Failed to request withdrawal. Please try again.', isSuccess: false);
+                        }
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.primaryGreen,
+                        foregroundColor: AppColors.primaryblack,
+                        padding: EdgeInsets.symmetric(vertical: 16.h),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12.r),
+                        ),
+                      ),
+                      child: Text('Confirm', style: TextStyle(fontSize: 16.sp, fontWeight: FontWeight.w700)),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+}
+
 class _WalletStatusCard extends StatelessWidget {
   const _WalletStatusCard({required this.controller});
   final ArtistEarningsController controller;
 
   @override
   Widget build(BuildContext context) {
-    final configured = controller.isWalletConfigured;
-    final wallet = controller.payoutWallet;
-    final method = wallet['payoutMethod'] ?? '';
+    final configured = controller.stripePayoutsEnabled;
+    final accountId = controller.stripeAccountId;
 
-    String title = 'Payout Wallet';
-    String subtitle = 'Not configured';
+    String title = 'Stripe Connect';
+    String subtitle = 'Not connected';
     IconData icon = Icons.warning_amber_rounded;
     Color iconColor = AppColors.listenerYellow;
 
     if (configured) {
-      if (method == 'bank') {
-        final bankName = wallet['bankName'] ?? 'Bank Account';
-        final accNum = wallet['accountNumber'] ?? '';
-        final masked = accNum.length > 4 ? accNum.substring(accNum.length - 4) : accNum;
-        title = bankName;
-        subtitle = 'Account ending in ****$masked';
-        icon = Icons.account_balance_rounded;
-        iconColor = AppColors.primaryGreen;
-      } else if (method == 'paypal') {
-        final email = wallet['paypalEmail'] ?? 'PayPal';
-        title = 'PayPal';
-        subtitle = email;
-        icon = Icons.payment_rounded;
-        iconColor = AppColors.primaryGreen;
-      } else if (method == 'crypto') {
-        final addr = wallet['cryptoAddress'] ?? '';
-        final network = wallet['cryptoNetwork'] ?? 'Crypto';
-        final masked = addr.length > 8 ? '${addr.substring(0, 6)}...${addr.substring(addr.length - 4)}' : addr;
-        title = 'Crypto - $network';
-        subtitle = masked;
-        icon = Icons.currency_bitcoin_rounded;
-        iconColor = AppColors.primaryGreen;
-      }
+      title = 'Stripe Connected';
+      subtitle = 'Payouts enabled';
+      icon = Icons.check_circle_rounded;
+      iconColor = AppColors.primaryGreen;
+    } else if (accountId != null) {
+      title = 'Pending Verification';
+      subtitle = 'Action required on Stripe';
+      icon = Icons.hourglass_empty_rounded;
+      iconColor = AppColors.listenerYellow;
     }
 
     return Container(

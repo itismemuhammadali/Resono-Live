@@ -16,8 +16,15 @@ class ListnerSignupView extends HookConsumerWidget {
     final passwordController = useTextEditingController();
     final confirmPasswordController = useTextEditingController();
     final authController = ref.watch(authControllerProvider);
+    final agreedToTerms = useState(false);
+    final termsError = useState(false);
 
     void onCreateAccount() async {
+      if (!agreedToTerms.value) {
+        termsError.value = true;
+        return;
+      }
+      termsError.value = false;
       if (formKey.currentState!.validate()) {
         final success = await ref.read(authControllerProvider).signUp(
               name: fullNameController.text.trim(),
@@ -275,7 +282,107 @@ class ListnerSignupView extends HookConsumerWidget {
                     validator: (value) =>
                         AppValidators.confirmPass(value, passwordController),
                   ),
-                  172.ph,
+                  24.ph,
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      SizedBox(
+                        width: 24.w,
+                        height: 24.w,
+                        child: Checkbox(
+                          value: agreedToTerms.value,
+                          onChanged: (val) {
+                            agreedToTerms.value = val ?? false;
+                            if (agreedToTerms.value) termsError.value = false;
+                          },
+                          activeColor: AppColors.listenerYellow,
+                          checkColor: AppColors.primaryblack,
+                          side: BorderSide(
+                            color: termsError.value
+                                ? Colors.redAccent
+                                : AppColors.listenerChipBorder,
+                            width: 1.5,
+                          ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(4.r),
+                          ),
+                        ),
+                      ),
+                      10.pw,
+                      Expanded(
+                        child: GestureDetector(
+                          onTap: () {
+                            agreedToTerms.value = !agreedToTerms.value;
+                            if (agreedToTerms.value) termsError.value = false;
+                          },
+                          child: RichText(
+                            text: TextSpan(
+                              style: TextStyle(
+                                fontFamily: 'Roboto',
+                                fontSize: 12.sp,
+                                color: AppColors.santagrey,
+                              ),
+                              children: [
+                                const TextSpan(text: 'I agree to the '),
+                                WidgetSpan(
+                                  child: GestureDetector(
+                                    onTap: () => AppRouterGo.push(
+                                      termsAndPoliciesView,
+                                      extra: {'sectionId': 'terms', 'isArtist': false},
+                                    ),
+                                    child: Text(
+                                      'Terms & Conditions',
+                                      style: TextStyle(
+                                        fontFamily: 'Roboto',
+                                        fontSize: 12.sp,
+                                        fontWeight: FontWeight.w700,
+                                        color: AppColors.listenerYellow,
+                                        decoration: TextDecoration.underline,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                                const TextSpan(text: ' and '),
+                                WidgetSpan(
+                                  child: GestureDetector(
+                                    onTap: () => AppRouterGo.push(
+                                      termsAndPoliciesView,
+                                      extra: {'sectionId': 'privacy', 'isArtist': false},
+                                    ),
+                                    child: Text(
+                                      'Privacy Policy',
+                                      style: TextStyle(
+                                        fontFamily: 'Roboto',
+                                        fontSize: 12.sp,
+                                        fontWeight: FontWeight.w700,
+                                        color: AppColors.listenerYellow,
+                                        decoration: TextDecoration.underline,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  if (termsError.value) ...[
+                    6.ph,
+                    Padding(
+                      padding: EdgeInsets.only(left: 34.w),
+                      child: Text(
+                        'You must accept the Terms & Policies to continue',
+                        style: TextStyle(
+                          fontFamily: 'Roboto',
+                          fontSize: 11.sp,
+                          color: Colors.redAccent,
+                        ),
+                      ),
+                    ),
+                  ],
+                  24.ph,
                   PrimaryElevatedButton(
                     onTap: onCreateAccount,
                     text: authController.isLoading ? "Creating Account..." : "Create Account",

@@ -1,3 +1,4 @@
+import 'package:url_launcher/url_launcher.dart';
 import 'package:vibe_swipe/src/core/utils/app_exports.dart';
 import '../../domain/entities/earning_entities.dart';
 
@@ -36,7 +37,16 @@ class ArtistEarningsController extends ChangeNotifier with Buffers {
   Map<String, dynamic> _payoutWallet = {};
   Map<String, dynamic> get payoutWallet => _payoutWallet;
 
-  bool get isWalletConfigured => _payoutWallet.isNotEmpty && _payoutWallet['payoutMethod'] != null;
+  String? _stripeAccountId;
+  String? get stripeAccountId => _stripeAccountId;
+
+  bool _stripePayoutsEnabled = false;
+  bool get stripePayoutsEnabled => _stripePayoutsEnabled;
+
+  double _pendingPayoutBalance = 0.0;
+  double get pendingPayoutBalance => _pendingPayoutBalance;
+
+  bool get isWalletConfigured => _stripePayoutsEnabled;
 
   ArtistEarningsController() {
     fetchEarnings();
@@ -53,6 +63,9 @@ class ArtistEarningsController extends ChangeNotifier with Buffers {
       final userData = await locator<FirestoreService>().getUserData(userId);
       if (userData != null) {
         _payoutWallet = Map<String, dynamic>.from(userData['payoutWallet'] ?? {});
+        _stripeAccountId = userData['stripeAccountId'] as String?;
+        _stripePayoutsEnabled = userData['stripeOnboardingComplete'] == true;
+        _pendingPayoutBalance = ((userData['pendingPayout'] ?? 0) as num).toDouble() / 100;
       }
 
       final data = await _stripeService.getTransactionHistory(userId);
@@ -64,9 +77,7 @@ class ArtistEarningsController extends ChangeNotifier with Buffers {
       final transactions = data['transactions'] as List? ?? [];
 
       final Map<String, PerformanceEarning> earningsByPerf = {};
-      final Map<String, PayoutRecord> pendingBySource = {};
-      final Map<String, PayoutRecord> paidBySource = {};
-
+      
       for (final tx in transactions) {
         final type = tx['type'] ?? '';
         final amount = ((tx['amount'] ?? 0) as num).toDouble() / 100;
@@ -75,7 +86,9 @@ class ArtistEarningsController extends ChangeNotifier with Buffers {
         final perfId = tx['performanceId'] ?? 'general';
         final createdAt = tx['createdAt'];
         DateTime date = DateTime.now();
-        if (createdAt is num) {
+        if (createdAt != null && createdAt is Map && createdAt['_seconds'] != null) {
+          date = DateTime.fromMillisecondsSinceEpoch((createdAt['_seconds'] * 1000).toInt());
+        } else if (createdAt is num) {
           date = DateTime.fromMillisecondsSinceEpoch((createdAt * 1000).toInt());
         }
 
@@ -148,7 +161,13 @@ class ArtistEarningsController extends ChangeNotifier with Buffers {
   }
 
   String _formatTime(dynamic createdAt) {
-    if (createdAt is num) {
+    if (createdAt != null && createdAt is Map && createdAt['_seconds'] != null) {
+      final date = DateTime.fromMillisecondsSinceEpoch((createdAt['_seconds'] * 1000).toInt());
+      final diff = DateTime.now().difference(date);
+      if (diff.inMinutes < 60) return '${diff.inMinutes}m ago';
+      if (diff.inHours < 24) return '${diff.inHours}h ago';
+      return '${diff.inDays}d ago';
+    } else if (createdAt is num) {
       final date = DateTime.fromMillisecondsSinceEpoch((createdAt * 1000).toInt());
       final diff = DateTime.now().difference(date);
       if (diff.inMinutes < 60) return '${diff.inMinutes}m ago';
@@ -158,7 +177,7 @@ class ArtistEarningsController extends ChangeNotifier with Buffers {
     return 'recently';
   }
 
-  double get pendingTotal => _pendingPayouts.fold(0.0, (s, p) => s + p.amount);
+  double get pendingTotal => _pendingPayoutBalance;
   double get paidTotal => _paidPayouts.fold(0.0, (s, p) => s + p.amount);
 
   Future<void> saveWalletDetails(Map<String, dynamic> walletData) async {
@@ -177,6 +196,76 @@ class ArtistEarningsController extends ChangeNotifier with Buffers {
     } catch (e) {
       appPrint('[Earnings] Error saving wallet: $e');
       rethrow;
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  // ─────────────────────────────────────────────────────────
+  // Stripe Connect Actions
+  // ─────────────────────────────────────────────────────────
+
+  Future<void> setupStripeConnect() async {
+    final userId = locator<FirebaseAuthService>().getUid();
+    if (userId == null) return;
+    
+    _isLoading = true;
+    notifyListeners();
+    
+    try {
+      final result = await _stripeService.createConnectAccount(userId);
+      final url = result['onboardingUrl'] as String?;
+      final accId = result['accountId'] as String?;
+      
+      if (accId != null) {
+        _stripeAccountId = accId;
+      }
+      
+      if (url != null) {
+        final uri = Uri.parse(url);
+        if (await canLaunchUrl(uri)) {
+          await launchUrl(uri, mode: LaunchMode.externalApplication);
+        }
+      }
+    } catch (e) {
+      appPrint('[Earnings] Error setting up Stripe Connect: $e');
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  Future<void> checkStripeStatus() async {
+    final userId = locator<FirebaseAuthService>().getUid();
+    if (userId == null) return;
+    
+    try {
+      final result = await _stripeService.getConnectAccountStatus(userId);
+      if (result['connected'] == true) {
+        _stripeAccountId = result['accountId'];
+        _stripePayoutsEnabled = result['payoutsEnabled'] == true;
+        notifyListeners();
+      }
+    } catch (e) {
+      appPrint('[Earnings] Error checking Stripe status: $e');
+    }
+  }
+
+  Future<bool> requestWithdrawal(double amount) async {
+    final userId = locator<FirebaseAuthService>().getUid();
+    if (userId == null) return false;
+    
+    _isLoading = true;
+    notifyListeners();
+    
+    try {
+      await _stripeService.requestPayout(artistId: userId, amount: amount);
+      await fetchEarnings(); // Refresh balance
+      return true;
+    } catch (e) {
+      appPrint('[Earnings] Error requesting withdrawal: $e');
+      return false;
     } finally {
       _isLoading = false;
       notifyListeners();

@@ -39,6 +39,11 @@ class MenuSection extends ConsumerWidget {
         onTap: () => AppRouterGo.push(artistPrivacySettingsView),
       ),
       _MenuItem(
+        emoji: '⚖️',
+        label: 'Terms & Policies',
+        onTap: () => AppRouterGo.push(termsAndPoliciesView, extra: {'isArtist': true}),
+      ),
+      _MenuItem(
         asset: 'assets/icons/png/artist_profile_help_and_support_icn.png',
         label: 'Help & Support',
         onTap: () => AppRouterGo.push(artistHelpSupportView),

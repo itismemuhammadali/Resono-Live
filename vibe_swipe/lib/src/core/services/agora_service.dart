@@ -4,8 +4,9 @@ import 'dart:convert';
 import 'package:agora_rtc_engine/agora_rtc_engine.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
+import 'package:vibe_swipe/src/core/services/registry_service/di.dart';
+import 'package:vibe_swipe/src/core/services/remote_config_service.dart';
 
 import 'python_api_service.dart';
 
@@ -16,9 +17,9 @@ class AgoraService {
   RtcEngine? get engine => _engine;
   bool get isInitialized => _isInitialized;
 
-  String get appId => dotenv.get('AGORA_APP_ID', fallback: '');
-  String get channelName => dotenv.get('AGORA_CHANNEL_NAME', fallback: 'live-stream-test');
-  bool get isTestMode => dotenv.get('AGORA_TEST_MODE', fallback: 'false').toLowerCase() == 'true';
+  String get appId => locator<RemoteConfigService>().agoraAppId;
+  String get channelName => locator<RemoteConfigService>().agoraChannelName;
+  bool get isTestMode => locator<RemoteConfigService>().agoraTestMode;
 
   // Token refresh state
   Timer? _refreshTimer;
@@ -260,14 +261,11 @@ class AgoraService {
   Future<void> dispose() async {
     _cancelRefreshTimer();
     await leaveChannel();
-    await _engine?.release();
-    _engine = null;
-    _isInitialized = false;
     onUserJoined = null;
     onUserOffline = null;
     onJoinChannelSuccess = null;
     onLeaveChannel = null;
     onError = null;
-    debugPrint('[AgoraService] Engine disposed');
+    debugPrint('[AgoraService] Event handlers cleared, engine kept alive');
   }
 }

@@ -27,23 +27,13 @@ class _PaymentSuccessViewState extends State<PaymentSuccessView> {
   }
 
   Future<void> _confirmPayment() async {
-    try {
-      final result = await StripeService().checkoutComplete(widget.sessionId);
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-          _isSuccess = result['success'] == true;
-          _netAmount = (result['netAmount'] as num?)?.toDouble();
-        });
-      }
-    } catch (e) {
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-          _isSuccess = false;
-          _errorMessage = e.toString();
-        });
-      }
+    // The webhook handles the backend sync. We just show a success state here.
+    await Future.delayed(const Duration(seconds: 1));
+    if (mounted) {
+      setState(() {
+        _isLoading = false;
+        _isSuccess = true;
+      });
     }
   }
 

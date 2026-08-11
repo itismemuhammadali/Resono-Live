@@ -136,6 +136,7 @@ class _TipArtistBottomSheetState extends ConsumerState<TipArtistBottomSheet> {
                     onTap: () => setState(() {
                       _selectedAmount = amount;
                       _isCustom = false;
+                      _customAmountController.clear();
                     }),
                     child: Container(
                       padding: EdgeInsets.symmetric(vertical: 14.h),
@@ -209,7 +210,8 @@ class _TipArtistBottomSheetState extends ConsumerState<TipArtistBottomSheet> {
                   border: InputBorder.none,
                   contentPadding: EdgeInsets.symmetric(vertical: 12.h),
                 ),
-                onChanged: (_) => setState(() {}),
+                onTap: () => setState(() => _isCustom = true),
+                onChanged: (_) => setState(() => _isCustom = true),
               ),
             ),
           ),

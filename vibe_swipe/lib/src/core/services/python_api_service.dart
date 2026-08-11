@@ -1,19 +1,16 @@
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'package:vibe_swipe/src/core/services/registry_service/di.dart';
+import 'package:vibe_swipe/src/core/services/remote_config_service.dart';
 
 class PythonApiService {
   static String get baseUrl {
-    final pythonUrl = dotenv.maybeGet('PYTHON_API_URL');
-    if (pythonUrl != null && pythonUrl.trim().isNotEmpty) {
-      return pythonUrl;
+    try {
+      return locator<RemoteConfigService>().pythonApiUrl;
+    } catch (_) {
+      return 'http://177.7.33.210:8000';
     }
-    final baseUrlVal = dotenv.maybeGet('BASE_URL');
-    if (baseUrlVal != null && baseUrlVal.trim().isNotEmpty) {
-      return baseUrlVal;
-    }
-    return 'http://177.7.33.210:8000';
   }
 
   final FirebaseAuth _auth = FirebaseAuth.instance;

@@ -30,6 +30,11 @@ class ProfileMenuSection extends StatelessWidget {
       onTap: () => AppRouterGo.push(listenerPrivacySettingsView),
     ),
     _MenuItem(
+      icon: Icons.gavel_outlined,
+      label: 'Terms & Policies',
+      onTap: () => AppRouterGo.push(termsAndPoliciesView, extra: {'isArtist': false}),
+    ),
+    _MenuItem(
       icon: Icons.help_outline,
       label: 'Help & Support',
       onTap: () => AppRouterGo.push(listenerHelpSupportView),

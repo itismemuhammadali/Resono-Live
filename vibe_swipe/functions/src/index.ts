@@ -10,9 +10,16 @@ export {
   stripeWebhook,
   createPaymentIntent,
   createCheckoutSession,
+  confirmPayment,
   checkAccess,
   checkTipStatus,
   getTransactionHistory,
+  createConnectAccount,
+  getConnectAccountStatus,
+  requestPayout,
+  stripeConnectWebhook,
+  paymentSuccess,
+  paymentCancelled,
 } from "./stripe";
 export {
   onNewFollower,

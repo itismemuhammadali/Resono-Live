@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:agora_rtc_engine/agora_rtc_engine.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:vibe_swipe/src/core/utils/app_exports.dart';
@@ -26,32 +27,37 @@ class _ArtistLiveBroadcastViewState extends State<ArtistLiveBroadcastView> {
   int _viewerCount = 0;
   DateTime? _streamStartTime;
   List<LiveChatMessage> _pinnedSuperChats = [];
+  StreamSubscription? _performanceSubscription;
 
   @override
   void initState() {
     super.initState();
     _agoraService.onJoinChannelSuccess = (connection, elapsed) {
       if (mounted) {
-        setState(() {
-          _isLive = true;
-        });
-      }
-    };
-    _agoraService.onUserJoined = (connection, remoteUid, elapsed) {
-      if (mounted) {
-        setState(() {
-          _viewerCount++;
-        });
-      }
-    };
-    _agoraService.onUserOffline = (connection, remoteUid, reason) {
-      if (mounted) {
-        setState(() {
-          _viewerCount = (_viewerCount - 1).clamp(0, 999);
-        });
+        setState(() => _isLive = true);
+        // Start Firestore viewer count listener once we go live
+        _watchViewerCount();
       }
     };
     _listenToSuperChats();
+  }
+
+  /// Listen to Firestore viewers_count in real time — much more accurate
+  /// than counting Agora join/offline events (which can miss late joiners
+  /// and double-count reconnections).
+  void _watchViewerCount() {
+    _performanceSubscription?.cancel();
+    _performanceSubscription = locator<FirestoreService>()
+        .watchPerformance(widget.item.id)
+        .listen((snapshot) {
+      if (!mounted) return;
+      final data = snapshot.data() as Map<String, dynamic>?;
+      if (data == null) return;
+      final count = data['current_live_viewers'] ?? data['viewers_count'];
+      if (count is int) {
+        setState(() => _viewerCount = (count < 0 ? 0 : count));
+      }
+    });
   }
 
   void _listenToSuperChats() {
@@ -85,6 +91,7 @@ class _ArtistLiveBroadcastViewState extends State<ArtistLiveBroadcastView> {
     _agoraService.onJoinChannelSuccess = null;
     _agoraService.onUserJoined = null;
     _agoraService.onUserOffline = null;
+    _performanceSubscription?.cancel();
     _leaveChannel();
     super.dispose();
   }
@@ -271,26 +278,31 @@ class _ArtistLiveBroadcastViewState extends State<ArtistLiveBroadcastView> {
               ),
             ),
 
-          // Gradient overlay
+          // Gradient overlay — light at top for controls visibility,
+          // gentle at bottom so the artist can clearly see their own video.
           DecoratedBox(
             decoration: BoxDecoration(
               gradient: LinearGradient(
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
                 colors: [
-                  AppColors.listenerDashboardBg.withValues(alpha: 0.10),
                   AppColors.listenerDashboardBg.withValues(alpha: 0.45),
-                  AppColors.listenerDashboardBg.withValues(alpha: 0.88),
-                  AppColors.listenerDashboardBg.withValues(alpha: 0.98),
+                  AppColors.listenerDashboardBg.withValues(alpha: 0.05),
+                  AppColors.listenerDashboardBg.withValues(alpha: 0.05),
+                  AppColors.listenerDashboardBg.withValues(alpha: 0.40),
                 ],
-                stops: const [0.0, 0.35, 0.60, 1.0],
+                stops: const [0.0, 0.18, 0.72, 1.0],
               ),
             ),
           ),
 
-          // Live chat overlay
+          // Live chat overlay — positioned well above the control buttons
+          // so messages don't overlap with mic/cam/flip row.
           if (_isLive)
-            LiveChatOverlay(performanceId: widget.item.id),
+            LiveChatOverlay(
+              performanceId: widget.item.id,
+              bottomOffset: 200,
+            ),
 
           // Super Chat Ticker (pinned zone at top)
           if (_isLive && _pinnedSuperChats.isNotEmpty)

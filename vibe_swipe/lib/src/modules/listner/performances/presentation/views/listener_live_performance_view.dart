@@ -38,6 +38,7 @@ class _ListenerLivePerformanceViewState extends ConsumerState<ListenerLivePerfor
   bool _streamEnded = false;
   bool _agoraInitialized = false;
   bool _accessCheckCompleted = false;
+  bool _accessCheckFailed = false;
   StreamSubscription? _performanceSubscription;
   int _activeViewersCount = 0;
 
@@ -117,14 +118,17 @@ class _ListenerLivePerformanceViewState extends ConsumerState<ListenerLivePerfor
       final data = snapshot.data() as Map<String, dynamic>?;
       if (data == null) return;
 
-      final viewersCount = data['viewers_count'] ?? data['viewCount'] ?? 0;
-      if (viewersCount is int) {
+      final status = data['status'] ?? 'upcoming';
+      final isStreamLive = status == 'live';
+      final rawCount = isStreamLive
+          ? (data['current_live_viewers'] ?? data['viewers_count'] ?? 0)
+          : (data['viewers_count'] ?? data['viewCount'] ?? 0);
+      if (rawCount is int) {
         setState(() {
-          _activeViewersCount = viewersCount;
+          _activeViewersCount = rawCount < 0 ? 0 : rawCount;
         });
       }
 
-      final status = data['status'] ?? 'upcoming';
       if (status == 'ended' && !_streamEnded) {
         _handleStreamEnded();
       } else if (status == 'live' && !_isAgoraLive && !_agoraInitialized) {
@@ -180,14 +184,14 @@ class _ListenerLivePerformanceViewState extends ConsumerState<ListenerLivePerfor
         // If isPaid && !hasAccess — show the paywall. Do NOT call _initAgora.
       }
     } catch (e) {
-      // Network error: keep _isPaidPerformance as-is (default false = free stream).
-      // Only call _initAgora if we haven't already decided it's a paid gate.
+      appPrint('[Tipping] _checkAccess error: $e');
+      // On network error we cannot determine if this is a paid performance.
+      // Fail-safe: do NOT grant free access — mark failure and let user retry.
       if (mounted) {
-        setState(() => _accessCheckCompleted = true);
-        if (!_isPaidPerformance) {
-          _joinLivePerformance();
-          _initAgora();
-        }
+        setState(() {
+          _accessCheckCompleted = true;
+          _accessCheckFailed = true;
+        });
       }
     }
   }
@@ -287,28 +291,117 @@ class _ListenerLivePerformanceViewState extends ConsumerState<ListenerLivePerfor
         children: [
           // 1. Video / Stream is the base layer (takes full screen)
           Positioned.fill(
-            child: showStream
-                ? LivePerformanceVideoSection(
-                    featured: widget.featured,
-                    isPlaying: controller.isPlaying,
-                    isVideoInitialized: controller.isVideoInitialized,
-                    onPlayPause: notifier.togglePlay,
-                    isLive: _isAgoraLive,
-                    videoController: controller.videoController,
-                    isFullScreen: true,
-                    liveChild: _isAgoraLive && _remoteUid != null && _agoraService.engine != null
-                        ? AgoraVideoView(
-                            controller: _agoraService.remoteVideoController(_remoteUid!),
-                          )
-                        : null,
+            child: !_accessCheckCompleted
+                // Still checking — show a dark loading screen to prevent flash of free content
+                ? Container(
+                    color: AppColors.primaryblack,
+                    child: Center(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          CircularProgressIndicator(
+                            color: AppColors.listenerYellow,
+                            strokeWidth: 2,
+                          ),
+                          16.ph,
+                          Text(
+                            'Loading performance...',
+                            style: TextStyle(
+                              color: AppColors.primaryWhite.withValues(alpha: 0.6),
+                              fontSize: 14.sp,
+                              fontFamily: 'Roboto',
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
                   )
-                : PaidAccessGate(
-                    title: widget.featured.title,
-                    artistName: widget.featured.artist,
-                    artistId: widget.featured.artistId,
-                    performanceId: widget.featured.id,
-                    price: _ticketPrice,
-                  ),
+                : _accessCheckFailed
+                    // Access check failed — show retry screen instead of granting free access
+                    ? Container(
+                        color: AppColors.primaryblack,
+                        child: Center(
+                          child: Padding(
+                            padding: EdgeInsets.symmetric(horizontal: 32.w),
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(Icons.signal_wifi_off_rounded,
+                                    color: AppColors.primaryWhite.withValues(alpha: 0.4),
+                                    size: 48.sp),
+                                16.ph,
+                                Text(
+                                  'Could not verify access.',
+                                  style: TextStyle(
+                                    fontFamily: 'Roboto',
+                                    fontSize: 16.sp,
+                                    fontWeight: FontWeight.w600,
+                                    color: AppColors.primaryWhite,
+                                  ),
+                                  textAlign: TextAlign.center,
+                                ),
+                                8.ph,
+                                Text(
+                                  'Check your connection and try again.',
+                                  style: TextStyle(
+                                    fontFamily: 'Roboto',
+                                    fontSize: 13.sp,
+                                    color: AppColors.primaryWhite.withValues(alpha: 0.5),
+                                  ),
+                                  textAlign: TextAlign.center,
+                                ),
+                                24.ph,
+                                ElevatedButton(
+                                  onPressed: () {
+                                    setState(() {
+                                      _accessCheckCompleted = false;
+                                      _accessCheckFailed = false;
+                                    });
+                                    _checkAccess();
+                                  },
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: AppColors.listenerYellow,
+                                    foregroundColor: AppColors.primaryblack,
+                                    padding: EdgeInsets.symmetric(
+                                        horizontal: 32.w, vertical: 14.h),
+                                    shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(12.r)),
+                                  ),
+                                  child: Text(
+                                    'Retry',
+                                    style: TextStyle(
+                                        fontFamily: 'Roboto',
+                                        fontWeight: FontWeight.w700,
+                                        fontSize: 14.sp),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      )
+                : showStream
+                    ? LivePerformanceVideoSection(
+                        featured: widget.featured,
+                        isPlaying: controller.isPlaying,
+                        isVideoInitialized: controller.isVideoInitialized,
+                        onPlayPause: notifier.togglePlay,
+                        isLive: _isAgoraLive,
+                        videoController: controller.videoController,
+                        isFullScreen: true,
+                        liveChild: _isAgoraLive && _remoteUid != null && _agoraService.engine != null
+                            ? AgoraVideoView(
+                                controller: _agoraService.remoteVideoController(_remoteUid!),
+                              )
+                            : null,
+                      )
+                    : PaidAccessGate(
+                        title: widget.featured.title,
+                        artistName: widget.featured.artist,
+                        artistId: widget.featured.artistId,
+                        performanceId: widget.featured.id,
+                        price: _ticketPrice,
+                      ),
           ),
 
           // 2. Gradient overlay at top for visibility of top row

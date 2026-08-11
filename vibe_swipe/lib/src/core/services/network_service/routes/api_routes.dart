@@ -1,4 +1,5 @@
-import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:vibe_swipe/src/core/services/registry_service/di.dart';
+import 'package:vibe_swipe/src/core/services/remote_config_service.dart';
 
 class ApiRoutes {
   ///
@@ -6,13 +7,9 @@ class ApiRoutes {
   ///
   static String get baseUrl {
     try {
-      return dotenv.get('BASE_URL');
+      return locator<RemoteConfigService>().baseUrl;
     } catch (_) {
-      try {
-        return dotenv.get('PYTHON_API_URL');
-      } catch (_) {
-        return 'http://177.7.33.210:8000';
-      }
+      return 'http://177.7.33.210:8000';
     }
   }
 

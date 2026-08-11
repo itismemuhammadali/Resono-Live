@@ -7,8 +7,16 @@ import 'package:vibe_swipe/src/core/utils/app_extensions.dart';
 
 class LiveChatOverlay extends StatelessWidget {
   final String performanceId;
+  /// Distance from the bottom of the screen. Default 100 works for the
+  /// listener side. Pass a larger value on the artist side to clear the
+  /// mic/cam/flip buttons row.
+  final double bottomOffset;
 
-  const LiveChatOverlay({super.key, required this.performanceId});
+  const LiveChatOverlay({
+    super.key,
+    required this.performanceId,
+    this.bottomOffset = 100,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -17,7 +25,7 @@ class LiveChatOverlay extends StatelessWidget {
     return Positioned(
       left: 12.w,
       right: 12.w,
-      bottom: 100.h,
+      bottom: bottomOffset.h,
       height: overlayHeight,
       child: StreamBuilder<List<LiveChatMessage>>(
         stream: LiveChatService.watchMessagesForOverlay(performanceId),

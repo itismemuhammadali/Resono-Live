@@ -51,3 +51,5 @@ const String artistPrivacySettingsView = '/artist-privacy-settings';
 const String artistHelpSupportView = '/artist-help-support';
 const String artistEarningsView = '/artist-earnings';
 const String artistWalletSetupView = '/artist-wallet-setup';
+const String termsAndPoliciesView = '/terms-and-policies';
+

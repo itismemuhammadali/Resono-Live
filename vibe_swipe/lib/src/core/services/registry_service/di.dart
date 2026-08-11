@@ -23,4 +23,5 @@ void setupLocator() {
   locator.registerLazySingleton<FirestoreService>(() => FirestoreService());
   locator.registerLazySingleton<PythonApiService>(() => PythonApiService());
   locator.registerLazySingleton<AgoraService>(() => AgoraService());
+  locator.registerLazySingleton<RemoteConfigService>(() => RemoteConfigService());
 }

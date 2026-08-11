@@ -120,6 +120,7 @@ class _SuperChatBottomSheetState extends ConsumerState<SuperChatBottomSheet> {
                       onTap: () => setState(() {
                         _selectedAmount = amount;
                         _isCustom = false;
+                        _customAmountController.clear();
                       }),
                       child: Container(
                         padding: EdgeInsets.symmetric(vertical: 14.h),
@@ -175,7 +176,7 @@ class _SuperChatBottomSheetState extends ConsumerState<SuperChatBottomSheet> {
                 ),
                 child: TextField(
                   controller: _customAmountController,
-                  keyboardType: TextInputType.numberWithOptions(decimal: true),
+                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
                   style: TextStyle(
                     fontFamily: 'Roboto',
                     fontSize: 16.sp,
@@ -197,7 +198,8 @@ class _SuperChatBottomSheetState extends ConsumerState<SuperChatBottomSheet> {
                     border: InputBorder.none,
                     contentPadding: EdgeInsets.symmetric(vertical: 12.h),
                   ),
-                  onChanged: (_) => setState(() {}),
+                  onTap: () => setState(() => _isCustom = true),
+                  onChanged: (_) => setState(() => _isCustom = true),
                 ),
               ),
             ),

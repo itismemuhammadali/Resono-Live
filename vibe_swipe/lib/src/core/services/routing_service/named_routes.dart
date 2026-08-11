@@ -64,6 +64,7 @@ import '../../../modules/artist/profile/presentation/views/artist_privacy_settin
 import '../../../modules/artist/notifications/presentation/views/artist_notifications_view.dart';
 import '../../../modules/artist/profile/presentation/views/artist_help_support_view.dart';
 import '../../../modules/listner/performances/presentation/views/payment_success_view.dart';
+import '../../../modules/legal/presentation/views/terms_and_policies_view.dart';
 
 class AppRouterGo {
   static BuildContext get context =>
@@ -517,6 +518,21 @@ class AppRouterGo {
           key: state.pageKey,
           child: const _PaymentCancelledView(),
         ),
+      ),
+      GoRoute(
+        path: termsAndPoliciesView,
+        pageBuilder: (context, state) {
+          final extra = state.extra as Map<String, dynamic>?;
+          final initialSectionId = extra?['sectionId'] as String?;
+          final isArtistMode = extra?['isArtist'] as bool? ?? false;
+          return NoTransitionPage(
+            key: state.pageKey,
+            child: TermsAndPoliciesView(
+              initialSectionId: initialSectionId,
+              isArtistViewInitial: isArtistMode,
+            ),
+          );
+        },
       ),
     ],
   );
