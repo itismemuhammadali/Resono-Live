@@ -85,12 +85,13 @@ class _MetaAdPlacementWidgetState extends State<MetaAdPlacementWidget> {
   }
 
   Widget _buildPlaceholder(double height, {double? width}) {
+    final isCompact = height <= 65;
     return GestureDetector(
       onTap: _onAdClicked,
       child: Container(
         width: width ?? double.infinity,
         height: height,
-        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
         decoration: BoxDecoration(
           color: const Color(0xFF1A1D24),
           borderRadius: BorderRadius.circular(12.r),
@@ -103,27 +104,57 @@ class _MetaAdPlacementWidgetState extends State<MetaAdPlacementWidget> {
         child: Stack(
           alignment: Alignment.center,
           children: [
-            Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(Icons.ad_units, color: AppColors.subtitleGray.withOpacity(0.5), size: 24.sp),
-                8.ph,
-                Text(
-                  'Meta Ad Placement\n(${widget.placementName})',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    color: AppColors.subtitleGray.withOpacity(0.8),
-                    fontSize: 12.sp,
-                    fontWeight: FontWeight.w500,
+            if (isCompact)
+              Padding(
+                padding: EdgeInsets.symmetric(horizontal: 12.w),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.ad_units, color: AppColors.subtitleGray.withOpacity(0.5), size: 18.sp),
+                    6.pw,
+                    Flexible(
+                      child: Text(
+                        'Meta Ad (${widget.placementName})',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          color: AppColors.subtitleGray.withOpacity(0.8),
+                          fontSize: 11.sp,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              )
+            else
+              FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Padding(
+                  padding: EdgeInsets.all(8.w),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.ad_units, color: AppColors.subtitleGray.withOpacity(0.5), size: 24.sp),
+                      6.ph,
+                      Text(
+                        'Meta Ad Placement\n(${widget.placementName})',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          color: AppColors.subtitleGray.withOpacity(0.8),
+                          fontSize: 12.sp,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-              ],
-            ),
+              ),
             Positioned(
               top: 0,
               right: 0,
               child: Container(
-                padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
+                padding: EdgeInsets.symmetric(horizontal: 6.w, vertical: 2.h),
                 decoration: BoxDecoration(
                   color: AppColors.listenerActiveTab.withOpacity(0.2),
                   borderRadius: BorderRadius.only(
@@ -135,7 +166,7 @@ class _MetaAdPlacementWidgetState extends State<MetaAdPlacementWidget> {
                   'Sponsored',
                   style: TextStyle(
                     color: AppColors.listenerActiveTab,
-                    fontSize: 10.sp,
+                    fontSize: 9.sp,
                     fontWeight: FontWeight.bold,
                   ),
                 ),

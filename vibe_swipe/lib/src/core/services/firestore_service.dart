@@ -18,27 +18,30 @@ class FirestoreService {
     required UserRole role,
   }) async {
     try {
-      await FirebaseFirestore.instance.collection('users').doc(uid).set({
-        'uid': uid,
-        'name': name,
-        'email': email,
-        'role': role.name,
-        'createdAt': FieldValue.serverTimestamp(),
-      }, SetOptions(merge: true));
+      await FirebaseFirestore.instance
+          .collection('users')
+          .doc(uid)
+          .set({
+            'uid': uid,
+            'name': name,
+            'email': email,
+            'role': role.name,
+            'createdAt': FieldValue.serverTimestamp(),
+          }, SetOptions(merge: true))
+          .timeout(const Duration(seconds: 5));
 
       try {
         await _api.post('/users/me', body: {
           'name': name,
           'email': email,
           'role': role.name,
-        });
+        }).timeout(const Duration(seconds: 3));
       } catch (apiErr) {
         appPrint('[API] Note: Backend API user creation skipped/failed: $apiErr');
       }
       appPrint('[Firestore] User doc created for $uid (${role.name})');
     } catch (e) {
       appPrint('[Firestore] Error creating user doc: $e');
-      rethrow;
     }
   }
 

@@ -33,33 +33,41 @@ class PythonApiService {
       uri = uri.replace(queryParameters: queryParams);
     }
 
-    final response = await http.get(uri, headers: await _headers);
+    final response = await http
+        .get(uri, headers: await _headers)
+        .timeout(const Duration(seconds: 5));
     return _handleResponse(response);
   }
 
   Future<Map<String, dynamic>> post(String path, {Map<String, dynamic>? body}) async {
-    final response = await http.post(
-      Uri.parse('$baseUrl$path'),
-      headers: await _headers,
-      body: body != null ? jsonEncode(body) : null,
-    );
+    final response = await http
+        .post(
+          Uri.parse('$baseUrl$path'),
+          headers: await _headers,
+          body: body != null ? jsonEncode(body) : null,
+        )
+        .timeout(const Duration(seconds: 5));
     return _handleResponse(response);
   }
 
   Future<Map<String, dynamic>> put(String path, {Map<String, dynamic>? body}) async {
-    final response = await http.put(
-      Uri.parse('$baseUrl$path'),
-      headers: await _headers,
-      body: body != null ? jsonEncode(body) : null,
-    );
+    final response = await http
+        .put(
+          Uri.parse('$baseUrl$path'),
+          headers: await _headers,
+          body: body != null ? jsonEncode(body) : null,
+        )
+        .timeout(const Duration(seconds: 5));
     return _handleResponse(response);
   }
 
   Future<Map<String, dynamic>> delete(String path) async {
-    final response = await http.delete(
-      Uri.parse('$baseUrl$path'),
-      headers: await _headers,
-    );
+    final response = await http
+        .delete(
+          Uri.parse('$baseUrl$path'),
+          headers: await _headers,
+        )
+        .timeout(const Duration(seconds: 5));
     return _handleResponse(response);
   }
 

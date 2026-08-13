@@ -21,7 +21,6 @@ class _TermsAndPoliciesViewState extends ConsumerState<TermsAndPoliciesView>
   late bool _isArtistMode;
   late TabController _tabController;
   final TextEditingController _searchController = TextEditingController();
-  String _searchQuery = '';
 
   @override
   void initState() {

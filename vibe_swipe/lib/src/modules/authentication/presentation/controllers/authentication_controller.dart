@@ -106,20 +106,36 @@ class AuthController extends ChangeNotifier with Buffers {
       );
       final uid = credential.user!.uid;
 
-      await _authService.updateDisplayName(name);
+      try {
+        await _authService.updateDisplayName(name).timeout(const Duration(seconds: 5));
+      } catch (e) {
+        appPrint('[Auth] Note: updateDisplayName skipped/timed out: $e');
+      }
 
-      await _firestoreService.createUserData(
-        uid: uid,
-        name: name,
-        email: email,
-        role: AppConfig.userRole,
-      );
+      try {
+        await _firestoreService.createUserData(
+          uid: uid,
+          name: name,
+          email: email,
+          role: AppConfig.userRole,
+        );
+      } catch (e) {
+        appPrint('[Auth] Note: createUserData skipped/error: $e');
+      }
 
-      await _authService.sendEmailVerification();
+      try {
+        await _authService.sendEmailVerification();
+      } catch (e) {
+        appPrint('[Auth] Note: sendEmailVerification skipped/error: $e');
+      }
 
-      await _authHandler.setupUser(credential.user, true);
-      final token = await credential.user!.getIdToken();
-      await _authHandler.storeToken(token, true);
+      try {
+        await _authHandler.setupUser(credential.user, true);
+        final token = await credential.user!.getIdToken().timeout(const Duration(seconds: 5));
+        await _authHandler.storeToken(token, true);
+      } catch (e) {
+        appPrint('[Auth] Note: setupUser/storeToken error: $e');
+      }
 
       _setLoading(false);
       return true;
