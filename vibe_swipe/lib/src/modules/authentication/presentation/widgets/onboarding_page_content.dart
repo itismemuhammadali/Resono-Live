@@ -45,7 +45,7 @@ class OnboardingPageContent extends StatelessWidget {
         Positioned(
           left: 24.w,
           right: 24.w,
-          bottom: 130.h,
+          bottom: 165.h,
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -80,7 +80,7 @@ class OnboardingPageContent extends StatelessWidget {
                   letterSpacing: -0.5,
                 ),
               ),
-              16.ph,
+              12.ph,
               Text(
                 subtitle,
                 textAlign: TextAlign.center,
@@ -88,7 +88,7 @@ class OnboardingPageContent extends StatelessWidget {
                   fontFamily: 'Roboto',
                   color: AppColors.subtitleGray,
                   fontSize: 14.sp,
-                  height: 1.5,
+                  height: 1.4,
                   fontWeight: FontWeight.w400,
                 ),
               ),

@@ -69,9 +69,8 @@ class OnboardingView extends HookConsumerWidget {
                               controller.onboardingData.length - 1
                           ? "Get Started"
                           : "Next",
-                      trailingIcon: Icons.arrow_forward_ios,
                     ),
-                    32.ph, // Bottom padding
+                    16.ph, // Bottom padding inside SafeArea
                   ],
                 ),
               ),
