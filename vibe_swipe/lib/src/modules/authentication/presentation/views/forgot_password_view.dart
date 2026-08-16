@@ -31,22 +31,27 @@ class ForgotPasswordView extends HookConsumerWidget {
       backgroundColor: AppColors.listenerDashboardBg,
       body: Stack(
         children: [
-          Container(
-            decoration: const BoxDecoration(
-              image: DecorationImage(
-                image: AssetImage('assets/images/png/app_background_image.png'),
-                fit: BoxFit.cover,
-              ),
+          Positioned.fill(
+            child: Image.asset(
+              'assets/images/png/app_background_image.png',
+              fit: BoxFit.cover,
             ),
           ),
           SafeArea(
-            child: SingleChildScrollView(
-              padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 24.h),
-              child: Form(
-                key: formKey,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                return SingleChildScrollView(
+                  padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 24.h),
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(
+                      minHeight: constraints.maxHeight - 48.h,
+                    ),
+                    child: IntrinsicHeight(
+                      child: Form(
+                        key: formKey,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
                     10.ph,
                     const AuthLogoHeader(),
                     20.ph,
@@ -279,8 +284,12 @@ class ForgotPasswordView extends HookConsumerWidget {
               ),
             ),
           ),
-        ],
-      ),
-    );
+        );
+      },
+    ),
+  ),
+],
+),
+);
   }
 }

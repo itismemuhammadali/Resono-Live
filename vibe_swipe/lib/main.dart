@@ -103,10 +103,7 @@ class VibeSwipeApp extends ConsumerWidget with AppSize, AppTheme {
     return ScreenUtilInit(
       designSize: MediaQuery.sizeOf(context).width < 600.0
           ? const Size(440, 956)
-          : Size(
-              MediaQuery.of(context).size.width,
-              MediaQuery.of(context).size.height,
-            ),
+          : const Size(768, 1024),
       minTextAdapt: true,
       splitScreenMode: true,
       builder: (_, child) {

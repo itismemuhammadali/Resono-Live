@@ -46,21 +46,29 @@ class ArtistSignupView extends HookConsumerWidget {
 
     return Scaffold(
       backgroundColor: AppColors.listenerDashboardBg,
-      body: Container(
-        decoration: const BoxDecoration(
-          image: DecorationImage(
-            image: AssetImage('assets/images/png/app_background_image.png'),
-            fit: BoxFit.cover,
+      body: SizedBox.expand(
+        child: Container(
+          decoration: const BoxDecoration(
+            image: DecorationImage(
+              image: AssetImage('assets/images/png/app_background_image.png'),
+              fit: BoxFit.cover,
+            ),
           ),
-        ),
-        child: SafeArea(
-          child: SingleChildScrollView(
-            padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 24.h),
-            child: Form(
-              key: formKey,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
+          child: SafeArea(
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                return SingleChildScrollView(
+                  padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 24.h),
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(
+                      minHeight: constraints.maxHeight - 48.h,
+                    ),
+                    child: IntrinsicHeight(
+                      child: Form(
+                        key: formKey,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
                   10.ph,
                   const AuthBackButton(),
                   28.ph,
@@ -272,7 +280,12 @@ class ArtistSignupView extends HookConsumerWidget {
             ),
           ),
         ),
-      ),
-    );
+      );
+    },
+  ),
+),
+),
+),
+);
   }
 }

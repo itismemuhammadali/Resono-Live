@@ -13,14 +13,15 @@ class DislikedGenresView extends HookConsumerWidget {
 
     return Scaffold(
       backgroundColor: AppColors.listenerDashboardBg,
-      body: Container(
-        decoration: const BoxDecoration(
-          image: DecorationImage(
-            image: AssetImage('assets/images/png/app_background_image.png'),
-            fit: BoxFit.cover,
+      body: SizedBox.expand(
+        child: Container(
+          decoration: const BoxDecoration(
+            image: DecorationImage(
+              image: AssetImage('assets/images/png/app_background_image.png'),
+              fit: BoxFit.cover,
+            ),
           ),
-        ),
-        child: SafeArea(
+          child: SafeArea(
           child: Column(
             children: [
               Padding(
@@ -131,6 +132,7 @@ class DislikedGenresView extends HookConsumerWidget {
           ),
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 }
