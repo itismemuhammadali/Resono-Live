@@ -1,4 +1,5 @@
 import 'package:vibe_swipe/src/core/utils/app_exports.dart';
+import 'package:vibe_swipe/src/core/utils/report_block_helper.dart';
 import '../../domain/entities/community_post_entity.dart';
 
 class ArtistPostDetailPostCard extends StatelessWidget {
@@ -80,6 +81,24 @@ class ArtistPostDetailPostCard extends StatelessWidget {
                   fontSize: 14.sp,
                   fontWeight: FontWeight.w400,
                   color: AppColors.huegrey,
+                ),
+              ),
+              8.pw,
+              GestureDetector(
+                onTap: () {
+                  ReportBlockHelper.showPostOptionsModal(
+                    context,
+                    authorName: post.authorName.isNotEmpty ? post.authorName : 'User',
+                    postId: post.id,
+                  );
+                },
+                child: Padding(
+                  padding: EdgeInsets.all(4.r),
+                  child: Icon(
+                    Icons.more_vert,
+                    size: 18.sp,
+                    color: AppColors.huegrey,
+                  ),
                 ),
               ),
             ],

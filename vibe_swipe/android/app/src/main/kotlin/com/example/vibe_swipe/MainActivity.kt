@@ -1,4 +1,4 @@
-package com.sliconsystems.vibe_swipe
+package com.vibeswipellc.vibeswipe
 
 import io.flutter.embedding.android.FlutterFragmentActivity
 

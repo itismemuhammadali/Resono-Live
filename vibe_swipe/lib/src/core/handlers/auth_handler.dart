@@ -81,4 +81,19 @@ class AuthHandler {
       appPrint(e);
     }
   }
+
+  Future<void> deleteAccount() async {
+    try {
+      final fbUser = _authService.currentUser;
+      if (fbUser != null) {
+        await fbUser.delete().catchError((e) {
+          appPrint('Firebase account deletion error: $e');
+        });
+      }
+      await logout();
+    } catch (e) {
+      appPrint(e);
+      await logout();
+    }
+  }
 }

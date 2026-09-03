@@ -5,9 +5,11 @@
 	<key>CADisableMinimumFrameDurationOnPhone</key>
 	<true/>
 	<key>NSCameraUsageDescription</key>
-	<string>Used to capture your profile picture</string>
+	<string>Used to capture photos and videos for your profile and posts</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Used to record audio for your video posts and live streams</string>
 	<key>NSPhotoLibraryUsageDescription</key>
-	<string>Used to select your profile picture from your photo library</string>
+	<string>Used to select photos and videos from your photo library</string>
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>
@@ -19,7 +21,7 @@
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
 	<key>CFBundleName</key>
-	<string>vibe_swipe</string>
+	<string>Vibe Swipe</string>
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>

@@ -50,6 +50,7 @@ platform :ios do
   lane :upload do
     api_key
     upload_to_testflight(
+      ipa: "../build/ios/ipa/vibe_swipe.ipa",
       skip_waiting_for_build_processing: true
     )
   end
