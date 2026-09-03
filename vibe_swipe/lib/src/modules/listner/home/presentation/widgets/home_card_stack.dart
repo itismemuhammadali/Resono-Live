@@ -7,10 +7,9 @@ class HomeCardStack extends StatelessWidget {
     super.key,
     required this.cards,
     required this.currentIndex,
-    required this.dragOffset,
-    required this.onDragUpdate,
-    required this.onDragEnd,
-    required this.currentCardSwipeDirection,
+    required this.cardRatings,
+    required this.pageController,
+    required this.onPageChanged,
     this.onPlayTap,
     this.onBookmarkTap,
     this.onCardTap,
@@ -22,10 +21,9 @@ class HomeCardStack extends StatelessWidget {
 
   final List<PostCardEntity> cards;
   final int currentIndex;
-  final Offset dragOffset;
-  final GestureDragUpdateCallback onDragUpdate;
-  final GestureDragEndCallback onDragEnd;
-  final int currentCardSwipeDirection;
+  final Map<int, bool> cardRatings;
+  final PageController pageController;
+  final ValueChanged<int> onPageChanged;
   final ValueChanged<int>? onPlayTap;
   final ValueChanged<int>? onBookmarkTap;
   final ValueChanged<int>? onCardTap;
@@ -36,8 +34,7 @@ class HomeCardStack extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final visible = cards.length - currentIndex;
-    if (visible <= 0) {
+    if (cards.isEmpty) {
       return Center(
         child: Text(
           'No more posts',
@@ -55,74 +52,52 @@ class HomeCardStack extends StatelessWidget {
         final cardGap = 10.w;
         final cardWidth = totalWidth - (peekAmount + cardGap) * 2;
 
-        final currentCardLeft = peekAmount + cardGap;
-        final prevCardLeft = currentCardLeft - cardWidth - cardGap;
-        final nextCardLeft = currentCardLeft + cardWidth + cardGap;
+        return SizedBox(
+          width: totalWidth,
+          height: cardHeight,
+          child: PageView.builder(
+            controller: pageController,
+            itemCount: cards.length,
+            onPageChanged: onPageChanged,
+            physics: const BouncingScrollPhysics(),
+            itemBuilder: (context, index) {
+              return AnimatedBuilder(
+                animation: pageController,
+                builder: (context, child) {
+                  double page = currentIndex.toDouble();
+                  if (pageController.hasClients &&
+                      pageController.position.haveDimensions) {
+                    page = pageController.page ?? pageController.initialPage.toDouble();
+                  }
+                  final diff = (index - page).abs();
+                  final isCurrent = diff < 0.5;
 
-        final dx = dragOffset.dx;
+                  final rating = cardRatings[index];
+                  final swipeDirection = rating == null ? 0 : (rating ? 1 : -1);
 
-        return GestureDetector(
-          behavior: HitTestBehavior.opaque,
-          onPanUpdate: onDragUpdate,
-          onPanEnd: onDragEnd,
-          child: ClipRect(
-            child: SizedBox(
-              width: totalWidth,
-              height: cardHeight,
-              child: Stack(
-                children: [
-                  if (currentIndex > 0)
-                    Positioned(
-                      left: prevCardLeft + dx,
-                      top: 0,
+                  return Center(
+                    child: SizedBox(
                       width: cardWidth,
                       height: cardHeight,
                       child: HomeSwipeCard(
-                        card: cards[currentIndex - 1],
+                        card: cards[index],
                         width: cardWidth,
                         height: cardHeight,
-                        swipeDirection: 0,
-                        dimmed: true,
+                        swipeDirection: swipeDirection,
+                        dimmed: diff > 0.4,
+                        isPlaying: isPlaying && isCurrent,
+                        isFollowed: isFollowedAt != null ? isFollowedAt!(index) : false,
+                        isBookmarked: isBookmarkedAt != null ? isBookmarkedAt!(index) : false,
+                        onPlayTap: onPlayTap != null ? () => onPlayTap!(index) : null,
+                        onBookmarkTap: onBookmarkTap != null ? () => onBookmarkTap!(index) : null,
+                        onCardTap: onCardTap != null ? () => onCardTap!(index) : null,
+                        onFollowTap: onFollowTap != null ? () => onFollowTap!(index) : null,
                       ),
                     ),
-
-                  if (currentIndex + 1 < cards.length)
-                    Positioned(
-                      left: nextCardLeft + dx,
-                      top: 0,
-                      width: cardWidth,
-                      height: cardHeight,
-                      child: HomeSwipeCard(
-                        card: cards[currentIndex + 1],
-                        width: cardWidth,
-                        height: cardHeight,
-                        swipeDirection: 0,
-                        dimmed: true,
-                      ),
-                    ),
-
-                  Positioned(
-                    left: currentCardLeft + dx,
-                    top: 0,
-                    width: cardWidth,
-                    height: cardHeight,
-                    child: HomeSwipeCard(
-                      card: cards[currentIndex],
-                      width: cardWidth,
-                      height: cardHeight,
-                      swipeDirection: currentCardSwipeDirection,
-                      isPlaying: isPlaying,
-                      isFollowed: isFollowedAt != null ? isFollowedAt!(currentIndex) : false,
-                      isBookmarked: isBookmarkedAt != null ? isBookmarkedAt!(currentIndex) : false,
-                      onPlayTap: onPlayTap != null ? () => onPlayTap!(currentIndex) : null,
-                      onBookmarkTap: onBookmarkTap != null ? () => onBookmarkTap!(currentIndex) : null,
-                      onCardTap: onCardTap != null ? () => onCardTap!(currentIndex) : null,
-                      onFollowTap: onFollowTap != null ? () => onFollowTap!(currentIndex) : null,
-                    ),
-                  ),
-                ],
-              ),
-            ),
+                  );
+                },
+              );
+            },
           ),
         );
       },

@@ -7,13 +7,17 @@ import '../utils/app_logger.dart';
 
 class FirebaseAuthService {
   final FirebaseAuth _auth = FirebaseAuth.instance;
+  final GoogleSignIn _googleSignIn = GoogleSignIn(
+    serverClientId:
+        '367306858996-l8k5q7fsg6g8f0honpm1od0gocshpd8d.apps.googleusercontent.com',
+  );
 
   User? get currentUser => _auth.currentUser;
 
   Stream<User?> get authStateChanges => _auth.authStateChanges();
 
-  static const _androidPackageName = 'com.sliconsystems.vibe_swipe';
-  static const _iosBundleId = 'com.sliconsystems.vibe_swipe';
+  static const _androidPackageName = 'com.vibeswipellc.vibeswipe';
+  static const _iosBundleId = 'com.vibeswipellc.vibeswipe';
   static const _linkDomain = 'vibeswipe.page.link';
 
   Future<void> sendSignInLinkToEmail(String email) async {
@@ -89,6 +93,9 @@ class FirebaseAuthService {
 
   Future<void> signOut() async {
     await _auth.signOut();
+    try {
+      await _googleSignIn.signOut();
+    } catch (_) {}
     appPrint('[FirebaseAuth] Signed out');
   }
 
@@ -103,7 +110,10 @@ class FirebaseAuthService {
 
   Future<UserCredential> signInWithGoogle() async {
     try {
-      final GoogleSignInAccount? googleUser = await GoogleSignIn().signIn();
+      try {
+        await _googleSignIn.signOut();
+      } catch (_) {}
+      final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
       if (googleUser == null) {
         throw FirebaseAuthException(
           code: 'ERROR_ABORTED_BY_USER',

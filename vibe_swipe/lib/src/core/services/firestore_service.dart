@@ -16,6 +16,7 @@ class FirestoreService {
     required String name,
     required String email,
     required UserRole role,
+    String? profileImageUrl,
   }) async {
     try {
       await FirebaseFirestore.instance
@@ -26,6 +27,7 @@ class FirestoreService {
             'name': name,
             'email': email,
             'role': role.name,
+            if (profileImageUrl != null) 'profileImageUrl': profileImageUrl,
             'createdAt': FieldValue.serverTimestamp(),
           }, SetOptions(merge: true))
           .timeout(const Duration(seconds: 5));
@@ -105,20 +107,40 @@ class FirestoreService {
     String? coverUrl,
   }) async {
     try {
-      await _api.post('/users/me/artist-profile', body: {
+      await FirebaseFirestore.instance.collection('users').doc(uid).set({
         'artistName': artistName,
+        'name': artistName,
         'bio': bio,
         'genres': genres,
         'spotifyUrl': spotifyUrl,
         'youtubeUrl': youtubeUrl,
         'instagramUrl': instagramUrl,
         'isPublicProfile': isPublicProfile,
-        'profileImageUrl': profileImageUrl,
-        'coverUrl': coverUrl,
-      });
-      appPrint('[API] Artist profile saved for $uid');
+        if (profileImageUrl != null) 'profileImageUrl': profileImageUrl,
+        if (coverUrl != null) 'coverUrl': coverUrl,
+        'profileCompleted': true,
+        'updatedAt': FieldValue.serverTimestamp(),
+      }, SetOptions(merge: true));
+      appPrint('[Firestore] Artist profile saved directly for $uid');
+
+      try {
+        await _api.post('/users/me/artist-profile', body: {
+          'artistName': artistName,
+          'bio': bio,
+          'genres': genres,
+          'spotifyUrl': spotifyUrl,
+          'youtubeUrl': youtubeUrl,
+          'instagramUrl': instagramUrl,
+          'isPublicProfile': isPublicProfile,
+          'profileImageUrl': profileImageUrl,
+          'coverUrl': coverUrl,
+        }).timeout(const Duration(seconds: 4));
+        appPrint('[API] Artist profile synced to backend for $uid');
+      } catch (apiErr) {
+        appPrint('[API] Note: Backend artist profile sync skipped: $apiErr');
+      }
     } catch (e) {
-      appPrint('[API] Error saving artist profile: $e');
+      appPrint('[Firestore] Error saving artist profile: $e');
       rethrow;
     }
   }
@@ -130,14 +152,28 @@ class FirestoreService {
     required List<String> dislikedGenres,
   }) async {
     try {
-      await _api.post('/users/me/listener-profile', body: {
+      await FirebaseFirestore.instance.collection('users').doc(uid).set({
         'username': username,
+        'name': username,
         'favoriteGenres': favoriteGenres,
         'dislikedGenres': dislikedGenres,
-      });
-      appPrint('[API] Listener profile saved for $uid');
+        'profileCompleted': true,
+        'updatedAt': FieldValue.serverTimestamp(),
+      }, SetOptions(merge: true));
+      appPrint('[Firestore] Listener profile saved directly for $uid');
+
+      try {
+        await _api.post('/users/me/listener-profile', body: {
+          'username': username,
+          'favoriteGenres': favoriteGenres,
+          'dislikedGenres': dislikedGenres,
+        }).timeout(const Duration(seconds: 4));
+        appPrint('[API] Listener profile synced to backend for $uid');
+      } catch (apiErr) {
+        appPrint('[API] Note: Backend listener profile sync skipped: $apiErr');
+      }
     } catch (e) {
-      appPrint('[API] Error saving listener profile: $e');
+      appPrint('[Firestore] Error saving listener profile: $e');
       rethrow;
     }
   }
@@ -303,23 +339,55 @@ class FirestoreService {
         'limit': limit.toString(),
         if (status != null) 'status': status,
         if (artistId != null) 'artist_id': artistId,
-      });
+      }).timeout(const Duration(seconds: 4));
       final list = data['performances'] as List<dynamic>? ?? [];
-      return list.cast<Map<String, dynamic>>();
+      if (list.isNotEmpty) {
+        return list.cast<Map<String, dynamic>>();
+      }
     } catch (e) {
-      appPrint('[API] Error getting performances: $e');
-      return [];
+      appPrint('[API] Note: Failed to fetch performances via API: $e');
     }
+
+    try {
+      Query<Map<String, dynamic>> query = FirebaseFirestore.instance.collection('performances');
+      if (status != null) {
+        query = query.where('status', isEqualTo: status);
+      }
+      if (artistId != null) {
+        query = query.where('artist_id', isEqualTo: artistId);
+      }
+      final snapshot = await query.limit(limit).get();
+      if (snapshot.docs.isNotEmpty) {
+        return snapshot.docs.map((doc) {
+          final data = Map<String, dynamic>.from(doc.data());
+          data['id'] = doc.id;
+          return data;
+        }).toList();
+      }
+    } catch (e) {
+      appPrint('[Firestore] Error getting performances fallback: $e');
+    }
+
+    return [];
   }
 
   Future<Map<String, dynamic>?> getUserProfileById(String uid) async {
     try {
-      final data = await _api.get('/users/$uid');
-      return data;
+      final data = await _api.get('/users/$uid').timeout(const Duration(seconds: 4));
+      if (data != null && data.isNotEmpty) return data;
     } catch (e) {
-      appPrint('[API] Error getting user profile for $uid: $e');
-      return null;
+      appPrint('[API] Note: Error getting user profile via API for $uid: $e');
     }
+
+    try {
+      final doc = await FirebaseFirestore.instance.collection('users').doc(uid).get();
+      if (doc.exists && doc.data() != null) {
+        return doc.data();
+      }
+    } catch (e) {
+      appPrint('[Firestore] Error getting user profile doc for $uid: $e');
+    }
+    return null;
   }
 
   Future<Map<String, dynamic>?> getArtistStats() async {

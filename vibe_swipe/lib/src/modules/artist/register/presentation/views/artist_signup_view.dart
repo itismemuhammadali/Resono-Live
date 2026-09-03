@@ -4,6 +4,7 @@ import '../../../../../components/primary_elevated_button.dart';
 import '../../../../authentication/presentation/controllers/authentication_controller.dart';
 import '../../../../authentication/presentation/widgets/email_verification_dialog.dart';
 import '../../../../authentication/presentation/widgets/auth_back_button.dart';
+import '../../../../authentication/presentation/widgets/social_auth_buttons.dart';
 import '../widgets/artist_signup_header.dart';
 import '../widgets/artist_labeled_field.dart';
 import '../widgets/artist_signin_footer.dart';
@@ -271,6 +272,12 @@ class ArtistSignupView extends HookConsumerWidget {
                     backgroundColor: AppColors.listenerYellow,
                     textColor: AppColors.primaryblack,
                     radius: 12,
+                  ),
+                  24.ph,
+                  SocialAuthButtons(
+                    onAuthStarted: () {
+                      authController.clearError();
+                    },
                   ),
                   24.ph,
                   const ArtistSigninFooter(),

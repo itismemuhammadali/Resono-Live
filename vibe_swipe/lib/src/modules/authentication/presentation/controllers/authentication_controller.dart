@@ -277,6 +277,26 @@ class AuthController extends ChangeNotifier with Buffers {
     }
   }
 
+  Future<bool> isProfileCompleted(String uid) async {
+    try {
+      final data = await _firestoreService.getUserData(uid);
+      if (data == null) return false;
+      if (data['profileCompleted'] == true) return true;
+      if (AppConfig.userRole == UserRole.artist) {
+        final artistName = data['artistName'] as String?;
+        final genres = data['genres'];
+        return artistName != null && artistName.isNotEmpty && genres is List && genres.isNotEmpty;
+      } else {
+        final username = data['username'] as String?;
+        final fav = data['favoriteGenres'];
+        return username != null && username.isNotEmpty && fav is List && fav.isNotEmpty;
+      }
+    } catch (e) {
+      appPrint('[Auth] Error checking profile completion: $e');
+      return false;
+    }
+  }
+
   Future<bool> signInWithGoogle() async {
     _setLoading(true);
     _setError(null);
@@ -293,6 +313,7 @@ class AuthController extends ChangeNotifier with Buffers {
           name: credential.user!.displayName ?? 'User',
           email: credential.user!.email ?? '',
           role: AppConfig.userRole,
+          profileImageUrl: credential.user!.photoURL,
         );
       }
 
@@ -331,6 +352,7 @@ class AuthController extends ChangeNotifier with Buffers {
           name: credential.user!.displayName ?? 'User',
           email: credential.user!.email ?? '',
           role: AppConfig.userRole,
+          profileImageUrl: credential.user!.photoURL,
         );
       }
 

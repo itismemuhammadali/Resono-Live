@@ -4,6 +4,7 @@ import '../../../../../components/custom_textfield.dart';
 import '../../../../../components/auth_logo_header.dart';
 import '../../../../authentication/presentation/controllers/authentication_controller.dart';
 import '../../../../authentication/presentation/widgets/email_verification_dialog.dart';
+import '../../../../authentication/presentation/widgets/social_auth_buttons.dart';
 
 class ListnerSignupView extends HookConsumerWidget {
   const ListnerSignupView({super.key});
@@ -398,6 +399,12 @@ class ListnerSignupView extends HookConsumerWidget {
                     backgroundColor: AppColors.listenerYellow,
                     textColor: AppColors.primaryblack,
                     radius: 12,
+                  ),
+                  24.ph,
+                  SocialAuthButtons(
+                    onAuthStarted: () {
+                      authController.clearError();
+                    },
                   ),
                   24.ph,
                   Center(

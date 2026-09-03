@@ -1,4 +1,5 @@
 import 'package:flutter/cupertino.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import '../../../../../core/utils/app_exports.dart';
 import '../../../../../components/primary_elevated_button.dart';
 import '../../../../../components/custom_textfield.dart';
@@ -15,12 +16,26 @@ class ProfileSetupView extends HookConsumerWidget {
     final formKey = useMemoized(() => GlobalKey<FormState>());
     final usernameController = useTextEditingController();
 
+    useEffect(() {
+      final user = FirebaseAuth.instance.currentUser;
+      if (user != null) {
+        if (controller.username.isEmpty && user.displayName != null && user.displayName!.isNotEmpty) {
+          controller.setUsername(user.displayName!);
+          usernameController.text = user.displayName!;
+        } else if (usernameController.text.isEmpty && controller.username.isNotEmpty) {
+          usernameController.text = controller.username;
+        }
+      }
+      return null;
+    }, []);
+
     void onContinue() async {
       if (formKey.currentState!.validate()) {
         final uid = locator<FirebaseAuthService>().getUid();
         if (uid != null) {
           final updates = <String, dynamic>{
             'username': controller.username,
+            'name': controller.username,
           };
           if (controller.profileImageBytes != null) {
             final downloadUrl = await locator<FirestoreService>().uploadProfileImage(
@@ -28,6 +43,11 @@ class ProfileSetupView extends HookConsumerWidget {
               controller.profileImageBytes!,
             );
             updates['profileImageUrl'] = downloadUrl;
+          } else {
+            final photo = FirebaseAuth.instance.currentUser?.photoURL;
+            if (photo != null && photo.isNotEmpty) {
+              updates['profileImageUrl'] = photo;
+            }
           }
           await locator<FirestoreService>().updateUserData(uid, updates);
         }
@@ -124,11 +144,25 @@ class ProfileSetupView extends HookConsumerWidget {
                                             fit: BoxFit.cover,
                                           ),
                                         )
-                                      : Icon(
-                                          CupertinoIcons.camera,
-                                          color: AppColors.gray500,
-                                          size: 32.sp,
-                                        ),
+                                      : (FirebaseAuth.instance.currentUser?.photoURL != null && FirebaseAuth.instance.currentUser!.photoURL!.isNotEmpty)
+                                          ? ClipOval(
+                                              child: Image.network(
+                                                FirebaseAuth.instance.currentUser!.photoURL!,
+                                                width: 100.w,
+                                                height: 100.w,
+                                                fit: BoxFit.cover,
+                                                errorBuilder: (_, __, ___) => Icon(
+                                                  CupertinoIcons.camera,
+                                                  color: AppColors.gray500,
+                                                  size: 32.sp,
+                                                ),
+                                              ),
+                                            )
+                                          : Icon(
+                                              CupertinoIcons.camera,
+                                              color: AppColors.gray500,
+                                              size: 32.sp,
+                                            ),
                                 ),
                                 Positioned(
                                   bottom: 2.h,

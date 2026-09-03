@@ -67,8 +67,6 @@ class ListenerHomeController extends ChangeNotifier with Buffers {
         final viewersCount = p['viewers_count'] ?? 0;
         final likesCount = p['likes_count'] ?? 0;
 
-        final formattedViews = _formatCount(viewersCount);
-
         cards.add(PostCardEntity(
           name: artistName,
           caption: description.isNotEmpty ? description : title,
@@ -87,6 +85,10 @@ class ListenerHomeController extends ChangeNotifier with Buffers {
         ));
       }
 
+      if (cards.isEmpty) {
+        cards.addAll(_defaultSampleCards);
+      }
+
       _isLoading = false;
       notifyListeners();
 
@@ -101,6 +103,9 @@ class ListenerHomeController extends ChangeNotifier with Buffers {
       notifyListeners();
     } catch (e) {
       appPrint('[Home] Error fetching cards: $e');
+      if (cards.isEmpty) {
+        cards.addAll(_defaultSampleCards);
+      }
       _isLoading = false;
       notifyListeners();
     }
@@ -136,10 +141,18 @@ class ListenerHomeController extends ChangeNotifier with Buffers {
     notifyListeners();
   }
 
+  void onPageChanged(int index) {
+    if (currentIndex != index) {
+      currentIndex = index;
+      notifyListeners();
+    }
+  }
+
   void swipe({required bool liked}) {
     if (currentIndex >= cards.length) return;
     final card = cards[currentIndex];
-    cardRatings[currentIndex] = liked;
+    final targetIndex = currentIndex;
+    cardRatings[targetIndex] = liked;
 
     if (card.performanceId.isNotEmpty) {
       if (liked) {
@@ -147,20 +160,13 @@ class ListenerHomeController extends ChangeNotifier with Buffers {
       }
     }
 
-    // Auto-advance to next card on dislike
-    if (!liked && currentIndex < cards.length - 1) {
-      currentIndex++;
-    }
-
     notifyListeners();
 
     // Clear the swipe overlay after 2 seconds
     _swipeTimer?.cancel();
     _swipeTimer = Timer(const Duration(seconds: 2), () {
-      if (currentIndex < cards.length) {
-        cardRatings.remove(currentIndex);
-        notifyListeners();
-      }
+      cardRatings.remove(targetIndex);
+      notifyListeners();
     });
   }
 
@@ -208,4 +214,63 @@ class ListenerHomeController extends ChangeNotifier with Buffers {
 
     await locator<FirestoreService>().toggleFollow(artistId: card.artistId);
   }
+
+  static const List<PostCardEntity> _defaultSampleCards = [
+    PostCardEntity(
+      name: 'Luna Ray',
+      caption: 'Late night acoustic sessions and vocal loop layering ✨',
+      song: 'Indie Pop',
+      likes: '12.4K',
+      imageUrl: 'https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?w=600&q=80',
+      artistId: 'sample_artist_1',
+      artistImageUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&q=80',
+      performanceId: 'sample_perf_1',
+      title: 'Midnight Echoes (Live Acoustic)',
+      status: 'live',
+      videoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4',
+      type: 'live',
+    ),
+    PostCardEntity(
+      name: 'The Neon Echoes',
+      caption: 'Live synthwave jam straight from the studio rooftop 🌆',
+      song: 'Electronic',
+      likes: '28.1K',
+      imageUrl: 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=600&q=80',
+      artistId: 'sample_artist_2',
+      artistImageUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&q=80',
+      performanceId: 'sample_perf_2',
+      title: 'Electric Skyline - Live Rooftop Set',
+      status: 'upcoming',
+      videoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4',
+      type: 'live',
+    ),
+    PostCardEntity(
+      name: 'Marcus Bell',
+      caption: 'Improv jazz solo & soulful saxophone vibes 🎷',
+      song: 'Jazz & Soul',
+      likes: '9.8K',
+      imageUrl: 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=600&q=80',
+      artistId: 'sample_artist_3',
+      artistImageUrl: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=200&q=80',
+      performanceId: 'sample_perf_3',
+      title: 'Blue Note Midnight Jam',
+      status: 'live',
+      videoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4',
+      type: 'live',
+    ),
+    PostCardEntity(
+      name: 'Aria Cruz',
+      caption: 'High energy beats, heavy 808s and fast verses 🔥',
+      song: 'Hip Hop',
+      likes: '45.2K',
+      imageUrl: 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=600&q=80',
+      artistId: 'sample_artist_4',
+      artistImageUrl: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=200&q=80',
+      performanceId: 'sample_perf_4',
+      title: 'Cypher Volume 3 - Live Drop',
+      status: 'upcoming',
+      videoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4',
+      type: 'live',
+    ),
+  ];
 }

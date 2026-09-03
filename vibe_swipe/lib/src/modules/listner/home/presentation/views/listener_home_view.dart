@@ -20,11 +20,57 @@ class ListenerHomeView extends ConsumerStatefulWidget {
 
 class _ListenerHomeViewState extends ConsumerState<ListenerHomeView> {
   bool _showConfetti = false;
+  PageController? _pageController;
+  bool _isAnimating = false;
+
+  PageController _ensurePageController(int initialPage) {
+    if (_pageController == null) {
+      final screenWidth = MediaQuery.sizeOf(context).width;
+      final peekAmount = 30.w;
+      final cardGap = 10.w;
+      final cardWidth = screenWidth - (peekAmount + cardGap) * 2;
+      final fraction = ((cardWidth + cardGap) / screenWidth).clamp(0.7, 0.95);
+      _pageController = PageController(
+        initialPage: initialPage,
+        viewportFraction: fraction,
+      );
+    }
+    return _pageController!;
+  }
+
+  @override
+  void dispose() {
+    _pageController?.dispose();
+    super.dispose();
+  }
+
+  Future<void> _handleDislike() async {
+    if (_isAnimating) return;
+    final controller = ref.read(listenerHomeControllerProvider);
+    final notifier = ref.read(listenerHomeControllerProvider.notifier);
+
+    notifier.swipe(liked: false);
+
+    if (_pageController != null &&
+        _pageController!.hasClients &&
+        controller.currentIndex < controller.cards.length - 1) {
+      _isAnimating = true;
+      try {
+        await _pageController!.nextPage(
+          duration: const Duration(milliseconds: 380),
+          curve: Curves.easeOutCubic,
+        );
+      } finally {
+        _isAnimating = false;
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     final controller = ref.watch(listenerHomeControllerProvider);
     final notifier = ref.read(listenerHomeControllerProvider.notifier);
+    final pageController = _ensurePageController(controller.currentIndex);
     final dashboardNotifier = ref.read(
       listenerDashboardControllerProvider.notifier,
     );
@@ -133,10 +179,9 @@ class _ListenerHomeViewState extends ConsumerState<ListenerHomeView> {
                         : HomeCardStack(
                             cards: controller.cards,
                             currentIndex: controller.currentIndex,
-                            dragOffset: controller.dragOffset,
-                            onDragUpdate: notifier.onDragUpdate,
-                            onDragEnd: notifier.onDragEnd,
-                            currentCardSwipeDirection: controller.currentCardSwipeDirection,
+                            cardRatings: controller.cardRatings,
+                            pageController: pageController,
+                            onPageChanged: notifier.onPageChanged,
                             isPlaying: controller.isPlaying,
                             isFollowedAt: (index) => notifier.isFollowed(controller.cards[index].artistId),
                             isBookmarkedAt: (index) => controller.isBookmarked(index),
@@ -150,7 +195,7 @@ class _ListenerHomeViewState extends ConsumerState<ListenerHomeView> {
             24.ph,
             if (!controller.isLoading && controller.cards.isNotEmpty)
               HomeActionButtons(
-                onDislike: () => notifier.swipe(liked: false),
+                onDislike: _handleDislike,
                 onLike: () {
                   notifier.swipe(liked: true);
                   setState(() => _showConfetti = true);

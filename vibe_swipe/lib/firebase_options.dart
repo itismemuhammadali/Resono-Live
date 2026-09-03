@@ -58,7 +58,7 @@ class DefaultFirebaseOptions {
 
   static const FirebaseOptions android = FirebaseOptions(
     apiKey: 'AIzaSyCKH-WWt_6KzINZmLfrfpZE3fHY0-nSjm0',
-    appId: '1:367306858996:android:527dede5a1759419fc59a1',
+    appId: '1:367306858996:android:89d0f80bc55fb426fc59a1',
     messagingSenderId: '367306858996',
     projectId: 'vibe-swipe-llc',
     storageBucket: 'vibe-swipe-llc.firebasestorage.app',

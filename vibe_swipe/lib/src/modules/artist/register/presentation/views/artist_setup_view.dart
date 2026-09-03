@@ -1,4 +1,5 @@
 import 'package:flutter/cupertino.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import '../../../../../core/utils/app_exports.dart';
 import '../../../../../components/primary_elevated_button.dart';
 import '../../../../../components/auth_logo_header.dart';
@@ -21,6 +22,16 @@ class ArtistSetupView extends HookConsumerWidget {
     final bioController = useTextEditingController();
     final genreError = useState(false);
 
+    useEffect(() {
+      final user = FirebaseAuth.instance.currentUser;
+      if (user != null) {
+        if (nameController.text.isEmpty && user.displayName != null && user.displayName!.isNotEmpty) {
+          nameController.text = user.displayName!;
+        }
+      }
+      return null;
+    }, []);
+
     void onContinue() async {
       final isFormValid = formKey.currentState!.validate();
       final hasGenre = registerController.selectedGenres.isNotEmpty;
@@ -31,6 +42,11 @@ class ArtistSetupView extends HookConsumerWidget {
           String? profileImageUrl;
           if (registerController.pickedImageBytes != null) {
             profileImageUrl = await locator<FirestoreService>().uploadProfileImage(uid, registerController.pickedImageBytes!);
+          } else {
+            final photo = FirebaseAuth.instance.currentUser?.photoURL;
+            if (photo != null && photo.isNotEmpty) {
+              profileImageUrl = photo;
+            }
           }
           String? coverUrl;
           if (registerController.pickedBannerImageBytes != null) {

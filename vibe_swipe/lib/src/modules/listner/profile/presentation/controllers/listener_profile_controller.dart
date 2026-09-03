@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:typed_data';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:vibe_swipe/src/core/utils/app_exports.dart';
 import 'package:vibe_swipe/src/core/constants/app_constants.dart';
 import '../../data/dtos/notification_dto.dart';
@@ -69,6 +70,20 @@ class ListenerProfileController extends ChangeNotifier with Buffers {
           dataCollection = privacyPrefs['dataCollection'] ?? true;
           shareWithArtists = privacyPrefs['shareWithArtists'] ?? false;
         }
+      }
+
+      final user = FirebaseAuth.instance.currentUser;
+      if (_name.isEmpty && user?.displayName != null && user!.displayName!.isNotEmpty) {
+        _name = user.displayName!;
+      }
+      if (_email.isEmpty && user?.email != null && user!.email!.isNotEmpty) {
+        _email = user.email!;
+      }
+      if (_username.isEmpty) {
+        _username = _name.isNotEmpty ? _name : 'Music Lover';
+      }
+      if (_profileImageUrl.isEmpty && user?.photoURL != null && user!.photoURL!.isNotEmpty) {
+        _profileImageUrl = user.photoURL!;
       }
     } catch (e) {
       appPrint('[Profile] Error fetching user data: $e');
