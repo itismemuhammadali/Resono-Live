@@ -27,6 +27,7 @@ class FirestoreService {
             'name': name,
             'email': email,
             'role': role.name,
+            'profileCompleted': false,
             if (profileImageUrl != null) 'profileImageUrl': profileImageUrl,
             'createdAt': FieldValue.serverTimestamp(),
           }, SetOptions(merge: true))
@@ -44,6 +45,19 @@ class FirestoreService {
       appPrint('[Firestore] User doc created for $uid (${role.name})');
     } catch (e) {
       appPrint('[Firestore] Error creating user doc: $e');
+    }
+  }
+
+  Future<void> deleteUserData(String uid) async {
+    try {
+      await FirebaseFirestore.instance
+          .collection('users')
+          .doc(uid)
+          .delete()
+          .timeout(const Duration(seconds: 4));
+      appPrint('[Firestore] User doc deleted for $uid');
+    } catch (e) {
+      appPrint('[Firestore] Error deleting user doc: $e');
     }
   }
 

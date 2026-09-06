@@ -1,4 +1,4 @@
-import 'package:flutter/cupertino.dart';
+import '../../../../components/password_requirements_widget.dart';
 import '../../../../core/utils/app_exports.dart';
 import '../../../../components/primary_elevated_button.dart';
 import '../../../../components/custom_textfield.dart';
@@ -13,6 +13,7 @@ class CreateNewPasswordView extends HookConsumerWidget {
     final formKey = useMemoized(() => GlobalKey<FormState>());
     final newPasswordController = useTextEditingController();
     final confirmPasswordController = useTextEditingController();
+    useListenable(newPasswordController);
 
     void onUpdatePassword() {
       if (formKey.currentState!.validate()) {
@@ -118,9 +119,13 @@ class CreateNewPasswordView extends HookConsumerWidget {
                         horizontal: 16.w,
                         vertical: 16.h,
                       ),
-                      validator: AppValidators.validatePass,
+                      validator: AppValidators.validateNewPassword,
                     ),
-                    24.ph,
+                    12.ph,
+                    PasswordRequirementsWidget(
+                      password: newPasswordController.text,
+                    ),
+                    20.ph,
                     Text(
                       "Confirm New Password",
                       style: TextStyle(

@@ -173,6 +173,36 @@ class AuthController extends ChangeNotifier with Buffers {
 
   bool get isEmailVerified => _authService.isEmailVerified;
 
+  Future<void> cancelPendingSignUp() async {
+    _setError(null);
+    try {
+      final user = _authService.currentUser;
+      if (user != null && !user.emailVerified) {
+        final uid = user.uid;
+        await _firestoreService.deleteUserData(uid);
+        try {
+          await user.delete().timeout(const Duration(seconds: 4));
+        } catch (e) {
+          appPrint('[Auth] Note: user.delete skipped/error: $e');
+        }
+        if (_authService.currentUser == null || _authService.currentUser?.uid == uid) {
+          await _authHandler.logout();
+        }
+      }
+    } catch (e) {
+      appPrint('[Auth] Error in cancelPendingSignUp: $e');
+    }
+  }
+
+  Future<void> cancelPendingLogin() async {
+    _setError(null);
+    try {
+      await _authHandler.logout();
+    } catch (e) {
+      appPrint('[Auth] Error in cancelPendingLogin: $e');
+    }
+  }
+
   Future<bool> signIn({
     required String email,
     required String password,

@@ -1,12 +1,13 @@
 import '../../../../core/utils/app_exports.dart';
 
 class AuthBackButton extends StatelessWidget {
-  const AuthBackButton({super.key});
+  final VoidCallback? onTap;
+  const AuthBackButton({super.key, this.onTap});
 
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: () => AppRouterGo.back(),
+      onTap: onTap ?? () => AppRouterGo.back(),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [

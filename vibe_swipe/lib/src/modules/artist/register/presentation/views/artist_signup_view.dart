@@ -1,4 +1,4 @@
-import 'package:flutter/cupertino.dart';
+import '../../../../../components/password_requirements_widget.dart';
 import '../../../../../core/utils/app_exports.dart';
 import '../../../../../components/primary_elevated_button.dart';
 import '../../../../authentication/presentation/controllers/authentication_controller.dart';
@@ -19,6 +19,7 @@ class ArtistSignupView extends HookConsumerWidget {
     final emailController = useTextEditingController();
     final passwordController = useTextEditingController();
     final confirmPasswordController = useTextEditingController();
+    useListenable(passwordController);
     final authController = ref.watch(authControllerProvider);
     final agreedToTerms = useState(false);
     final termsError = useState(false);
@@ -40,6 +41,7 @@ class ArtistSignupView extends HookConsumerWidget {
             context,
             email: emailController.text.trim(),
             targetRoute: artistSetupView,
+            isSignUp: true,
           );
         }
       }
@@ -143,9 +145,13 @@ class ArtistSignupView extends HookConsumerWidget {
                     ),
                     isObscure: true,
                     isSuffix: true,
-                    validator: AppValidators.validatePass,
+                    validator: AppValidators.validateNewPassword,
                   ),
-                  24.ph,
+                  12.ph,
+                  PasswordRequirementsWidget(
+                    password: passwordController.text,
+                  ),
+                  20.ph,
                   ArtistLabeledField(
                     label: "Confirm Password",
                     hintText: "Confirm new password",

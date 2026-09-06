@@ -1,3 +1,4 @@
+import '../../../../../components/password_requirements_widget.dart';
 import '../../../../../core/utils/app_exports.dart';
 import '../../../../../components/primary_elevated_button.dart';
 import '../../../../../components/custom_textfield.dart';
@@ -16,6 +17,7 @@ class ListnerSignupView extends HookConsumerWidget {
     final emailController = useTextEditingController();
     final passwordController = useTextEditingController();
     final confirmPasswordController = useTextEditingController();
+    useListenable(passwordController);
     final authController = ref.watch(authControllerProvider);
     final agreedToTerms = useState(false);
     final termsError = useState(false);
@@ -37,6 +39,7 @@ class ListnerSignupView extends HookConsumerWidget {
             context,
             email: emailController.text.trim(),
             targetRoute: profileSetupView,
+            isSignUp: true,
           );
         }
       }
@@ -242,9 +245,13 @@ class ListnerSignupView extends HookConsumerWidget {
                       horizontal: 16.w,
                       vertical: 16.h,
                     ),
-                    validator: AppValidators.validatePass,
+                    validator: AppValidators.validateNewPassword,
                   ),
-                  24.ph,
+                  12.ph,
+                  PasswordRequirementsWidget(
+                    password: passwordController.text,
+                  ),
+                  20.ph,
                   Text(
                     "Confirm Password",
                     style: TextStyle(

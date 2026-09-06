@@ -1,9 +1,11 @@
-import 'package:flutter/cupertino.dart';
+import 'package:flutter/cupertino.dart' show CupertinoIcons;
 import 'package:firebase_auth/firebase_auth.dart';
 import '../../../../../core/utils/app_exports.dart';
 import '../../../../../components/primary_elevated_button.dart';
 import '../../../../../components/auth_logo_header.dart';
 import '../../../../authentication/presentation/widgets/auth_back_button.dart';
+import '../../../../authentication/presentation/widgets/profile_setup_exit_dialog.dart';
+import '../../../../authentication/presentation/controllers/authentication_controller.dart';
 import '../controllers/artist_register_controller.dart';
 import '../widgets/artist_avatar_picker.dart';
 import '../widgets/artist_banner_picker.dart';
@@ -71,27 +73,41 @@ class ArtistSetupView extends HookConsumerWidget {
       }
     }
 
-    return Scaffold(
-      backgroundColor: AppColors.listenerDashboardBg,
-      body: Container(
-        decoration: const BoxDecoration(
-          image: DecorationImage(
-            image: AssetImage('assets/images/png/app_background_image.png'),
-            fit: BoxFit.cover,
+    Future<void> onExitAttempt() async {
+      final shouldExit = await ProfileSetupExitDialog.show(context, isArtist: true);
+      if (shouldExit && context.mounted) {
+        await ref.read(authControllerProvider).cancelPendingLogin();
+        AppRouterGo.pushRemoveUntil(loginView);
+      }
+    }
+
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) async {
+        if (didPop) return;
+        await onExitAttempt();
+      },
+      child: Scaffold(
+        backgroundColor: AppColors.listenerDashboardBg,
+        body: Container(
+          decoration: const BoxDecoration(
+            image: DecorationImage(
+              image: AssetImage('assets/images/png/app_background_image.png'),
+              fit: BoxFit.cover,
+            ),
           ),
-        ),
-        child: SafeArea(
-          child: SingleChildScrollView(
-            padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 24.h),
-            child: Form(
-              key: formKey,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  10.ph,
-                  const AuthBackButton(),
-                  20.ph,
-                  const AuthLogoHeader(),
+          child: SafeArea(
+            child: SingleChildScrollView(
+              padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 24.h),
+              child: Form(
+                key: formKey,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    10.ph,
+                    AuthBackButton(onTap: onExitAttempt),
+                    20.ph,
+                    const AuthLogoHeader(),
                   28.ph,
                   ArtistAvatarPicker(
                     imageBytes: registerController.pickedImageBytes,
@@ -224,6 +240,7 @@ class ArtistSetupView extends HookConsumerWidget {
           ),
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 }

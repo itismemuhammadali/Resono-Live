@@ -1,9 +1,12 @@
-import 'package:flutter/cupertino.dart';
+import 'package:flutter/cupertino.dart' show CupertinoIcons;
 import 'package:firebase_auth/firebase_auth.dart';
 import '../../../../../core/utils/app_exports.dart';
 import '../../../../../components/primary_elevated_button.dart';
 import '../../../../../components/custom_textfield.dart';
 import '../../../../../components/auth_logo_header.dart';
+import '../../../../authentication/presentation/widgets/auth_back_button.dart';
+import '../../../../authentication/presentation/widgets/profile_setup_exit_dialog.dart';
+import '../../../../authentication/presentation/controllers/authentication_controller.dart';
 import '../controllers/listener_register_controller.dart';
 import 'package:vibe_swipe/src/components/auth_step_progress.dart';
 
@@ -57,28 +60,44 @@ class ProfileSetupView extends HookConsumerWidget {
       }
     }
 
-    return Scaffold(
-      backgroundColor: AppColors.listenerDashboardBg,
-      body: SizedBox.expand(
-        child: Container(
-          decoration: const BoxDecoration(
-            image: DecorationImage(
-              image: AssetImage('assets/images/png/app_background_image.png'),
-              fit: BoxFit.cover,
+    Future<void> onExitAttempt() async {
+      final shouldExit = await ProfileSetupExitDialog.show(context, isArtist: false);
+      if (shouldExit && context.mounted) {
+        await ref.read(authControllerProvider).cancelPendingLogin();
+        AppRouterGo.pushRemoveUntil(loginView);
+      }
+    }
+
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) async {
+        if (didPop) return;
+        await onExitAttempt();
+      },
+      child: Scaffold(
+        backgroundColor: AppColors.listenerDashboardBg,
+        body: SizedBox.expand(
+          child: Container(
+            decoration: const BoxDecoration(
+              image: DecorationImage(
+                image: AssetImage('assets/images/png/app_background_image.png'),
+                fit: BoxFit.cover,
+              ),
             ),
-          ),
-          child: SafeArea(
-          child: Column(
-            children: [
-              Padding(
-                padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 24.h),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    10.ph,
-                    const AuthLogoHeader(),
-                    20.ph,
-                    const AuthStepProgress(currentStep: 1),
+            child: SafeArea(
+            child: Column(
+              children: [
+                Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 24.h),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      10.ph,
+                      AuthBackButton(onTap: onExitAttempt),
+                      14.ph,
+                      const AuthLogoHeader(),
+                      20.ph,
+                      const AuthStepProgress(currentStep: 1),
                     28.ph,
                     Text(
                       "Set Up Your Profile",
@@ -279,6 +298,7 @@ class ProfileSetupView extends HookConsumerWidget {
         ),
       ),
     ),
-  );
+  ),
+);
 }
 }

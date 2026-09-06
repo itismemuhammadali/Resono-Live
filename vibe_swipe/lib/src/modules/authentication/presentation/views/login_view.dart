@@ -1,4 +1,3 @@
-import 'package:flutter/cupertino.dart';
 import '../../../../core/utils/app_exports.dart';
 import '../../presentation/controllers/authentication_controller.dart';
 import '../../presentation/widgets/email_verification_dialog.dart';
@@ -25,15 +24,28 @@ class LoginView extends HookConsumerWidget {
               password: passwordController.text,
             );
         if (success && context.mounted) {
-          final target = AppConfig.userRole == UserRole.artist
+          final uid = locator<FirebaseAuthService>().getUid();
+          final isCompleted = uid != null
+              ? await controller.isProfileCompleted(uid)
+              : false;
+
+          final setupTarget = AppConfig.userRole == UserRole.artist
+              ? artistSetupView
+              : profileSetupView;
+          final dashboardTarget = AppConfig.userRole == UserRole.artist
               ? artistDashboardView
               : listenerDashboardView;
+
+          final target = isCompleted ? dashboardTarget : setupTarget;
+
+          if (!context.mounted) return;
 
           if (!controller.isEmailVerified) {
             EmailVerificationDialog.show(
               context,
               email: emailController.text.trim(),
               targetRoute: target,
+              isSignUp: false,
             );
           } else {
             AppRouterGo.pushReplacement(target);

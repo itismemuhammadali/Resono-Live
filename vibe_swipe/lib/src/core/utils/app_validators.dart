@@ -78,6 +78,51 @@ class AppValidators {
     }
   }
 
+  static bool hasMinLength(String? value, [int min = 8]) =>
+      (value?.length ?? 0) >= min;
+
+  static bool hasUppercase(String? value) =>
+      value != null && RegExp(r'[A-Z]').hasMatch(value);
+
+  static bool hasLowercase(String? value) =>
+      value != null && RegExp(r'[a-z]').hasMatch(value);
+
+  static bool hasDigit(String? value) =>
+      value != null && RegExp(r'[0-9]').hasMatch(value);
+
+  static bool hasSpecialChar(String? value) =>
+      value != null && RegExp(r'[^a-zA-Z0-9\s]').hasMatch(value);
+
+  static bool isPasswordValid(String? value) {
+    return hasMinLength(value, 8) &&
+        hasUppercase(value) &&
+        hasLowercase(value) &&
+        hasDigit(value) &&
+        hasSpecialChar(value);
+  }
+
+  static String? validateNewPassword(String? value) {
+    if (value == null || value.isEmpty) {
+      return 'Please enter your password';
+    }
+    if (!hasMinLength(value, 8)) {
+      return 'Password must be at least 8 characters long';
+    }
+    if (!hasUppercase(value)) {
+      return 'Password must contain at least one uppercase letter (A-Z)';
+    }
+    if (!hasLowercase(value)) {
+      return 'Password must contain at least one lowercase letter (a-z)';
+    }
+    if (!hasDigit(value)) {
+      return 'Password must contain at least one number (0-9)';
+    }
+    if (!hasSpecialChar(value)) {
+      return 'Password must contain at least one special character (!@#\$%...)';
+    }
+    return null;
+  }
+
   static String? confirmPass(String? value, TextEditingController newPass) {
     if (value == null || value.isEmpty) {
       return 'Please enter confirm password';
