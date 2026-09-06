@@ -101,6 +101,9 @@ class ArtistPerformancesController extends ChangeNotifier with Buffers {
               recordedItems.add(entity);
             }
             break;
+          case PerformanceStatus.live:
+            upcomingItems.add(entity);
+            break;
           case PerformanceStatus.past:
             pastItems.add(entity);
             if (videoUrl.isNotEmpty || type == 'recorded') {
@@ -120,6 +123,8 @@ class ArtistPerformancesController extends ChangeNotifier with Buffers {
 
   PerformanceStatus _parseStatus(String status) {
     switch (status) {
+      case 'live':
+        return PerformanceStatus.live;
       case 'upcoming':
         return PerformanceStatus.upcoming;
       case 'past':
@@ -385,6 +390,81 @@ class ArtistPerformancesController extends ChangeNotifier with Buffers {
       return false;
     } finally {
       _isScheduling = false;
+      notifyListeners();
+    }
+  }
+
+  bool _isGoingLive = false;
+  bool get isGoingLive => _isGoingLive;
+
+  Future<PerformanceEntity?> startInstantLiveSession({
+    required String title,
+    String? description,
+    String? category,
+    bool isPaid = false,
+    double? ticketPrice,
+    Uint8List? coverBytes,
+  }) async {
+    if (_isGoingLive) return null;
+    _isGoingLive = true;
+    notifyListeners();
+
+    try {
+      final uid = locator<FirebaseAuthService>().getUid();
+      if (uid == null) throw Exception('Not authenticated');
+
+      final channelName = locator<RemoteConfigService>().agoraChannelName;
+
+      // 1. Create performance document with status live
+      final performanceId = await locator<FirestoreService>().createPerformance(
+        artistId: uid,
+        title: title,
+        description: description,
+        genres: category != null ? [category] : [],
+        status: 'live',
+        type: 'live',
+        isPaid: isPaid,
+        ticketPrice: isPaid ? ticketPrice : null,
+      );
+
+      // 2. Upload cover thumbnail if provided
+      String thumbnailUrl = '';
+      if (coverBytes != null) {
+        thumbnailUrl = await locator<FirestoreService>()
+            .uploadPerformanceThumbnail(performanceId, coverBytes);
+        await locator<FirestoreService>().updatePerformance(performanceId, {
+          'thumbnailUrl': thumbnailUrl,
+        });
+      }
+
+      // 3. Mark live with Agora channel in Firestore
+      await locator<FirestoreService>().startLivePerformance(
+        performanceId: performanceId,
+        channelName: channelName,
+      );
+
+      // 4. Refresh performances list
+      await fetchPerformances();
+
+      final entity = PerformanceEntity(
+        id: performanceId,
+        title: title,
+        thumbnailUrl: thumbnailUrl,
+        status: PerformanceStatus.live,
+        date: DateTime.now(),
+        viewCount: 0,
+        liveCount: 0,
+        description: description,
+        category: category,
+        type: 'live',
+      );
+
+      return entity;
+    } catch (e) {
+      appPrint('[Performances] Error starting instant live session: $e');
+      return null;
+    } finally {
+      _isGoingLive = false;
       notifyListeners();
     }
   }

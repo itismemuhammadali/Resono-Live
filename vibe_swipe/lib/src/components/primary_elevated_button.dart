@@ -1,5 +1,4 @@
 import 'package:flutter/cupertino.dart';
-import 'package:flutter/foundation.dart' show kIsWeb;
 import '../core/utils/app_exports.dart';
 
 class PrimaryElevatedButton extends StatelessWidget {
@@ -75,23 +74,28 @@ class PrimaryElevatedButton extends StatelessWidget {
               )
             : Row(
                 mainAxisAlignment: MainAxisAlignment.center,
+                mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  if (leadingWidget != null) ...[leadingWidget!, 16.pw],
-                  Text(
-                    text,
-                    style:
-                        style ??
-                        TextStyle(
-                          fontFamily: 'Roboto',
-                          color: enabled
-                              ? (textColor ?? AppColors.primaryblack)
-                              : (disableButtonTextColor ??
-                                    AppColors.inactiveGray),
-                          fontSize: 16.sp,
-                          fontWeight: FontWeight.w600,
-                        ),
-                    textAlign: TextAlign.center,
+                  if (leadingWidget != null) ...[leadingWidget!, 8.pw],
+                  Flexible(
+                    child: Text(
+                      text,
+                      style:
+                          style ??
+                          TextStyle(
+                            fontFamily: 'Roboto',
+                            color: enabled
+                                ? (textColor ?? AppColors.primaryblack)
+                                : (disableButtonTextColor ??
+                                      AppColors.inactiveGray),
+                            fontSize: 16.sp,
+                            fontWeight: FontWeight.w600,
+                          ),
+                      textAlign: TextAlign.center,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
                   ),
                   if (trailingIcon != null) ...[
                     8.pw,

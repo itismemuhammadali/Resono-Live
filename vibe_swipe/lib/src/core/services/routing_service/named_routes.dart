@@ -48,6 +48,7 @@ import '../../../modules/artist/performances/presentation/views/upload_review_vi
 import '../../../modules/artist/performances/presentation/views/upload_success_view.dart';
 import '../../../modules/artist/performances/presentation/views/edit_performance_view.dart';
 import '../../../modules/artist/performances/presentation/views/artist_live_broadcast_view.dart';
+import '../../../modules/artist/performances/presentation/views/artist_go_live_setup_view.dart';
 import '../../../modules/artist/performances/presentation/views/artist_session_ended_view.dart';
 import '../../../modules/artist/performances/domain/entities/performance_entity.dart';
 import '../../../modules/artist/community/presentation/views/artist_create_post_view.dart';
@@ -429,6 +430,13 @@ class AppRouterGo {
         pageBuilder: (context, state) => NoTransitionPage(
           key: state.pageKey,
           child: const ArtistHelpSupportView(),
+        ),
+      ),
+      GoRoute(
+        path: artistGoLiveSetupView,
+        pageBuilder: (context, state) => NoTransitionPage(
+          key: state.pageKey,
+          child: const ArtistGoLiveSetupView(),
         ),
       ),
       GoRoute(

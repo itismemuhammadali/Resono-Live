@@ -7,6 +7,11 @@ service cloud.firestore {
     match /users/{userId} {
       allow read, write: if request.auth != null && request.auth.uid == userId;
       allow read: if request.auth != null; // Other users can read profiles
+
+      // Blocked users subcollection
+      match /blocked_users/{targetUserId} {
+        allow read, write: if request.auth != null && request.auth.uid == userId;
+      }
     }
 
     // ========== OTP VERIFICATION ==========
@@ -19,7 +24,8 @@ service cloud.firestore {
     match /performances/{performanceId} {
       allow read: if request.auth != null;
       allow create: if request.auth != null && request.resource.data.artist_id == request.auth.uid;
-      allow update, delete: if request.auth != null && resource.data.artist_id == request.auth.uid;
+      allow update: if request.auth != null;
+      allow delete: if request.auth != null && resource.data.artist_id == request.auth.uid;
     }
 
     // Live viewers tracking
@@ -131,6 +137,33 @@ service cloud.firestore {
     // ========== PREFERENCES ==========
     match /preferences/{userId} {
       allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+
+    // ========== SAFETY & MODERATION ==========
+    match /blocks/{blockId} {
+      allow read, write: if request.auth != null;
+    }
+
+    match /reports/{reportId} {
+      allow read, create, write: if request.auth != null;
+    }
+
+    match /shadow_bans/{banId} {
+      allow read, write: if request.auth != null;
+    }
+
+    // ========== HELP, FAQ & TRACKS ==========
+    match /help_topics/{topicId} {
+      allow read: if request.auth != null;
+    }
+
+    match /faqs/{faqId} {
+      allow read: if request.auth != null;
+    }
+
+    match /tracks/{trackId} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null;
     }
 
     // ========== DEFAULT DENY ==========

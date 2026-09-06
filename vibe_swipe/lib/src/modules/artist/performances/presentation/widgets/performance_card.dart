@@ -258,6 +258,12 @@ class _StatusBadge extends StatelessWidget {
           AppColors.huegrey,
           7.0,
         ),
+      PerformanceStatus.live => (
+          'live',
+          Colors.red.withValues(alpha: 0.20),
+          Colors.redAccent,
+          8.0,
+        ),
       PerformanceStatus.pending => (
           'pending',
           AppColors.listenerPendingBlue.withValues(alpha: 0.20),

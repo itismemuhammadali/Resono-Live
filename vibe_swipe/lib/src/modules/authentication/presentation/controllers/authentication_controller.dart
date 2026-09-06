@@ -203,6 +203,17 @@ class AuthController extends ChangeNotifier with Buffers {
     }
   }
 
+  bool _validateRole(String? roleStr) {
+    if (roleStr == null || roleStr.isEmpty) return true;
+    final expectedRoleStr = AppConfig.userRole == UserRole.artist ? 'artist' : 'listener';
+    if (roleStr.toLowerCase() != expectedRoleStr) {
+      final actualRoleName = roleStr.toLowerCase() == 'artist' ? 'an Artist' : 'a Listener';
+      _setError('This account is registered as $actualRoleName. Please log in through the $actualRoleName mode.');
+      return false;
+    }
+    return true;
+  }
+
   Future<bool> signIn({
     required String email,
     required String password,
@@ -217,8 +228,10 @@ class AuthController extends ChangeNotifier with Buffers {
 
       final uid = credential.user!.uid;
       final roleStr = await _firestoreService.getUserRole(uid);
-      if (roleStr != null) {
-        AppConfig.userRole = roleStr == 'artist' ? UserRole.artist : UserRole.listener;
+      if (!_validateRole(roleStr)) {
+        await _authHandler.logout();
+        _setLoading(false);
+        return false;
       }
 
       await _authHandler.setupUser(credential.user, true);
@@ -285,8 +298,10 @@ class AuthController extends ChangeNotifier with Buffers {
 
       final uid = credential.user!.uid;
       final roleStr = await _firestoreService.getUserRole(uid);
-      if (roleStr != null) {
-        AppConfig.userRole = roleStr == 'artist' ? UserRole.artist : UserRole.listener;
+      if (!_validateRole(roleStr)) {
+        await _authHandler.logout();
+        _setLoading(false);
+        return false;
       }
 
       await _authHandler.setupUser(credential.user, true);
@@ -335,9 +350,12 @@ class AuthController extends ChangeNotifier with Buffers {
       final uid = credential.user!.uid;
 
       final roleStr = await _firestoreService.getUserRole(uid);
-      if (roleStr != null) {
-        AppConfig.userRole = roleStr == 'artist' ? UserRole.artist : UserRole.listener;
-      } else {
+      if (!_validateRole(roleStr)) {
+        await _authHandler.logout();
+        _setLoading(false);
+        return false;
+      }
+      if (roleStr == null) {
         await _firestoreService.createUserData(
           uid: uid,
           name: credential.user!.displayName ?? 'User',
@@ -374,9 +392,12 @@ class AuthController extends ChangeNotifier with Buffers {
       final uid = credential.user!.uid;
 
       final roleStr = await _firestoreService.getUserRole(uid);
-      if (roleStr != null) {
-        AppConfig.userRole = roleStr == 'artist' ? UserRole.artist : UserRole.listener;
-      } else {
+      if (!_validateRole(roleStr)) {
+        await _authHandler.logout();
+        _setLoading(false);
+        return false;
+      }
+      if (roleStr == null) {
         await _firestoreService.createUserData(
           uid: uid,
           name: credential.user!.displayName ?? 'User',

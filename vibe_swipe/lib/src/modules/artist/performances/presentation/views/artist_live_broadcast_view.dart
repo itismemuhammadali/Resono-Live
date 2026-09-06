@@ -28,34 +28,58 @@ class _ArtistLiveBroadcastViewState extends State<ArtistLiveBroadcastView> {
   DateTime? _streamStartTime;
   List<LiveChatMessage> _pinnedSuperChats = [];
   StreamSubscription? _performanceSubscription;
+  StreamSubscription? _viewersSubscription;
 
   @override
   void initState() {
     super.initState();
+    // Start watching viewer count immediately
+    _watchViewerCount();
+
     _agoraService.onJoinChannelSuccess = (connection, elapsed) {
       if (mounted) {
         setState(() => _isLive = true);
-        // Start Firestore viewer count listener once we go live
         _watchViewerCount();
       }
     };
     _listenToSuperChats();
+    if (widget.item.status == PerformanceStatus.live) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _startLiveSession();
+      });
+    }
   }
 
-  /// Listen to Firestore viewers_count in real time — much more accurate
-  /// than counting Agora join/offline events (which can miss late joiners
-  /// and double-count reconnections).
+  /// Listen to real-time viewer updates via active viewers subcollection
+  /// with fallback to performance document current_live_viewers.
   void _watchViewerCount() {
     _performanceSubscription?.cancel();
+    _viewersSubscription?.cancel();
+
+    // Primary: listen to active viewers subcollection
+    _viewersSubscription = locator<FirestoreService>()
+        .watchPerformanceViewers(widget.item.id)
+        .listen((snapshot) {
+      if (!mounted) return;
+      setState(() {
+        _viewerCount = snapshot.docs.length;
+      });
+    }, onError: (e) {
+      debugPrint('[ArtistLive] Error watching viewers subcollection: $e');
+    });
+
+    // Secondary / Fallback: listen to performance document
     _performanceSubscription = locator<FirestoreService>()
         .watchPerformance(widget.item.id)
         .listen((snapshot) {
       if (!mounted) return;
       final data = snapshot.data() as Map<String, dynamic>?;
       if (data == null) return;
-      final count = data['current_live_viewers'] ?? data['viewers_count'];
-      if (count is int) {
-        setState(() => _viewerCount = (count < 0 ? 0 : count));
+      final count = data['current_live_viewers'];
+      if (count is int && count >= 0) {
+        if (_viewerCount == 0 && count > 0) {
+          setState(() => _viewerCount = count);
+        }
       }
     });
   }
@@ -92,44 +116,40 @@ class _ArtistLiveBroadcastViewState extends State<ArtistLiveBroadcastView> {
     _agoraService.onUserJoined = null;
     _agoraService.onUserOffline = null;
     _performanceSubscription?.cancel();
+    _viewersSubscription?.cancel();
     _leaveChannel();
     super.dispose();
   }
 
   Future<void> _startLiveSession() async {
-    final cameraStatus = await Permission.camera.status;
-    final micStatus = await Permission.microphone.status;
+    if (_isLive) return;
+    var cameraStatus = await Permission.camera.status;
+    var micStatus = await Permission.microphone.status;
 
-    bool hasCamera = cameraStatus.isGranted;
-    bool hasMic = micStatus.isGranted;
-
-    // Request permissions we don't have yet
-    if (!hasCamera || !hasMic) {
-      final results = await [Permission.camera, Permission.microphone].request();
-      hasCamera = results[Permission.camera]?.isGranted ?? false;
-      hasMic = results[Permission.microphone]?.isGranted ?? false;
+    // If microphone is not yet granted, request it directly from the OS
+    if (!micStatus.isGranted && !micStatus.isPermanentlyDenied) {
+      micStatus = await Permission.microphone.request();
     }
 
+    if (!cameraStatus.isGranted && !cameraStatus.isPermanentlyDenied) {
+      cameraStatus = await Permission.camera.request();
+    }
+
+    final hasMic = micStatus.isGranted;
+    final hasCamera = cameraStatus.isGranted;
+
     if (!hasMic) {
-      // Microphone is essential for live streaming
-      final isPermanentlyDenied = await Permission.microphone.isPermanentlyDenied;
       if (!mounted) return;
-      if (isPermanentlyDenied) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Text('Microphone permission is required. Please enable it in Settings.'),
-            action: SnackBarAction(
-              label: 'Settings',
-              onPressed: () => openAppSettings(),
-            ),
-            duration: const Duration(seconds: 5),
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('Microphone permission is required for live streaming. Please enable it in Settings.'),
+          action: SnackBarAction(
+            label: 'Settings',
+            onPressed: () => openAppSettings(),
           ),
-        );
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Microphone permission is required for live streaming')),
-        );
-      }
+          duration: const Duration(seconds: 5),
+        ),
+      );
       return;
     }
 

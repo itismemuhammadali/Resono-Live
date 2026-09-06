@@ -196,7 +196,12 @@ class AgoraService {
       debugPrint('[AgoraService] Using null token (test mode or fallback)');
     }
 
-    if (enableVideo) await _engine!.enableVideo();
+    if (enableVideo) {
+      await _engine!.enableVideo();
+      if (role == ClientRoleType.clientRoleBroadcaster) {
+        await _engine!.startPreview();
+      }
+    }
     if (enableAudio) {
       await _engine!.enableAudio();
       if (role == ClientRoleType.clientRoleBroadcaster) {
@@ -227,6 +232,9 @@ class AgoraService {
     _currentToken = null;
     _currentChannelId = null;
     if (_engine == null) return;
+    try {
+      await _engine!.stopPreview();
+    } catch (_) {}
     await _engine!.leaveChannel();
     debugPrint('[AgoraService] Left channel');
   }

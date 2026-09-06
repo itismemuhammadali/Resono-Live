@@ -40,15 +40,23 @@ class PermissionService {
       Permission.notification,
     ];
 
+    final results = <Permission, PermissionStatus>{};
     try {
-      final results = await permissionsToRequest.request();
+      for (final permission in permissionsToRequest) {
+        final status = await permission.status;
+        if (!status.isGranted && !status.isPermanentlyDenied) {
+          results[permission] = await permission.request();
+        } else {
+          results[permission] = status;
+        }
+      }
       await markInitialPermissionsRequested();
       appPrint('[PermissionService] Initial permissions result: $results');
       return results;
     } catch (e) {
       appPrint('[PermissionService] Error requesting initial permissions: $e');
       await markInitialPermissionsRequested();
-      return {};
+      return results;
     }
   }
 }

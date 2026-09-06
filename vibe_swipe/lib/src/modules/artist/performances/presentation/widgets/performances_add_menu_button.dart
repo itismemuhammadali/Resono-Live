@@ -22,7 +22,8 @@ class PerformancesAddMenuButton extends StatelessWidget {
       padding: EdgeInsets.zero,
       position: PopupMenuPosition.under,
       offset: Offset(0, 8.h),
-      itemBuilder: (_) => [
+      constraints: BoxConstraints(minWidth: 200.w, maxWidth: 300.w),
+      itemBuilder: (_) => const [
         PopupMenuItem(
           value: _PerformanceQuickAction.scheduleLiveSession,
           child: _MenuOption(
@@ -60,6 +61,7 @@ class _MenuOption extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Row(
+      mainAxisSize: MainAxisSize.min,
       children: [
         Image.asset(
           asset,
@@ -68,12 +70,16 @@ class _MenuOption extends StatelessWidget {
           height: 16.w,
         ),
         10.pw,
-        Text(
-          label,
-          style: TextStyle(
-            color: AppColors.primaryWhite,
-            fontSize: 16.sp,
-            fontWeight: FontWeight.w500,
+        Flexible(
+          child: Text(
+            label,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              color: AppColors.primaryWhite,
+              fontSize: 14.sp,
+              fontWeight: FontWeight.w500,
+            ),
           ),
         ),
       ],

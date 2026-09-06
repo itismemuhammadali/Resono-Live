@@ -1,7 +1,7 @@
 // App Enums
 import 'package:flutter/material.dart';
 
-enum PerformanceStatus { upcoming, past, pending }
+enum PerformanceStatus { upcoming, past, pending, live }
 
 enum PerformanceMenuAction { edit, startLive, delete }
 

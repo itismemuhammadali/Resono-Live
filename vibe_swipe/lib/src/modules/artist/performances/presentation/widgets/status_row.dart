@@ -18,6 +18,11 @@ class StatusRow extends StatelessWidget {
         AppColors.listenerPastBadgeBg,
         AppColors.huegrey,
       ),
+      PerformanceStatus.live => (
+        'live',
+        Colors.red.withValues(alpha: 0.20),
+        Colors.redAccent,
+      ),
       PerformanceStatus.pending => (
         'pending',
         AppColors.listenerPendingBlue.withValues(alpha: 0.20),

@@ -1,6 +1,5 @@
 import 'package:vibe_swipe/src/core/utils/app_exports.dart';
 import 'package:vibe_swipe/src/modules/artist/dashboard/presentation/controllers/artist_dashboard_controller.dart';
-import 'package:vibe_swipe/src/modules/artist/performances/domain/entities/performance_entity.dart';
 
 class QuickActionsSection extends ConsumerWidget {
   const QuickActionsSection({super.key});
@@ -19,19 +18,7 @@ class QuickActionsSection extends ConsumerWidget {
       _QuickAction(
         asset: 'assets/icons/png/artist_home_go_live_icn.png',
         label: 'Go Live',
-        onTap: () => AppRouterGo.push(
-          artistLiveBroadcastView,
-          extra: PerformanceEntity(
-            id: 'quick-live',
-            title: 'Live Session',
-            thumbnailUrl: '',
-            status: PerformanceStatus.upcoming,
-            date: DateTime.now(),
-            viewCount: 0,
-            liveCount: 0,
-            description: 'Quick live session from home',
-          ),
-        ),
+        onTap: () => AppRouterGo.push(artistGoLiveSetupView),
       ),
       _QuickAction(
         asset: 'assets/icons/png/artist_home_createpost_icn.png',

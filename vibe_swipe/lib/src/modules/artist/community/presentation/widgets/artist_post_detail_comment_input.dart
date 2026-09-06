@@ -75,13 +75,13 @@ class ArtistPostDetailCommentInput extends StatelessWidget {
                     backgroundColor: AppColors.listenerActiveTab,
                     disabledBackgroundColor: AppColors.listenerActiveTab
                         .withValues(alpha: 0.25),
-                    padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
+                    padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 8.h),
                   ),
-                  width: 110.w,
-                  height: 44.h,
-                  radius: 16.r,
+                  width: 120.w,
+                  height: 42.h,
+                  radius: 14.r,
                   style: TextStyle(
-                    fontSize: 18.sp,
+                    fontSize: 14.sp,
                     fontWeight: FontWeight.w600,
                     color: Colors.black,
                   ),

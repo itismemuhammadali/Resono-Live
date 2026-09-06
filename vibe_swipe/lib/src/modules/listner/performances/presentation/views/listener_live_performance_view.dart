@@ -1,6 +1,6 @@
 import 'dart:async';
 import 'package:agora_rtc_engine/agora_rtc_engine.dart';
-import 'package:permission_handler/permission_handler.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:vibe_swipe/src/core/utils/app_exports.dart';
 import 'package:vibe_swipe/src/components/primary_elevated_button.dart';
@@ -40,7 +40,9 @@ class _ListenerLivePerformanceViewState extends ConsumerState<ListenerLivePerfor
   bool _accessCheckCompleted = false;
   bool _accessCheckFailed = false;
   StreamSubscription? _performanceSubscription;
+  StreamSubscription? _viewersSubscription;
   int _activeViewersCount = 0;
+  bool _hasJoinedLivePerformance = false;
 
   List<LiveChatMessage> _pinnedSuperChats = [];
   StreamSubscription? _superChatsSubscription;
@@ -107,10 +109,25 @@ class _ListenerLivePerformanceViewState extends ConsumerState<ListenerLivePerfor
   }
 
   void _joinLivePerformance() {
+    if (_hasJoinedLivePerformance) return;
+    _hasJoinedLivePerformance = true;
     locator<FirestoreService>().joinPerformance(performanceId: widget.featured.id);
   }
 
   void _watchPerformanceStatus() {
+    _viewersSubscription?.cancel();
+    _viewersSubscription = locator<FirestoreService>()
+        .watchPerformanceViewers(widget.featured.id)
+        .listen((snapshot) {
+      if (!mounted) return;
+      setState(() {
+        _activeViewersCount = snapshot.docs.length;
+      });
+    }, onError: (e) {
+      debugPrint('[ListenerLive] Error watching viewers subcollection: $e');
+    });
+
+    _performanceSubscription?.cancel();
     _performanceSubscription = locator<FirestoreService>()
         .watchPerformance(widget.featured.id)
         .listen((snapshot) {
@@ -123,7 +140,7 @@ class _ListenerLivePerformanceViewState extends ConsumerState<ListenerLivePerfor
       final rawCount = isStreamLive
           ? (data['current_live_viewers'] ?? data['viewers_count'] ?? 0)
           : (data['viewers_count'] ?? data['viewCount'] ?? 0);
-      if (rawCount is int) {
+      if (rawCount is int && _activeViewersCount == 0 && rawCount > 0) {
         setState(() {
           _activeViewersCount = rawCount < 0 ? 0 : rawCount;
         });
@@ -132,16 +149,14 @@ class _ListenerLivePerformanceViewState extends ConsumerState<ListenerLivePerfor
       if (status == 'ended' && !_streamEnded) {
         _handleStreamEnded();
       } else if (status == 'live' && !_isAgoraLive && !_agoraInitialized) {
-        // Only join Agora if access has already been confirmed.
-        // _checkAccess() is async — if it hasn't resolved yet we skip here;
-        // _checkAccess itself will call _initAgora() once it confirms access.
         final hasPaidAccess = ref.read(tippingControllerProvider).hasPaid;
         if (!_isPaidPerformance && _accessCheckCompleted) {
+          _joinLivePerformance();
           _initAgora();
         } else if (_isPaidPerformance && hasPaidAccess) {
+          _joinLivePerformance();
           _initAgora();
         }
-        // If _accessCheckCompleted is false, _checkAccess() will handle it.
       }
     });
   }
@@ -181,12 +196,33 @@ class _ListenerLivePerformanceViewState extends ConsumerState<ListenerLivePerfor
           _joinLivePerformance();
           _initAgora();
         }
-        // If isPaid && !hasAccess — show the paywall. Do NOT call _initAgora.
       }
     } catch (e) {
       appPrint('[Tipping] _checkAccess error: $e');
-      // On network error we cannot determine if this is a paid performance.
-      // Fail-safe: do NOT grant free access — mark failure and let user retry.
+      // Direct Firestore check fallback in case Cloud Function is unreachable
+      try {
+        final doc = await FirebaseFirestore.instance.collection('performances').doc(widget.featured.id).get();
+        final data = doc.data();
+        if (data != null && mounted) {
+          final isPaid = data['isPaid'] == true;
+          final price = (data['ticketPrice'] as num?)?.toDouble() ?? 9.99;
+          final paidUsers = List<String>.from(data['paidUsers'] ?? []);
+          final hasAccess = !isPaid || paidUsers.contains(userId);
+          setState(() {
+            _isPaidPerformance = isPaid;
+            _ticketPrice = price;
+            _accessCheckCompleted = true;
+            _accessCheckFailed = false;
+          });
+          if (hasAccess) {
+            _joinLivePerformance();
+            _initAgora();
+          }
+          return;
+        }
+      } catch (fbErr) {
+        appPrint('[Tipping] Fallback checkAccess error: $fbErr');
+      }
       if (mounted) {
         setState(() {
           _accessCheckCompleted = true;
@@ -198,8 +234,11 @@ class _ListenerLivePerformanceViewState extends ConsumerState<ListenerLivePerfor
 
   @override
   void dispose() {
-    locator<FirestoreService>().leavePerformance(performanceId: widget.featured.id);
+    if (_hasJoinedLivePerformance) {
+      locator<FirestoreService>().leavePerformance(performanceId: widget.featured.id);
+    }
     _performanceSubscription?.cancel();
+    _viewersSubscription?.cancel();
     _superChatsSubscription?.cancel();
     _alertTimer?.cancel();
     _agoraService.onUserJoined = null;
@@ -212,7 +251,6 @@ class _ListenerLivePerformanceViewState extends ConsumerState<ListenerLivePerfor
 
   Future<void> _initAgora() async {
     if (_agoraInitialized) return;
-    await [Permission.camera, Permission.microphone].request();
 
     _agoraService.onJoinChannelSuccess = (connection, elapsed) {
       if (mounted) {

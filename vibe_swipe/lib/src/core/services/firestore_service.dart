@@ -1,5 +1,6 @@
 import 'dart:typed_data';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import '../utils/app_enums.dart';
 import '../utils/app_logger.dart';
@@ -331,6 +332,14 @@ class FirestoreService {
         .snapshots();
   }
 
+  Stream<QuerySnapshot<Map<String, dynamic>>> watchPerformanceViewers(String performanceId) {
+    return FirebaseFirestore.instance
+        .collection('performances')
+        .doc(performanceId)
+        .collection('viewers')
+        .snapshots();
+  }
+
   Future<String> uploadPerformanceThumbnail(String performanceId, Uint8List bytes) async {
     try {
       final ref = FirebaseStorage.instance.ref().child('performances/$performanceId/thumbnail');
@@ -494,15 +503,37 @@ class FirestoreService {
   }
 
   Future<void> joinPerformance({required String performanceId}) async {
-    // Always update Firestore directly for accurate real-time viewer count.
-    // current_live_viewers tracks active live listeners (goes up/down)
-    // viewers_count tracks cumulative total views (only goes up)
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    // 1. Add viewer to /performances/{performanceId}/viewers/{uid}
+    if (uid != null) {
+      try {
+        await FirebaseFirestore.instance
+            .collection('performances')
+            .doc(performanceId)
+            .collection('viewers')
+            .doc(uid)
+            .set({
+          'userId': uid,
+          'joinedAt': FieldValue.serverTimestamp(),
+        }, SetOptions(merge: true));
+        appPrint('[Firestore] Viewer $uid joined performance $performanceId');
+      } catch (e) {
+        appPrint('[Firestore] Error adding viewer to subcollection: $e');
+      }
+    }
+
+    // 2. Increment active live viewers and cumulative total views
     try {
       await FirebaseFirestore.instance.collection('performances').doc(performanceId).update({
         'current_live_viewers': FieldValue.increment(1),
         'viewers_count': FieldValue.increment(1),
       });
-    } catch (_) {}
+      appPrint('[Firestore] Incremented viewer count for $performanceId');
+    } catch (e) {
+      appPrint('[Firestore] Error incrementing viewer count: $e');
+    }
+
+    // 3. Notify backend API
     try {
       await _api.post('/performances/$performanceId/join');
       appPrint('[API] Joined performance $performanceId');
@@ -512,12 +543,33 @@ class FirestoreService {
   }
 
   Future<void> leavePerformance({required String performanceId}) async {
-    // Decrement active live viewers count when leaving (do NOT reduce total viewers_count)
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    // 1. Remove viewer from /performances/{performanceId}/viewers/{uid}
+    if (uid != null) {
+      try {
+        await FirebaseFirestore.instance
+            .collection('performances')
+            .doc(performanceId)
+            .collection('viewers')
+            .doc(uid)
+            .delete();
+        appPrint('[Firestore] Viewer $uid left performance $performanceId');
+      } catch (e) {
+        appPrint('[Firestore] Error removing viewer from subcollection: $e');
+      }
+    }
+
+    // 2. Decrement active live viewers count when leaving
     try {
       await FirebaseFirestore.instance.collection('performances').doc(performanceId).update({
         'current_live_viewers': FieldValue.increment(-1),
       });
-    } catch (_) {}
+      appPrint('[Firestore] Decremented live viewers for $performanceId');
+    } catch (e) {
+      appPrint('[Firestore] Error decrementing viewer count: $e');
+    }
+
+    // 3. Notify backend API
     try {
       await _api.post('/performances/$performanceId/leave');
       appPrint('[API] Left performance $performanceId');

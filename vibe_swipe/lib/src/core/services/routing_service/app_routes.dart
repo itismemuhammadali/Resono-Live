@@ -40,6 +40,7 @@ const String artistUploadSuccessView = '/upload-success';
 const String artistEditPerformanceView = '/edit-performance';
 const String artistEditProfileView = '/artist-edit-profile';
 const String artistLiveBroadcastView = '/artist-live-broadcast';
+const String artistGoLiveSetupView = '/artist-go-live-setup';
 const String artistSessionEndedView = '/artist-session-ended';
 const String artistCreatePostView = '/artist-create-post';
 const String artistPostDetailView = '/artist-post-detail';
