@@ -4,6 +4,7 @@ import 'package:firebase_storage/firebase_storage.dart';
 import '../utils/app_enums.dart';
 import '../utils/app_logger.dart';
 import 'python_api_service.dart';
+import 'safety_service.dart';
 
 class FirestoreService {
   final PythonApiService _api = PythonApiService();
@@ -348,6 +349,8 @@ class FirestoreService {
     String? status,
     String? artistId,
   }) async {
+    List<Map<String, dynamic>> results = [];
+
     try {
       final data = await _api.get('/performances', queryParams: {
         'limit': limit.toString(),
@@ -356,33 +359,49 @@ class FirestoreService {
       }).timeout(const Duration(seconds: 4));
       final list = data['performances'] as List<dynamic>? ?? [];
       if (list.isNotEmpty) {
-        return list.cast<Map<String, dynamic>>();
+        results = list.cast<Map<String, dynamic>>();
       }
     } catch (e) {
       appPrint('[API] Note: Failed to fetch performances via API: $e');
     }
 
-    try {
-      Query<Map<String, dynamic>> query = FirebaseFirestore.instance.collection('performances');
-      if (status != null) {
-        query = query.where('status', isEqualTo: status);
+    if (results.isEmpty) {
+      try {
+        Query<Map<String, dynamic>> query = FirebaseFirestore.instance.collection('performances');
+        if (status != null) {
+          query = query.where('status', isEqualTo: status);
+        }
+        if (artistId != null) {
+          query = query.where('artist_id', isEqualTo: artistId);
+        }
+        final snapshot = await query.limit(limit).get();
+        if (snapshot.docs.isNotEmpty) {
+          results = snapshot.docs.map((doc) {
+            final data = Map<String, dynamic>.from(doc.data());
+            data['id'] = doc.id;
+            return data;
+          }).toList();
+        }
+      } catch (e) {
+        appPrint('[Firestore] Error getting performances fallback: $e');
       }
-      if (artistId != null) {
-        query = query.where('artist_id', isEqualTo: artistId);
-      }
-      final snapshot = await query.limit(limit).get();
-      if (snapshot.docs.isNotEmpty) {
-        return snapshot.docs.map((doc) {
-          final data = Map<String, dynamic>.from(doc.data());
-          data['id'] = doc.id;
-          return data;
-        }).toList();
-      }
-    } catch (e) {
-      appPrint('[Firestore] Error getting performances fallback: $e');
     }
 
-    return [];
+    if (results.isNotEmpty) {
+      try {
+        final restricted = await SafetyService.getBlockedAndBannedArtistIds();
+        if (restricted.isNotEmpty) {
+          results = results.where((p) {
+            final aId = (p['artist_id'] ?? p['artistId'])?.toString();
+            return aId == null || !restricted.contains(aId);
+          }).toList();
+        }
+      } catch (e) {
+        appPrint('[FirestoreService] Note: Safety filtering error: $e');
+      }
+    }
+
+    return results;
   }
 
   Future<Map<String, dynamic>?> getUserProfileById(String uid) async {

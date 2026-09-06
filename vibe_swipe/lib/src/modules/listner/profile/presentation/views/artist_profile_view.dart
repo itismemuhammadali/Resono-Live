@@ -5,6 +5,7 @@ import '../widgets/artist_info_card.dart';
 import '../widgets/artist_performances_sheet.dart';
 import '../widgets/artist_top_songs_section.dart';
 import 'package:vibe_swipe/src/modules/listner/home/presentation/widgets/sponsored_ad_widgets.dart';
+import 'package:vibe_swipe/src/core/utils/report_block_helper.dart';
 
 
 class ArtistProfileView extends ConsumerStatefulWidget {
@@ -204,7 +205,7 @@ class _ArtistProfileViewState extends ConsumerState<ArtistProfileView> {
     return Scaffold(
       backgroundColor: AppColors.listenerDashboardBg,
       body: _isLoading
-          ? Center(
+          ? const Center(
               child: CircularProgressIndicator(
                 color: AppColors.listenerActiveTab,
                 strokeWidth: 2.5,
@@ -228,6 +229,18 @@ class _ArtistProfileViewState extends ConsumerState<ArtistProfileView> {
                             onFollow: _toggleFollow,
                             performances: _performances,
                             onPerformancesTap: () => _showPerformancesSheet(),
+                            onOptionsTap: () {
+                              ReportBlockHelper.showArtistOptionsModal(
+                                context,
+                                artistId: widget.args.artistId,
+                                artistName: _artist?.name ?? widget.args.artistName,
+                                onArtistBlocked: () {
+                                  if (mounted) {
+                                    Navigator.pop(context);
+                                  }
+                                },
+                              );
+                            },
                           ),
                           28.ph,
                           ArtistTopSongsSection(songs: _artist!.topSongs),

@@ -401,10 +401,14 @@ class AuthController extends ChangeNotifier with Buffers {
       appPrint('[Auth] Apple Sign-In error: $e');
       _setLoading(false);
       final err = e.toString().toLowerCase();
-      if (err.contains('canceled') || err.contains('cancelled')) {
+      if (err.contains('canceled') || err.contains('cancelled') || err.contains('1001')) {
         return false;
       }
-      _setError('Apple Sign-In is natively supported on iOS devices.');
+      if (!kIsWeb && Platform.isAndroid) {
+        _setError('Apple Sign-In is not supported on this device.');
+      } else {
+        _setError('Apple Sign-In failed. Please try again.');
+      }
       return false;
     }
   }

@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:vibe_swipe/src/core/utils/app_logger.dart';
+import 'safety_service.dart';
 
 class CommunityPost {
   final String id;
@@ -288,7 +289,12 @@ class CommunityFirestoreService {
         .collection('comments')
         .orderBy('createdAt', descending: true)
         .snapshots()
-        .map((snap) => snap.docs.map(CommunityComment.fromDoc).toList());
+        .asyncMap((snap) async {
+          final comments = snap.docs.map(CommunityComment.fromDoc).toList();
+          final blockedUsers = await SafetyService.getBlockedUserIds();
+          if (blockedUsers.isEmpty) return comments;
+          return comments.where((c) => !blockedUsers.contains(c.authorId)).toList();
+        });
   }
 
   static Stream<CommunityPost?> watchPostByPerformanceId(String performanceId) {

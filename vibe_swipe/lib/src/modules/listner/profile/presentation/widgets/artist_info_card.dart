@@ -10,6 +10,7 @@ class ArtistInfoCard extends StatelessWidget {
     required this.onFollow,
     this.performances = const [],
     this.onPerformancesTap,
+    this.onOptionsTap,
   });
 
   final ArtistDto artist;
@@ -17,6 +18,7 @@ class ArtistInfoCard extends StatelessWidget {
   final VoidCallback onFollow;
   final List<Map<String, dynamic>> performances;
   final VoidCallback? onPerformancesTap;
+  final VoidCallback? onOptionsTap;
 
   @override
   Widget build(BuildContext context) {
@@ -98,28 +100,58 @@ class ArtistInfoCard extends StatelessWidget {
             ),
           ],
           20.ph,
-          PrimaryElevatedButton(
-            onTap: onFollow,
-            text: isFollowing ? 'Following' : 'Follow',
-            style: TextStyle(
-              fontSize: 15.sp,
-              fontWeight: FontWeight.w600,
-              color: isFollowing ? AppColors.primaryWhite : AppColors.primaryblack,
-              fontFamily: 'Roboto',
-            ),
-            buttonStyle: ElevatedButton.styleFrom(
-              backgroundColor: isFollowing ? AppColors.listenerChipBg : AppColors.listenerYellow,
-              elevation: 0,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(14.r),
-                side: isFollowing
-                    ? BorderSide(
+          Row(
+            children: [
+              Expanded(
+                child: PrimaryElevatedButton(
+                  onTap: onFollow,
+                  text: isFollowing ? 'Following' : 'Follow',
+                  style: TextStyle(
+                    fontSize: 15.sp,
+                    fontWeight: FontWeight.w600,
+                    color: isFollowing ? AppColors.primaryWhite : AppColors.primaryblack,
+                    fontFamily: 'Roboto',
+                  ),
+                  buttonStyle: ElevatedButton.styleFrom(
+                    backgroundColor: isFollowing ? AppColors.listenerChipBg : AppColors.listenerYellow,
+                    elevation: 0,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14.r),
+                      side: isFollowing
+                          ? BorderSide(
+                              color: AppColors.primaryWhite.withValues(alpha: 0.10),
+                              width: 1,
+                            )
+                          : BorderSide.none,
+                    ),
+                  ),
+                ),
+              ),
+              if (onOptionsTap != null) ...[
+                10.pw,
+                GestureDetector(
+                  onTap: onOptionsTap,
+                  child: Container(
+                    height: 48.h,
+                    width: 48.h,
+                    decoration: BoxDecoration(
+                      color: AppColors.listenerChipBg,
+                      borderRadius: BorderRadius.circular(14.r),
+                      border: Border.all(
                         color: AppColors.primaryWhite.withValues(alpha: 0.10),
                         width: 1,
-                      )
-                    : BorderSide.none,
-              ),
-            ),
+                      ),
+                    ),
+                    alignment: Alignment.center,
+                    child: Icon(
+                      Icons.more_vert,
+                      color: AppColors.primaryWhite,
+                      size: 20.sp,
+                    ),
+                  ),
+                ),
+              ],
+            ],
           ),
           if (performances.isNotEmpty && onPerformancesTap != null) ...[
             12.ph,

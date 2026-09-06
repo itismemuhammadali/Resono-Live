@@ -5,6 +5,7 @@ import '../controllers/listener_create_post_controller.dart';
 import '../widgets/discussion_original_post.dart';
 import '../widgets/discussion_reply_card.dart';
 import '../widgets/discussion_reply_input.dart';
+import 'package:vibe_swipe/src/core/utils/report_block_helper.dart';
 
 class ListenerDiscussionDetailView extends ConsumerStatefulWidget {
   const ListenerDiscussionDetailView({
@@ -168,6 +169,15 @@ class _ListenerDiscussionDetailViewState
                             avatarUrl: comment.authorAvatarUrl,
                             isLiked: controller.isCommentLiked(comment.id),
                             onLikeTap: () => controller.toggleCommentLike(comment.id),
+                            onMoreTap: () {
+                              ReportBlockHelper.showCommentOptionsModal(
+                                context,
+                                authorId: comment.authorId,
+                                authorName: comment.authorName,
+                                commentId: comment.id,
+                                commentText: comment.text,
+                              );
+                            },
                           ),
                         ),
                       ),

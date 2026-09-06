@@ -1,4 +1,3 @@
-import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -7,33 +6,44 @@ class AppImagePicker {
   static final _picker = ImagePicker();
 
   static Future<XFile?> fromGallery() async {
-    if (!kIsWeb) {
-      final status = await Permission.photos.request();
-      if (status.isDenied || status.isPermanentlyDenied) return null;
+    try {
+      return await _picker.pickImage(
+        source: ImageSource.gallery,
+        imageQuality: 80,
+      );
+    } catch (e) {
+      debugPrint('[AppImagePicker] Error picking image from gallery: $e');
+      return null;
     }
-    return await _picker.pickImage(
-      source: ImageSource.gallery,
-      imageQuality: 80,
-    );
   }
 
   static Future<XFile?> fromCamera() async {
-    if (!kIsWeb) {
-      final status = await Permission.camera.request();
-      if (status.isDenied || status.isPermanentlyDenied) return null;
+    try {
+      if (!kIsWeb) {
+        final status = await Permission.camera.request();
+        if (status.isPermanentlyDenied) {
+          await openAppSettings();
+          return null;
+        }
+        if (status.isDenied) return null;
+      }
+      return await _picker.pickImage(
+        source: ImageSource.camera,
+        imageQuality: 80,
+      );
+    } catch (e) {
+      debugPrint('[AppImagePicker] Error picking image from camera: $e');
+      return null;
     }
-    return await _picker.pickImage(
-      source: ImageSource.camera,
-      imageQuality: 80,
-    );
   }
 
   static Future<XFile?> videoFromGallery() async {
-    if (!kIsWeb) {
-      final status = await Permission.photos.request();
-      if (status.isDenied || status.isPermanentlyDenied) return null;
+    try {
+      return await _picker.pickVideo(source: ImageSource.gallery);
+    } catch (e) {
+      debugPrint('[AppImagePicker] Error picking video from gallery: $e');
+      return null;
     }
-    return await _picker.pickVideo(source: ImageSource.gallery);
   }
 }
 

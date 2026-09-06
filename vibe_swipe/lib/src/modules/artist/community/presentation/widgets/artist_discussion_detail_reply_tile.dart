@@ -6,11 +6,13 @@ class ArtistDiscussionDetailReplyTile extends StatelessWidget {
     required this.reply,
     this.isLiked = false,
     this.onLikeTap,
+    this.onOptionsTap,
   });
 
   final Map<String, dynamic> reply;
   final bool isLiked;
   final VoidCallback? onLikeTap;
+  final VoidCallback? onOptionsTap;
 
   @override
   Widget build(BuildContext context) {
@@ -88,22 +90,47 @@ class ArtistDiscussionDetailReplyTile extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      author,
-                      style: TextStyle(
-                        fontSize: 14.sp,
-                        fontWeight: FontWeight.w500,
-                        color: AppColors.primaryWhite,
-                      ),
-                    ),
-                    4.ph,
-                    Text(
-                      date,
-                      style: TextStyle(
-                        fontSize: 12.sp,
-                        fontWeight: FontWeight.w400,
-                        color: AppColors.huegrey,
-                      ),
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                author,
+                                style: TextStyle(
+                                  fontSize: 14.sp,
+                                  fontWeight: FontWeight.w500,
+                                  color: AppColors.primaryWhite,
+                                ),
+                              ),
+                              4.ph,
+                              Text(
+                                date,
+                                style: TextStyle(
+                                  fontSize: 12.sp,
+                                  fontWeight: FontWeight.w400,
+                                  color: AppColors.huegrey,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        if (onOptionsTap != null)
+                          GestureDetector(
+                            onTap: onOptionsTap,
+                            behavior: HitTestBehavior.opaque,
+                            child: Padding(
+                              padding: EdgeInsets.only(left: 8.w, bottom: 8.h),
+                              child: Icon(
+                                Icons.more_vert,
+                                color: AppColors.huegrey,
+                                size: 18.sp,
+                              ),
+                            ),
+                          ),
+                      ],
                     ),
                     10.ph,
                     Text(

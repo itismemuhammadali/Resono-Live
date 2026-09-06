@@ -112,7 +112,20 @@ class _ArtistLiveBroadcastViewState extends State<ArtistLiveBroadcastView> {
 
     if (!hasMic) {
       // Microphone is essential for live streaming
-      if (mounted) {
+      final isPermanentlyDenied = await Permission.microphone.isPermanentlyDenied;
+      if (!mounted) return;
+      if (isPermanentlyDenied) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text('Microphone permission is required. Please enable it in Settings.'),
+            action: SnackBarAction(
+              label: 'Settings',
+              onPressed: () => openAppSettings(),
+            ),
+            duration: const Duration(seconds: 5),
+          ),
+        );
+      } else {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Microphone permission is required for live streaming')),
         );

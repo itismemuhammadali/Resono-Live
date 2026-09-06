@@ -11,6 +11,7 @@ class DiscussionReplyCard extends StatelessWidget {
     required this.avatarUrl,
     this.isLiked = false,
     this.onLikeTap,
+    this.onMoreTap,
   });
 
   final String author;
@@ -21,6 +22,7 @@ class DiscussionReplyCard extends StatelessWidget {
   final String avatarUrl;
   final bool isLiked;
   final VoidCallback? onLikeTap;
+  final VoidCallback? onMoreTap;
 
   @override
   Widget build(BuildContext context) {
@@ -58,34 +60,56 @@ class DiscussionReplyCard extends StatelessWidget {
                   children: [
                     Row(
                       children: [
-                        Text(
-                          author,
-                          style: TextStyle(
-                            fontFamily: 'Roboto',
-                            fontSize: 16.sp,
-                            fontWeight: FontWeight.w500,
-                            color: AppColors.primaryWhite,
+                        Expanded(
+                          child: Row(
+                            children: [
+                              Flexible(
+                                child: Text(
+                                  author,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(
+                                    fontFamily: 'Roboto',
+                                    fontSize: 16.sp,
+                                    fontWeight: FontWeight.w500,
+                                    color: AppColors.primaryWhite,
+                                  ),
+                                ),
+                              ),
+                              6.pw,
+                              Text(
+                                '·',
+                                style: TextStyle(
+                                  fontSize: 12.sp,
+                                  fontWeight: FontWeight.w400,
+                                  color: AppColors.coolGray,
+                                ),
+                              ),
+                              6.pw,
+                              Text(
+                                timeAgo,
+                                style: TextStyle(
+                                  fontFamily: 'Roboto',
+                                  fontSize: 12.sp,
+                                  fontWeight: FontWeight.w400,
+                                  color: AppColors.coolGray,
+                                ),
+                              ),
+                            ],
                           ),
                         ),
-                        6.pw,
-                        Text(
-                          'Â·',
-                          style: TextStyle(
-                            fontSize: 12.sp,
-                            fontWeight: FontWeight.w400,
-                            color: AppColors.coolGray,
+                        if (onMoreTap != null)
+                          GestureDetector(
+                            onTap: onMoreTap,
+                            behavior: HitTestBehavior.opaque,
+                            child: Padding(
+                              padding: EdgeInsets.only(left: 8.w),
+                              child: Icon(
+                                Icons.more_vert,
+                                color: AppColors.huegrey,
+                                size: 18.sp,
+                              ),
+                            ),
                           ),
-                        ),
-                        6.pw,
-                        Text(
-                          timeAgo,
-                          style: TextStyle(
-                            fontFamily: 'Roboto',
-                            fontSize: 12.sp,
-                            fontWeight: FontWeight.w400,
-                            color: AppColors.coolGray,
-                          ),
-                        ),
                       ],
                     ),
                     8.ph,

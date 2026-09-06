@@ -4,6 +4,7 @@ import '../widgets/artist_discussion_detail_header.dart';
 import '../widgets/artist_discussion_detail_post_card.dart';
 import '../widgets/artist_discussion_detail_reply_tile.dart';
 import '../widgets/artist_post_detail_comment_input.dart';
+import 'package:vibe_swipe/src/core/utils/report_block_helper.dart';
 
 class ArtistDiscussionDetailView extends ConsumerStatefulWidget {
   const ArtistDiscussionDetailView({super.key, required this.discussion});
@@ -97,6 +98,15 @@ class _ArtistDiscussionDetailViewState
                             },
                             isLiked: controller.isCommentLiked(comment.id),
                             onLikeTap: () => controller.toggleCommentLike(comment.id),
+                            onOptionsTap: () {
+                              ReportBlockHelper.showCommentOptionsModal(
+                                context,
+                                authorId: comment.authorId,
+                                authorName: comment.authorName,
+                                commentId: comment.id,
+                                commentText: comment.text,
+                              );
+                            },
                           ),
                         ),
                       ),

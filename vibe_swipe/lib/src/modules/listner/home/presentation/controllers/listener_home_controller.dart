@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:vibe_swipe/src/core/utils/app_exports.dart';
+import 'package:vibe_swipe/src/core/services/safety_service.dart';
 import '../../domain/entities/post_card_entity.dart';
 
 final listenerHomeControllerProvider =
@@ -45,10 +46,14 @@ class ListenerHomeController extends ChangeNotifier with Buffers {
       final performances = await locator<FirestoreService>().getPerformances(
         limit: 20,
       );
+      final restrictedArtistIds = await SafetyService.getBlockedAndBannedArtistIds();
 
       cards.clear();
       for (final p in performances) {
         final artistId = p['artist_id'] as String? ?? '';
+        if (artistId.isNotEmpty && restrictedArtistIds.contains(artistId)) {
+          continue;
+        }
         String artistName = 'Unknown Artist';
         String artistImageUrl = '';
 
@@ -64,7 +69,6 @@ class ListenerHomeController extends ChangeNotifier with Buffers {
         final title = (p['title'] ?? '').toString();
         final description = (p['description'] ?? '').toString();
         final genres = p['genres'] is List ? (p['genres'] as List).cast<String>() : <String>[];
-        final viewersCount = p['viewers_count'] ?? 0;
         final likesCount = p['likes_count'] ?? 0;
 
         cards.add(PostCardEntity(
