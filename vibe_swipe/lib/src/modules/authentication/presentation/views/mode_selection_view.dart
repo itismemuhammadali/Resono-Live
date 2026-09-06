@@ -1,10 +1,22 @@
 import '../../../../core/utils/app_exports.dart';
+import 'package:vibe_swipe/src/components/initial_permission_sheet.dart';
 
 class ModeSelectionView extends HookConsumerWidget {
   const ModeSelectionView({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    useEffect(() {
+      WidgetsBinding.instance.addPostFrameCallback((_) async {
+        final permissionService = locator<PermissionService>();
+        final hasRequested = await permissionService.hasRequestedInitialPermissions();
+        if (!hasRequested && context.mounted) {
+          await InitialPermissionSheet.show(context);
+        }
+      });
+      return null;
+    }, const []);
+
     return Scaffold(
       backgroundColor: const Color(0xFF11151E),
       body: SafeArea(

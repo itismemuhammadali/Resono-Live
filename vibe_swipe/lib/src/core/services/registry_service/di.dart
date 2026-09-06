@@ -1,5 +1,6 @@
 import 'package:vibe_swipe/src/core/services/agora_service.dart';
 import 'package:vibe_swipe/src/core/services/local_db_service/secure_storage.dart';
+import 'package:vibe_swipe/src/core/services/permission_service.dart';
 import 'package:vibe_swipe/src/core/services/python_api_service.dart';
 import 'package:vibe_swipe/src/core/utils/app_exports.dart';
 
@@ -24,4 +25,5 @@ void setupLocator() {
   locator.registerLazySingleton<PythonApiService>(() => PythonApiService());
   locator.registerLazySingleton<AgoraService>(() => AgoraService());
   locator.registerLazySingleton<RemoteConfigService>(() => RemoteConfigService());
+  locator.registerLazySingleton<PermissionService>(() => PermissionService());
 }
