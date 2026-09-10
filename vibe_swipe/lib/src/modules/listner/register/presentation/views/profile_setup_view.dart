@@ -30,7 +30,9 @@ class ProfileSetupView extends HookConsumerWidget {
           defaultUsername = 'MusicLover';
         }
         if (controller.username.isEmpty) {
-          controller.setUsername(defaultUsername);
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            controller.setUsername(defaultUsername);
+          });
         }
         if (usernameController.text.isEmpty) {
           usernameController.text = defaultUsername;

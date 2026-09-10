@@ -36,7 +36,9 @@ class ArtistSetupView extends HookConsumerWidget {
         }
         if (nameController.text.isEmpty) {
           nameController.text = defaultName;
-          ref.read(artistRegisterControllerProvider).setArtistName(defaultName);
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            ref.read(artistRegisterControllerProvider).setArtistName(defaultName);
+          });
         }
       }
       return null;
