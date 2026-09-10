@@ -9,6 +9,7 @@ import '../widgets/home_card_stack.dart';
 import '../widgets/home_action_buttons.dart';
 import '../../../../../components/like_confetti_overlay.dart';
 import '../../../../../components/meta_ad_placement_widget.dart';
+import 'package:vibe_swipe/src/core/utils/report_block_helper.dart';
 
 
 class ListenerHomeView extends ConsumerStatefulWidget {
@@ -189,6 +190,17 @@ class _ListenerHomeViewState extends ConsumerState<ListenerHomeView> {
                             onCardTap: onCardTap,
                             onBookmarkTap: (index) => notifier.toggleBookmark(index),
                             onFollowTap: (index) => notifier.toggleFollow(index),
+                            onOptionsTap: (index) {
+                              final card = controller.cards[index];
+                              ReportBlockHelper.showArtistOptionsModal(
+                                context,
+                                artistId: card.artistId,
+                                artistName: card.name,
+                                onArtistBlocked: () {
+                                  ref.read(listenerHomeControllerProvider).removeCardsForArtist(card.artistId);
+                                },
+                              );
+                            },
                           ),
               ),
             ),

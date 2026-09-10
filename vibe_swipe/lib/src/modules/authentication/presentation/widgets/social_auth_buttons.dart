@@ -1,10 +1,9 @@
-import 'dart:io';
-import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../../../../core/utils/app_exports.dart';
 import '../../../../components/primary_elevated_button.dart';
 import '../controllers/authentication_controller.dart';
 import '../../../listner/register/presentation/controllers/listener_register_controller.dart';
+import '../../../artist/register/presentation/controllers/artist_register_controller.dart';
 
 class SocialAuthButtons extends ConsumerWidget {
   final VoidCallback? onAuthStarted;
@@ -91,11 +90,17 @@ class SocialAuthButtons extends ConsumerWidget {
       AppRouterGo.pushReplacement(target);
     } else {
       if (AppConfig.userRole == UserRole.artist) {
+        final user = FirebaseAuth.instance.currentUser;
+        final name = user?.displayName ?? locator<FirebaseAuthService>().lastAppleFullName;
+        if (name != null && name.isNotEmpty) {
+          ref.read(artistRegisterControllerProvider).setArtistName(name);
+        }
         AppRouterGo.pushReplacement(artistSetupView);
       } else {
         final user = FirebaseAuth.instance.currentUser;
-        if (user != null && user.displayName != null && user.displayName!.isNotEmpty) {
-          ref.read(listenerRegisterControllerProvider).setUsername(user.displayName!);
+        final name = user?.displayName ?? locator<FirebaseAuthService>().lastAppleFullName;
+        if (name != null && name.isNotEmpty) {
+          ref.read(listenerRegisterControllerProvider).setUsername(name);
         }
         AppRouterGo.pushReplacement(profileSetupView);
       }

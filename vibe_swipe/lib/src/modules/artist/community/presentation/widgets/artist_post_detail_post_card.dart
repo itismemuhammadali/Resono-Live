@@ -90,6 +90,7 @@ class ArtistPostDetailPostCard extends StatelessWidget {
                     context,
                     authorName: post.authorName.isNotEmpty ? post.authorName : 'User',
                     postId: post.id,
+                    authorId: post.authorId,
                   );
                 },
                 child: Padding(

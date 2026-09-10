@@ -264,6 +264,81 @@ class LoginView extends HookConsumerWidget {
                   32.ph,
                   const SocialAuthButtons(),
                   16.ph,
+                  Center(
+                    child: Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 16.w),
+                      child: Text.rich(
+                        TextSpan(
+                          text: "By signing in or registering, you agree to our ",
+                          style: TextStyle(
+                            fontFamily: 'Roboto',
+                            fontSize: 12.sp,
+                            color: AppColors.santagrey,
+                          ),
+                          children: [
+                            WidgetSpan(
+                              alignment: PlaceholderAlignment.middle,
+                              child: GestureDetector(
+                                onTap: () => AppRouterGo.push(
+                                  termsAndPoliciesView,
+                                  extra: {'sectionId': 'terms', 'isArtist': AppConfig.userRole == UserRole.artist},
+                                ),
+                                child: Text(
+                                  "Terms of Use (EULA)",
+                                  style: TextStyle(
+                                    fontFamily: 'Roboto',
+                                    fontSize: 12.sp,
+                                    color: AppColors.listenerYellow,
+                                    fontWeight: FontWeight.w600,
+                                    decoration: TextDecoration.underline,
+                                    decorationColor: AppColors.listenerYellow,
+                                  ),
+                                ),
+                              ),
+                            ),
+                            TextSpan(
+                              text: " and ",
+                              style: TextStyle(
+                                fontFamily: 'Roboto',
+                                fontSize: 12.sp,
+                                color: AppColors.santagrey,
+                              ),
+                            ),
+                            WidgetSpan(
+                              alignment: PlaceholderAlignment.middle,
+                              child: GestureDetector(
+                                onTap: () => AppRouterGo.push(
+                                  termsAndPoliciesView,
+                                  extra: {'sectionId': 'privacy', 'isArtist': AppConfig.userRole == UserRole.artist},
+                                ),
+                                child: Text(
+                                  "Privacy Policy",
+                                  style: TextStyle(
+                                    fontFamily: 'Roboto',
+                                    fontSize: 12.sp,
+                                    color: AppColors.listenerYellow,
+                                    fontWeight: FontWeight.w600,
+                                    decoration: TextDecoration.underline,
+                                    decorationColor: AppColors.listenerYellow,
+                                  ),
+                                ),
+                              ),
+                            ),
+                            TextSpan(
+                              text: ".",
+                              style: TextStyle(
+                                fontFamily: 'Roboto',
+                                fontSize: 12.sp,
+                                color: AppColors.santagrey,
+                              ),
+                            ),
+                          ],
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
+                  ),
+                  16.ph,
                 ],
               ),
             ),

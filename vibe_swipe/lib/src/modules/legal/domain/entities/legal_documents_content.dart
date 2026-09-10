@@ -24,12 +24,20 @@ class LegalDocumentsContent {
       iconName: 'gavel',
       summary: 'Users 13+, neutral intermediary status, spam prohibition, anti-harassment, and off-platform engagement rules.',
       listenerContent: '''
-# 1. Terms & Conditions
+# 1. Terms of Use & EULA Agreement
 
-**Last Updated: August 13, 2026**
+**Last Updated: September 10, 2026**
 **Entity: VibeSwipe LLC**
 
-Users must be 13+ to sign up on the platform as a listener or an artist under US law. VibeSwipe operates purely as a neutral intermediary. Spam or fake engagement is against the company policy. Any form of harassment and off-platform engagement is strictly prohibited.
+Users must be 13+ to sign up on the platform as a listener or an artist under US law. VibeSwipe operates purely as a neutral intermediary.
+
+---
+
+### 0. End User License Agreement (EULA) & Zero-Tolerance Policy
+• **Zero-Tolerance Policy:** VibeSwipe maintains a strict zero-tolerance policy for objectionable content and abusive users.
+• **Prohibited Content:** Users are strictly forbidden from posting, transmitting, or sharing objectionable content, including but not limited to hate speech, harassment, bullying, sexually explicit content, defamation, violence, or spam.
+• **Immediate Action & Termination:** Any user found posting objectionable content or engaging in abusive behavior will have their content removed immediately and their account suspended or permanently banned.
+• **Flagging & Blocking Tools:** Users are provided built-in mechanisms to report objectionable content and permanently block abusive users. Blocking immediately removes that user's content from your feed and alerts our moderation team.
 
 ---
 
@@ -43,12 +51,20 @@ Users must be 13+ to sign up on the platform as a listener or an artist under US
 • **Enforcement:** Accounts violating these terms face immediate suspension or permanent termination.
 ''',
       artistContent: '''
-# 1. Terms & Conditions (Artist & Performer)
+# 1. Terms of Use & EULA Agreement (Artist & Performer)
 
-**Last Updated: August 13, 2026**
+**Last Updated: September 10, 2026**
 **Entity: VibeSwipe LLC**
 
-Users must be 13+ to sign up on the platform as a listener or an artist under US law. VibeSwipe operates purely as a neutral intermediary. Spam or fake engagement is against the company policy. Any form of harassment and off-platform engagement is strictly prohibited.
+Users must be 13+ to sign up on the platform as a listener or an artist under US law. VibeSwipe operates purely as a neutral intermediary.
+
+---
+
+### 0. End User License Agreement (EULA) & Zero-Tolerance Policy
+• **Zero-Tolerance Policy:** VibeSwipe maintains a strict zero-tolerance policy for objectionable content and abusive users.
+• **Prohibited Content & Streams:** Artists are strictly forbidden from uploading or broadcasting objectionable content, including hate speech, pornography/nudity, violence, copyright-infringing audio, or harassment.
+• **Immediate Action & Termination:** Any artist found distributing objectionable content will have their content removed immediately, live stream terminated, and account permanently banned.
+• **Moderation & Reporting:** All performances, community posts, and comments are subject to real-time moderation, user flagging, and developer review.
 
 ---
 

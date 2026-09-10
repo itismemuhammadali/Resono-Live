@@ -27,25 +27,44 @@ class ArtistSetupView extends HookConsumerWidget {
     useEffect(() {
       final user = FirebaseAuth.instance.currentUser;
       if (user != null) {
-        if (nameController.text.isEmpty && user.displayName != null && user.displayName!.isNotEmpty) {
-          nameController.text = user.displayName!;
+        String defaultName = user.displayName ?? '';
+        if (defaultName.isEmpty && user.email != null && user.email!.isNotEmpty) {
+          defaultName = user.email!.split('@').first;
+        }
+        if (defaultName.isEmpty) {
+          defaultName = 'Artist';
+        }
+        if (nameController.text.isEmpty) {
+          nameController.text = defaultName;
+          ref.read(artistRegisterControllerProvider).setArtistName(defaultName);
         }
       }
       return null;
     }, []);
 
     void onContinue() async {
-      final isFormValid = formKey.currentState!.validate();
+      final isFormValid = formKey.currentState?.validate() ?? true;
       final hasGenre = registerController.selectedGenres.isNotEmpty;
       genreError.value = !hasGenre;
       if (isFormValid && hasGenre) {
         final uid = locator<FirebaseAuthService>().getUid();
         if (uid != null) {
+          final user = FirebaseAuth.instance.currentUser;
+          final fallbackName = user?.displayName?.isNotEmpty == true
+              ? user!.displayName!
+              : (user?.email?.split('@').first ?? 'Artist');
+          final finalArtistName = nameController.text.trim().isNotEmpty
+              ? nameController.text.trim()
+              : fallbackName;
+          final finalBio = bioController.text.trim().isNotEmpty
+              ? bioController.text.trim()
+              : 'Artist on VibeSwipe';
+
           String? profileImageUrl;
           if (registerController.pickedImageBytes != null) {
             profileImageUrl = await locator<FirestoreService>().uploadProfileImage(uid, registerController.pickedImageBytes!);
           } else {
-            final photo = FirebaseAuth.instance.currentUser?.photoURL;
+            final photo = user?.photoURL;
             if (photo != null && photo.isNotEmpty) {
               profileImageUrl = photo;
             }
@@ -56,8 +75,8 @@ class ArtistSetupView extends HookConsumerWidget {
           }
           await locator<FirestoreService>().saveArtistProfile(
             uid: uid,
-            artistName: nameController.text.trim(),
-            bio: bioController.text.trim(),
+            artistName: finalArtistName,
+            bio: finalBio,
             genres: registerController.selectedGenres.toList(),
             spotifyUrl: registerController.spotifyUrl,
             youtubeUrl: registerController.youtubeUrl,
@@ -144,12 +163,11 @@ class ArtistSetupView extends HookConsumerWidget {
                     onChanged: (val) => ref
                         .read(artistRegisterControllerProvider)
                         .setArtistName(val),
-                    validator: (value) =>
-                        AppValidators.validateEmpty(value, 'Artist name is required'),
+                    validator: null,
                   ),
                   24.ph,
                   ArtistLabeledField(
-                    label: "Bio",
+                    label: "Bio (Optional)",
                     hintText: "Tell your story...",
                     controller: bioController,
                     maxLines: 5,
@@ -159,8 +177,7 @@ class ArtistSetupView extends HookConsumerWidget {
                     textAlignVertical: TextAlignVertical.top,
                     onChanged: (val) =>
                         ref.read(artistRegisterControllerProvider).setBio(val),
-                    validator: (value) =>
-                        AppValidators.validateEmpty(value, 'Bio is required'),
+                    validator: null,
                   ),
                   24.ph,
                   Text(

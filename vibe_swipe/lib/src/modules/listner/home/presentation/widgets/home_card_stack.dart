@@ -14,6 +14,7 @@ class HomeCardStack extends StatelessWidget {
     this.onBookmarkTap,
     this.onCardTap,
     this.onFollowTap,
+    this.onOptionsTap,
     this.isPlaying = false,
     this.isFollowedAt,
     this.isBookmarkedAt,
@@ -28,6 +29,7 @@ class HomeCardStack extends StatelessWidget {
   final ValueChanged<int>? onBookmarkTap;
   final ValueChanged<int>? onCardTap;
   final ValueChanged<int>? onFollowTap;
+  final ValueChanged<int>? onOptionsTap;
   final bool isPlaying;
   final bool Function(int index)? isFollowedAt;
   final bool Function(int index)? isBookmarkedAt;
@@ -92,6 +94,7 @@ class HomeCardStack extends StatelessWidget {
                         onBookmarkTap: onBookmarkTap != null ? () => onBookmarkTap!(index) : null,
                         onCardTap: onCardTap != null ? () => onCardTap!(index) : null,
                         onFollowTap: onFollowTap != null ? () => onFollowTap!(index) : null,
+                        onOptionsTap: onOptionsTap != null ? () => onOptionsTap!(index) : null,
                       ),
                     ),
                   );

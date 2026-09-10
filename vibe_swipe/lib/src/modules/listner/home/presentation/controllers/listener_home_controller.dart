@@ -277,4 +277,11 @@ class ListenerHomeController extends ChangeNotifier with Buffers {
       type: 'live',
     ),
   ];
+
+  /// Instantly removes all performance cards belonging to an artist (e.g. upon block/report)
+  void removeCardsForArtist(String artistId) {
+    if (artistId.isEmpty) return;
+    cards.removeWhere((c) => c.artistId == artistId);
+    notifyListeners();
+  }
 }

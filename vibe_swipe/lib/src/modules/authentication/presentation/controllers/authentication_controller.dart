@@ -397,14 +397,26 @@ class AuthController extends ChangeNotifier with Buffers {
         _setLoading(false);
         return false;
       }
+      final appleName = _authService.lastAppleFullName;
+      final existingName = credential.user!.displayName;
+      final resolvedName = (appleName != null && appleName.isNotEmpty)
+          ? appleName
+          : (existingName != null && existingName.isNotEmpty)
+              ? existingName
+              : (credential.user!.email != null && credential.user!.email!.isNotEmpty
+                  ? credential.user!.email!.split('@').first
+                  : (AppConfig.userRole == UserRole.artist ? 'Artist' : 'Music Lover'));
+
       if (roleStr == null) {
         await _firestoreService.createUserData(
           uid: uid,
-          name: credential.user!.displayName ?? 'User',
+          name: resolvedName,
           email: credential.user!.email ?? '',
           role: AppConfig.userRole,
           profileImageUrl: credential.user!.photoURL,
         );
+      } else if (resolvedName != 'Artist' && resolvedName != 'Music Lover') {
+        await _firestoreService.updateUserData(uid, {'name': resolvedName});
       }
 
       await _authHandler.setupUser(credential.user, true);

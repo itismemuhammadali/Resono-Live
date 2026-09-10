@@ -104,9 +104,22 @@ class SafetyService {
         'createdAt': FieldValue.serverTimestamp(),
       });
 
+      // Auto-notify developer of inappropriate/abusive user report
+      final reportRef = _db.collection('reports').doc();
+      batch.set(reportRef, {
+        'reporterId': uid,
+        'reportedUserId': targetUserId,
+        'reportedUserName': targetUserName,
+        'targetType': 'blocked_user',
+        'targetId': targetUserId,
+        'reason': 'User permanently blocked (Auto-reported to developer for moderation review)',
+        'createdAt': FieldValue.serverTimestamp(),
+        'status': 'pending',
+      });
+
       await batch.commit();
       invalidateCache();
-      debugPrint('[SafetyService] User $targetUserId permanently blocked by $uid');
+      debugPrint('[SafetyService] User $targetUserId permanently blocked by $uid & reported to developer');
     } catch (e) {
       debugPrint('[SafetyService] Error blocking user: $e');
       rethrow;
@@ -137,6 +150,30 @@ class SafetyService {
     } catch (e) {
       debugPrint('[SafetyService] Error reporting artist: $e');
       rethrow;
+    }
+  }
+
+  /// Reports generic content (performance, song, post)
+  static Future<void> reportContent({
+    required String contentType,
+    required String contentId,
+    required String reason,
+  }) async {
+    final uid = _currentUserId;
+    if (uid == null) return;
+
+    try {
+      await _db.collection('reports').add({
+        'reporterId': uid,
+        'targetType': contentType.toLowerCase(),
+        'targetId': contentId,
+        'reason': reason,
+        'createdAt': FieldValue.serverTimestamp(),
+        'status': 'pending',
+      });
+      debugPrint('[SafetyService] Content $contentId ($contentType) reported by $uid');
+    } catch (e) {
+      debugPrint('[SafetyService] Error reporting content: $e');
     }
   }
 

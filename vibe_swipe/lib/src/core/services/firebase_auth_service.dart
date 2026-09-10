@@ -140,6 +140,9 @@ class FirebaseAuthService {
     }
   }
 
+  String? _lastAppleFullName;
+  String? get lastAppleFullName => _lastAppleFullName;
+
   Future<UserCredential> signInWithApple() async {
     try {
       WebAuthenticationOptions? webOptions;
@@ -166,6 +169,19 @@ class FirebaseAuthService {
       );
 
       final userCredential = await _auth.signInWithCredential(credential);
+      final user = userCredential.user;
+
+      // Extract name provided by Apple (Apple only provides this on the first authorization)
+      final givenName = appleCredential.givenName ?? '';
+      final familyName = appleCredential.familyName ?? '';
+      final fullName = '$givenName $familyName'.trim();
+      if (fullName.isNotEmpty) {
+        _lastAppleFullName = fullName;
+        if (user != null) {
+          await user.updateDisplayName(fullName);
+        }
+      }
+
       appPrint('[FirebaseAuth] Apple Sign-In success: ${userCredential.user?.uid}');
       return userCredential;
     } on FirebaseAuthException catch (e) {

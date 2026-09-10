@@ -6,6 +6,7 @@ import '../widgets/artist_performances_sheet.dart';
 import '../widgets/artist_top_songs_section.dart';
 import 'package:vibe_swipe/src/modules/listner/home/presentation/widgets/sponsored_ad_widgets.dart';
 import 'package:vibe_swipe/src/core/utils/report_block_helper.dart';
+import 'package:vibe_swipe/src/modules/listner/home/presentation/controllers/listener_home_controller.dart';
 
 
 class ArtistProfileView extends ConsumerStatefulWidget {
@@ -235,6 +236,7 @@ class _ArtistProfileViewState extends ConsumerState<ArtistProfileView> {
                                 artistId: widget.args.artistId,
                                 artistName: _artist?.name ?? widget.args.artistName,
                                 onArtistBlocked: () {
+                                  ref.read(listenerHomeControllerProvider).removeCardsForArtist(widget.args.artistId);
                                   if (mounted) {
                                     Navigator.pop(context);
                                   }

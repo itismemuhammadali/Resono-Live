@@ -13,6 +13,7 @@ class HomeSwipeCard extends StatelessWidget {
     this.onBookmarkTap,
     this.onCardTap,
     this.onFollowTap,
+    this.onOptionsTap,
     this.isPlaying = false,
     this.isFollowed = false,
     this.isBookmarked = false,
@@ -27,6 +28,7 @@ class HomeSwipeCard extends StatelessWidget {
   final VoidCallback? onBookmarkTap;
   final VoidCallback? onCardTap;
   final VoidCallback? onFollowTap;
+  final VoidCallback? onOptionsTap;
   final bool isPlaying;
   final bool isFollowed;
   final bool isBookmarked;
@@ -263,6 +265,25 @@ class HomeSwipeCard extends StatelessWidget {
                         ],
                       ),
                     ),
+                    if (onOptionsTap != null) ...[
+                      14.ph,
+                      GestureDetector(
+                        onTap: onOptionsTap,
+                        child: Container(
+                          width: 38.w,
+                          height: 38.w,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: Colors.black.withValues(alpha: 0.35),
+                          ),
+                          child: Icon(
+                            Icons.more_horiz_rounded,
+                            color: AppColors.primaryWhite,
+                            size: 22.sp,
+                          ),
+                        ),
+                      ),
+                    ],
                   ],
                 ),
               ],

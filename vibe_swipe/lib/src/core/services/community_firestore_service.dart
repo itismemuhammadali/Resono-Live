@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:vibe_swipe/src/core/utils/app_logger.dart';
+import 'package:vibe_swipe/src/core/utils/content_filter.dart';
 import 'safety_service.dart';
 
 class CommunityPost {
@@ -259,6 +260,10 @@ class CommunityFirestoreService {
     required String text,
     String authorAvatarUrl = '',
   }) async {
+    if (ContentFilter.isObjectionable(text)) {
+      throw Exception('Your comment contains prohibited or objectionable language.');
+    }
+
     final commentsRef = _db
         .collection(_collection)
         .doc(postId)

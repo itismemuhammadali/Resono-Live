@@ -324,19 +324,19 @@ class ReportBlockHelper {
         message: const Text('Why are you reporting this content?'),
         actions: [
           CupertinoActionSheetAction(
-            onPressed: () => _handleReportSubmitted(ctx, 'Inappropriate Content'),
+            onPressed: () => _handleReportSubmitted(ctx, reason: 'Inappropriate Content', contentType: contentType, contentId: contentId),
             child: const Text('Inappropriate Content'),
           ),
           CupertinoActionSheetAction(
-            onPressed: () => _handleReportSubmitted(ctx, 'Spam or Scam'),
+            onPressed: () => _handleReportSubmitted(ctx, reason: 'Spam or Scam', contentType: contentType, contentId: contentId),
             child: const Text('Spam or Scam'),
           ),
           CupertinoActionSheetAction(
-            onPressed: () => _handleReportSubmitted(ctx, 'Harassment or Bullying'),
+            onPressed: () => _handleReportSubmitted(ctx, reason: 'Harassment or Bullying', contentType: contentType, contentId: contentId),
             child: const Text('Harassment or Bullying'),
           ),
           CupertinoActionSheetAction(
-            onPressed: () => _handleReportSubmitted(ctx, 'Hate Speech'),
+            onPressed: () => _handleReportSubmitted(ctx, reason: 'Hate Speech', contentType: contentType, contentId: contentId),
             child: const Text('Hate Speech'),
           ),
         ],
@@ -349,30 +349,46 @@ class ReportBlockHelper {
     );
   }
 
-  static void _handleReportSubmitted(BuildContext context, String reason) {
+  static void _handleReportSubmitted(
+    BuildContext context, {
+    required String reason,
+    required String contentType,
+    required String contentId,
+  }) async {
     Navigator.pop(context);
-    showCupertinoDialog(
-      context: context,
-      builder: (ctx) => CupertinoAlertDialog(
-        title: const Text('Report Submitted'),
-        content: const Text(
-          'Thank you for bringing this to our attention. Our safety team will review this report within 24 hours.',
-        ),
-        actions: [
-          CupertinoDialogAction(
-            child: const Text('OK'),
-            onPressed: () => Navigator.pop(ctx),
-          ),
-        ],
-      ),
+    await SafetyService.reportContent(
+      contentType: contentType,
+      contentId: contentId,
+      reason: reason,
     );
+    if (context.mounted) {
+      showCupertinoDialog(
+        context: context,
+        builder: (ctx) => CupertinoAlertDialog(
+          title: const Text('Report Submitted'),
+          content: const Text(
+            'Thank you for bringing this to our attention. Our safety team will review this report within 24 hours.',
+          ),
+          actions: [
+            CupertinoDialogAction(
+              child: const Text('OK'),
+              onPressed: () => Navigator.pop(ctx),
+            ),
+          ],
+        ),
+      );
+    }
   }
 
   static void showPostOptionsModal(
     BuildContext context, {
     required String authorName,
     required String postId,
+    String? authorId,
+    VoidCallback? onBlockComplete,
   }) {
+    final effectiveTargetUserId = (authorId != null && authorId.isNotEmpty) ? authorId : postId;
+
     showCupertinoModalPopup(
       context: context,
       builder: (ctx) => CupertinoActionSheet(
@@ -390,7 +406,12 @@ class ReportBlockHelper {
             isDestructiveAction: true,
             onPressed: () {
               Navigator.pop(ctx);
-              showBlockUserDialog(context, targetUserId: postId, targetUsername: authorName);
+              showBlockUserDialog(
+                context,
+                targetUserId: effectiveTargetUserId,
+                targetUsername: authorName,
+                onBlockComplete: onBlockComplete,
+              );
             },
             child: Text('Block $authorName'),
           ),
