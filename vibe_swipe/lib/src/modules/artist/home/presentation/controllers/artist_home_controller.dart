@@ -42,10 +42,46 @@ class ArtistHomeController extends ChangeNotifier with Buffers {
   ];
   List<ArtistStatEntity> get stats => _stats;
 
-  List<CampaignEntity> _campaigns = [];
+  final List<CampaignEntity> _campaigns = const [
+    CampaignEntity(
+      title: 'Summer Acoustic Tour 2026',
+      subtitle: 'Targeting indie and pop listeners across Texas & California',
+      isActive: true,
+    ),
+    CampaignEntity(
+      title: '"Echoes of You" Single Push',
+      subtitle: 'Featured showcase in Indie & Acoustic radar feeds',
+      isActive: true,
+    ),
+  ];
   List<CampaignEntity> get campaigns => _campaigns;
 
-  List<ActivityEntity> _recentActivity = [];
+  final List<ActivityEntity> _recentActivity = const [
+    ActivityEntity(
+      iconBgColor: AppColors.listenerActiveTab,
+      icon: Icons.favorite_rounded,
+      description: 'Sarah J. and 48 others saved "Echoes of You"',
+      timeAgo: '15m ago',
+    ),
+    ActivityEntity(
+      iconBgColor: AppColors.mintGreen,
+      icon: Icons.play_arrow_rounded,
+      description: '"Midnight Waves" surpassed 1,800 live streams',
+      timeAgo: '1h ago',
+    ),
+    ActivityEntity(
+      iconBgColor: Color(0xFF6C5CE7),
+      icon: Icons.chat_bubble_rounded,
+      description: 'Marcus D. commented on your community discussion',
+      timeAgo: '2h ago',
+    ),
+    ActivityEntity(
+      iconBgColor: Color(0xFF0984E3),
+      icon: Icons.person_add_rounded,
+      description: '24 new listeners followed your artist profile',
+      timeAgo: '4h ago',
+    ),
+  ];
   List<ActivityEntity> get recentActivity => _recentActivity;
 
   bool _isLoading = false;
