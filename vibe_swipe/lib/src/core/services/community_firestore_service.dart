@@ -36,6 +36,13 @@ class CommunityPost {
 
   factory CommunityPost.fromDoc(DocumentSnapshot doc) {
     final data = doc.data() as Map<String, dynamic>;
+    DateTime createdAtDate = DateTime.now();
+    final rawCreated = data['createdAt'];
+    if (rawCreated is Timestamp) {
+      createdAtDate = rawCreated.toDate();
+    } else if (rawCreated is String) {
+      createdAtDate = DateTime.tryParse(rawCreated) ?? DateTime.now();
+    }
     return CommunityPost(
       id: doc.id,
       title: (data['title'] ?? '').toString(),
@@ -46,10 +53,10 @@ class CommunityPost {
       authorRole: (data['authorRole'] ?? '').toString(),
       authorAvatarUrl: (data['authorAvatarUrl'] ?? '').toString(),
       performanceId: (data['performanceId'] ?? '').toString(),
-      likesCount: data['likesCount'] ?? 0,
-      repliesCount: data['repliesCount'] ?? 0,
+      likesCount: (data['likesCount'] as num?)?.toInt() ?? 0,
+      repliesCount: (data['repliesCount'] as num?)?.toInt() ?? 0,
       likedBy: List<String>.from(data['likedBy'] ?? []),
-      createdAt: (data['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
+      createdAt: createdAtDate,
     );
   }
 
@@ -102,6 +109,13 @@ class CommunityComment {
 
   factory CommunityComment.fromDoc(DocumentSnapshot doc) {
     final data = doc.data() as Map<String, dynamic>;
+    DateTime createdAtDate = DateTime.now();
+    final rawCreated = data['createdAt'];
+    if (rawCreated is Timestamp) {
+      createdAtDate = rawCreated.toDate();
+    } else if (rawCreated is String) {
+      createdAtDate = DateTime.tryParse(rawCreated) ?? DateTime.now();
+    }
     return CommunityComment(
       id: doc.id,
       authorId: (data['authorId'] ?? '').toString(),
@@ -109,8 +123,8 @@ class CommunityComment {
       authorRole: (data['authorRole'] ?? '').toString(),
       authorAvatarUrl: (data['authorAvatarUrl'] ?? '').toString(),
       text: (data['text'] ?? '').toString(),
-      createdAt: (data['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
-      likesCount: data['likesCount'] ?? 0,
+      createdAt: createdAtDate,
+      likesCount: (data['likesCount'] as num?)?.toInt() ?? 0,
       likedBy: List<String>.from(data['likedBy'] ?? []),
     );
   }
@@ -158,27 +172,35 @@ class CommunityFirestoreService {
   static Stream<List<CommunityPost>> watchAllPosts() {
     return _db
         .collection(_collection)
-        .orderBy('createdAt', descending: true)
         .snapshots()
-        .map((snap) => snap.docs.map(CommunityPost.fromDoc).toList());
+        .map((snap) {
+          final posts = snap.docs.map(CommunityPost.fromDoc).toList();
+          posts.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+          return posts;
+        });
   }
 
   static Stream<List<CommunityPost>> watchPostsByAuthor(String authorId) {
     return _db
         .collection(_collection)
         .where('authorId', isEqualTo: authorId)
-        .orderBy('createdAt', descending: true)
         .snapshots()
-        .map((snap) => snap.docs.map(CommunityPost.fromDoc).toList());
+        .map((snap) {
+          final posts = snap.docs.map(CommunityPost.fromDoc).toList();
+          posts.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+          return posts;
+        });
   }
 
   static Stream<List<CommunityPost>> watchRecentPosts({int limit = 3}) {
     return _db
         .collection(_collection)
-        .orderBy('createdAt', descending: true)
-        .limit(limit)
         .snapshots()
-        .map((snap) => snap.docs.map(CommunityPost.fromDoc).toList());
+        .map((snap) {
+          final posts = snap.docs.map(CommunityPost.fromDoc).toList();
+          posts.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+          return posts.take(limit).toList();
+        });
   }
 
   static Future<void> deletePost(String postId) async {

@@ -67,7 +67,6 @@ class ArtistPerformancesController extends ChangeNotifier with Buffers {
       final snapshot = await FirebaseFirestore.instance
           .collection('performances')
           .where('artist_id', isEqualTo: uid)
-          .orderBy('createdAt', descending: true)
           .get();
 
       upcomingItems.clear();
@@ -80,13 +79,22 @@ class ArtistPerformancesController extends ChangeNotifier with Buffers {
         final status = p['status'] ?? 'upcoming';
         final videoUrl = p['videoUrl'] ?? '';
         final type = (p['type'] ?? 'live').toString();
+
+        DateTime parsedDate = DateTime.now();
+        final rawCreated = p['createdAt'];
+        if (rawCreated is Timestamp) {
+          parsedDate = rawCreated.toDate();
+        } else if (rawCreated is String) {
+          parsedDate = DateTime.tryParse(rawCreated) ?? DateTime.now();
+        }
+
         final entity = PerformanceEntity(
           id: doc.id,
           title: p['title'] ?? '',
           thumbnailUrl: p['thumbnailUrl'] ?? '',
           status: _parseStatus(status),
-          date: (p['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
-          viewCount: p['viewers_count'] ?? 0,
+          date: parsedDate,
+          viewCount: (p['viewers_count'] as num?)?.toInt() ?? 0,
           liveCount: 0,
           description: p['description'],
           category: p['genres'] is List && (p['genres'] as List).isNotEmpty ? p['genres'][0] : null,
@@ -115,6 +123,10 @@ class ArtistPerformancesController extends ChangeNotifier with Buffers {
             break;
         }
       }
+      allItems.sort((a, b) => b.date.compareTo(a.date));
+      upcomingItems.sort((a, b) => b.date.compareTo(a.date));
+      pastItems.sort((a, b) => b.date.compareTo(a.date));
+      recordedItems.sort((a, b) => b.date.compareTo(a.date));
       notifyListeners();
     } catch (e) {
       appPrint('[Performances] Error fetching performances: $e');

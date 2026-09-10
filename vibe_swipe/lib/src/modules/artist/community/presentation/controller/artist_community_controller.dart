@@ -63,7 +63,6 @@ class ArtistCommunityController extends ChangeNotifier with Buffers {
       final snapshot = await FirebaseFirestore.instance
           .collection('performances')
           .where('artist_id', isEqualTo: uid)
-          .orderBy('createdAt', descending: true)
           .get();
 
       _availablePerformances = snapshot.docs
