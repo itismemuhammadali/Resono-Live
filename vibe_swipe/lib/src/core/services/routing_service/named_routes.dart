@@ -1,6 +1,8 @@
 // ignore_for_file: strict_top_level_inference
 
 // This is also known as declerative routing
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../utils/app_exports.dart';
 import 'package:vibe_swipe/src/modules/authentication/presentation/views/mode_selection_view.dart';
 import '../../../modules/authentication/presentation/views/onboarding_view.dart';
@@ -72,6 +74,31 @@ class AppRouterGo {
       appRouter.routerDelegate.navigatorKey.currentContext!;
 
   static final appRouter = GoRouter(
+    initialLocation: '/',
+    redirect: (context, state) async {
+      if (state.matchedLocation != '/') return null;
+      final fbUser = FirebaseAuth.instance.currentUser;
+      if (fbUser == null) return null; // not logged in → normal flow
+      try {
+        final roleStr = await FirebaseFirestore.instance
+            .collection('users')
+            .doc(fbUser.uid)
+            .get()
+            .timeout(const Duration(seconds: 3))
+            .then((d) => d.data()?['role'] as String?);
+        final role = roleStr?.toLowerCase();
+        if (role == 'artist') {
+          AppConfig.userRole = UserRole.artist;
+          await AuthHandler.ref.init();
+          return artistDashboardView;
+        } else if (role == 'listener') {
+          AppConfig.userRole = UserRole.listener;
+          await AuthHandler.ref.init();
+          return listenerDashboardView;
+        }
+      } catch (_) {}
+      return null; // on any error → fall through to ModeSelectionView
+    },
     routes: [
       GoRoute(
         path: '/',

@@ -1,3 +1,4 @@
+import 'dart:io' show Platform;
 import 'package:flutter/foundation.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -7,6 +8,14 @@ class AppImagePicker {
 
   static Future<XFile?> fromGallery() async {
     try {
+      if (!kIsWeb && Platform.isIOS) {
+        final status = await Permission.photos.request();
+        if (status.isPermanentlyDenied) {
+          await openAppSettings();
+          return null;
+        }
+        if (status.isDenied) return null;
+      }
       return await _picker.pickImage(
         source: ImageSource.gallery,
         imageQuality: 80,
@@ -39,6 +48,14 @@ class AppImagePicker {
 
   static Future<XFile?> videoFromGallery() async {
     try {
+      if (!kIsWeb && Platform.isIOS) {
+        final status = await Permission.photos.request();
+        if (status.isPermanentlyDenied) {
+          await openAppSettings();
+          return null;
+        }
+        if (status.isDenied) return null;
+      }
       return await _picker.pickVideo(source: ImageSource.gallery);
     } catch (e) {
       debugPrint('[AppImagePicker] Error picking video from gallery: $e');

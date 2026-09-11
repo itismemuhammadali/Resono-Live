@@ -8,8 +8,12 @@ import '../utils/app_logger.dart';
 class FirebaseAuthService {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final GoogleSignIn _googleSignIn = GoogleSignIn(
-    serverClientId:
-        '367306858996-l8k5q7fsg6g8f0honpm1od0gocshpd8d.apps.googleusercontent.com',
+    clientId: (!kIsWeb && Platform.isIOS)
+        ? '367306858996-oepl42avutap73h38qejqco3klqo40vp.apps.googleusercontent.com'
+        : null,
+    serverClientId: (!kIsWeb && !Platform.isIOS)
+        ? '367306858996-l8k5q7fsg6g8f0honpm1od0gocshpd8d.apps.googleusercontent.com'
+        : null,
   );
 
   User? get currentUser => _auth.currentUser;

@@ -5,6 +5,7 @@ import '../../presentation/widgets/social_auth_buttons.dart';
 import '../../../../components/primary_elevated_button.dart';
 import '../../../../components/custom_textfield.dart';
 import '../../../../components/auth_logo_header.dart';
+import '../../presentation/widgets/auth_back_button.dart';
 
 class LoginView extends HookConsumerWidget {
   const LoginView({super.key});
@@ -80,6 +81,8 @@ class LoginView extends HookConsumerWidget {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                   10.ph,
+                  AuthBackButton(onTap: () => AppRouterGo.pushRemoveUntil('/')),
+                  28.ph,
                   const AuthLogoHeader(),
                   28.ph,
                   Text(
@@ -261,8 +264,42 @@ class LoginView extends HookConsumerWidget {
                       elevation: 0,
                     ),
                   ),
-                  32.ph,
+                  24.ph,
                   const SocialAuthButtons(),
+                  16.ph,
+                  Center(
+                    child: GestureDetector(
+                      onTap: () {
+                        AppConfig.userRole = AppConfig.userRole == UserRole.artist
+                            ? UserRole.listener
+                            : UserRole.artist;
+                        AppRouterGo.pushRemoveUntil('/');
+                      },
+                      child: Text.rich(
+                        TextSpan(
+                          text: AppConfig.userRole == UserRole.artist
+                              ? "Not an Artist? "
+                              : "Are you an Artist? ",
+                          style: TextStyle(
+                            fontFamily: 'Roboto',
+                            fontSize: 13.sp,
+                            color: AppColors.santagrey,
+                          ),
+                          children: [
+                            TextSpan(
+                              text: "Switch here",
+                              style: TextStyle(
+                                fontFamily: 'Roboto',
+                                fontSize: 13.sp,
+                                color: AppColors.listenerYellow,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
                   16.ph,
                   Center(
                     child: Padding(
