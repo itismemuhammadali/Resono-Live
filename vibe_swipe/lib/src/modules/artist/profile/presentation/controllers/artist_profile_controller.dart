@@ -319,7 +319,10 @@ class ArtistProfileController extends ChangeNotifier with Buffers {
 
   void onSavePrivacySettings() => AppRouterGo.back();
 
-  void onLogout() => AppRouterGo.pushRemoveUntil(loginView);
+  void onLogout() async {
+    await AuthHandler.ref.logout();
+    AppRouterGo.pushRemoveUntil(loginView);
+  }
 
   // ── Help & Support ────────────────────────────────────────────
   List<TopicEntity> _topics = [];

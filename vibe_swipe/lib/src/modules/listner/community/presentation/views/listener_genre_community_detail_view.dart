@@ -103,6 +103,7 @@ class ListenerGenreCommunityDetailView extends ConsumerWidget {
                               listenerDiscussionDetailView,
                               extra: {
                                 'postId': p.id,
+                                'authorId': p.authorId,
                                 'title': p.title,
                                 'tag': p.category,
                                 'author': p.authorName,

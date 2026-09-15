@@ -1,4 +1,3 @@
-import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:vibe_swipe/src/core/utils/app_exports.dart';
 import 'package:vibe_swipe/src/core/services/ads_service.dart';
@@ -16,11 +15,11 @@ class MetaAdPlacementWidget extends StatefulWidget {
   final bool isTestMode;
 
   const MetaAdPlacementWidget({
-    Key? key,
+    super.key,
     required this.type,
     required this.placementName,
-    this.isTestMode = true, // Default to true so developers can see the placeholder
-  }) : super(key: key);
+    this.isTestMode = true,
+  });
 
   @override
   State<MetaAdPlacementWidget> createState() => _MetaAdPlacementWidgetState();
@@ -34,30 +33,33 @@ class _MetaAdPlacementWidgetState extends State<MetaAdPlacementWidget> {
   @override
   void initState() {
     super.initState();
-    if (!widget.isTestMode) {
-      _fetchAd();
-    } else {
-      _isLoading = false;
-    }
+    _fetchAd();
   }
 
   Future<void> _fetchAd() async {
-    final ads = await adsService.getActiveAds(placement: widget.placementName);
-    if (ads.isNotEmpty) {
-      if (mounted) {
+    try {
+      final ads = await adsService.getActiveAds(placement: widget.placementName);
+      if (!mounted) return;
+      if (ads.isNotEmpty) {
         setState(() {
           _ad = ads.first;
           _isLoading = false;
         });
-      }
 
-      if (_ad != null && !_viewLogged) {
-        _viewLogged = true;
-        adsService.logAdView(_ad!.id);
+        if (!_viewLogged) {
+          _viewLogged = true;
+          adsService.logAdView(_ad!.id);
+        }
+      } else {
+        setState(() {
+          _ad = null;
+          _isLoading = false;
+        });
       }
-    } else {
+    } catch (e) {
       if (mounted) {
         setState(() {
+          _ad = null;
           _isLoading = false;
         });
       }
@@ -84,100 +86,6 @@ class _MetaAdPlacementWidgetState extends State<MetaAdPlacementWidget> {
     }
   }
 
-  Widget _buildPlaceholder(double height, {double? width}) {
-    final isCompact = height <= 65;
-    return GestureDetector(
-      onTap: _onAdClicked,
-      child: Container(
-        width: width ?? double.infinity,
-        height: height,
-        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-        decoration: BoxDecoration(
-          color: const Color(0xFF1A1D24),
-          borderRadius: BorderRadius.circular(12.r),
-          border: Border.all(
-            color: AppColors.listenerActiveTab.withOpacity(0.3),
-            width: 1,
-            style: BorderStyle.solid,
-          ),
-        ),
-        child: Stack(
-          alignment: Alignment.center,
-          children: [
-            if (isCompact)
-              Padding(
-                padding: EdgeInsets.symmetric(horizontal: 12.w),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(Icons.ad_units, color: AppColors.subtitleGray.withOpacity(0.5), size: 18.sp),
-                    6.pw,
-                    Flexible(
-                      child: Text(
-                        'Meta Ad (${widget.placementName})',
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          color: AppColors.subtitleGray.withOpacity(0.8),
-                          fontSize: 11.sp,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              )
-            else
-              FittedBox(
-                fit: BoxFit.scaleDown,
-                child: Padding(
-                  padding: EdgeInsets.all(8.w),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(Icons.ad_units, color: AppColors.subtitleGray.withOpacity(0.5), size: 24.sp),
-                      6.ph,
-                      Text(
-                        'Meta Ad Placement\n(${widget.placementName})',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          color: AppColors.subtitleGray.withOpacity(0.8),
-                          fontSize: 12.sp,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            Positioned(
-              top: 0,
-              right: 0,
-              child: Container(
-                padding: EdgeInsets.symmetric(horizontal: 6.w, vertical: 2.h),
-                decoration: BoxDecoration(
-                  color: AppColors.listenerActiveTab.withOpacity(0.2),
-                  borderRadius: BorderRadius.only(
-                    bottomLeft: Radius.circular(8.r),
-                    topRight: Radius.circular(12.r),
-                  ),
-                ),
-                child: Text(
-                  'Sponsored',
-                  style: TextStyle(
-                    color: AppColors.listenerActiveTab,
-                    fontSize: 9.sp,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
   Widget _buildRealAd(double height, {double? width}) {
     if (_ad == null) return const SizedBox.shrink();
 
@@ -195,7 +103,7 @@ class _MetaAdPlacementWidgetState extends State<MetaAdPlacementWidget> {
           ),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.1),
+              color: Colors.black.withValues(alpha: 0.1),
               blurRadius: 8,
               offset: const Offset(0, 4),
             ),
@@ -206,7 +114,7 @@ class _MetaAdPlacementWidgetState extends State<MetaAdPlacementWidget> {
           child: Container(
             padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
             decoration: BoxDecoration(
-              color: Colors.black.withOpacity(0.6),
+              color: Colors.black.withValues(alpha: 0.6),
               borderRadius: BorderRadius.only(
                 bottomLeft: Radius.circular(8.r),
                 topRight: Radius.circular(12.r),
@@ -228,23 +136,19 @@ class _MetaAdPlacementWidgetState extends State<MetaAdPlacementWidget> {
 
   @override
   Widget build(BuildContext context) {
-    if (_isLoading) {
-      return const SizedBox(height: 100, child: Center(child: CircularProgressIndicator()));
+    if (_isLoading || _ad == null) {
+      return const SizedBox.shrink();
     }
-
-    final bool showPlaceholder = widget.isTestMode || _ad == null;
 
     switch (widget.type) {
       case MetaAdPlacementType.banner:
-        return showPlaceholder ? _buildPlaceholder(60.h) : _buildRealAd(60.h);
+        return _buildRealAd(60.h);
       case MetaAdPlacementType.mediumRectangle:
-        return showPlaceholder ? _buildPlaceholder(250.h) : _buildRealAd(250.h);
+        return _buildRealAd(250.h);
       case MetaAdPlacementType.inlineFeed:
-        return showPlaceholder ? _buildPlaceholder(120.h) : _buildRealAd(120.h);
+        return _buildRealAd(120.h);
       case MetaAdPlacementType.streamOverlay:
-        return showPlaceholder
-            ? _buildPlaceholder(80.h, width: 300.w)
-            : _buildRealAd(80.h, width: 300.w);
+        return _buildRealAd(80.h, width: 300.w);
     }
   }
 }

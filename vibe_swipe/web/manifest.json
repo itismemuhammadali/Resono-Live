@@ -1,6 +1,6 @@
 {
-    "name": "vibe_swipe",
-    "short_name": "vibe_swipe",
+    "name": "Vibe Swipe",
+    "short_name": "Vibe Swipe",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",

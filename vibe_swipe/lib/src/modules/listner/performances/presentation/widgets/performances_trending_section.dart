@@ -1,4 +1,6 @@
-﻿import 'package:vibe_swipe/src/core/utils/app_exports.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:vibe_swipe/src/core/services/community_firestore_service.dart';
+import 'package:vibe_swipe/src/core/utils/app_exports.dart';
 import '../../domain/entities/performance_trending_entity.dart';
 import 'performances_section_title.dart';
 
@@ -30,23 +32,29 @@ class _TrendingGrid extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    if (performances.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
     final rows = <Widget>[];
-    for (int i = 0; i < performances.length; i += 2) {
-      final hasRight = i + 1 < performances.length;
+    for (var i = 0; i < performances.length; i += 2) {
+      final left = performances[i];
+      final right = i + 1 < performances.length ? performances[i + 1] : null;
+
       rows.add(
         Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Expanded(child: _TrendingCard(performance: performances[i])),
-            12.pw,
+            Expanded(child: _TrendingCard(performance: left)),
+            16.pw,
             Expanded(
-              child: hasRight
-                  ? _TrendingCard(performance: performances[i + 1])
+              child: right != null
+                  ? _TrendingCard(performance: right)
                   : const SizedBox.shrink(),
             ),
           ],
         ),
       );
+
       if (i + 2 < performances.length) rows.add(16.ph);
     }
     return Column(children: rows);
@@ -58,18 +66,37 @@ class _TrendingCard extends StatelessWidget {
 
   final PerformanceTrendingEntity performance;
 
-  void _onTap() {
+  void _onTap(BuildContext context) async {
+    String postId = '';
+    final perfId = performance.id;
+    if (perfId.isNotEmpty) {
+      final user = FirebaseAuth.instance.currentUser;
+      final uid = user?.uid ?? '';
+      final authorName = user?.displayName ?? 'Listener';
+      postId = await CommunityFirestoreService.findOrCreatePerformanceDiscussion(
+        performanceId: perfId,
+        performanceTitle: performance.title,
+        authorId: uid,
+        authorName: authorName,
+        authorRole: 'listener',
+      );
+    }
+
+    if (!context.mounted) return;
+
     AppRouterGo.push(
       listenerDiscussionDetailView,
       extra: {
         'title': performance.title,
         'author': performance.artist,
+        'authorId': performance.artistId,
         'timeAgo': 'Now',
         'tag': 'Trending',
         'replies': 0,
         'likes': 0,
         'body': 'Discussion about ${performance.title}',
         'authorAvatarUrl': null,
+        'postId': postId,
       },
     );
   }
@@ -77,7 +104,7 @@ class _TrendingCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: _onTap,
+      onTap: () => _onTap(context),
       child: Container(
         decoration: BoxDecoration(
           color: AppColors.listenerChipBg,

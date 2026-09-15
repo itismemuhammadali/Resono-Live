@@ -389,8 +389,10 @@ class ListenerProfileController extends ChangeNotifier with Buffers {
 
   void onSavePrivacySettings() => AppRouterGo.back();
 
-  // ── Actions ───────────────────────────────────────────────────
-  void onLogout() => AppRouterGo.pushRemoveUntil(loginView);
+  void onLogout() async {
+    await AuthHandler.ref.logout();
+    AppRouterGo.pushRemoveUntil(loginView);
+  }
 
   Future<void> onSaveChanges({
     required String name,

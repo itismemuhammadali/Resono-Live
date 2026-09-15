@@ -19,6 +19,7 @@ class ListenerDiscussionDetailView extends ConsumerStatefulWidget {
     required this.body,
     this.authorAvatarUrl,
     this.postId,
+    this.authorId,
   });
 
   final String title;
@@ -30,6 +31,7 @@ class ListenerDiscussionDetailView extends ConsumerStatefulWidget {
   final String body;
   final String? authorAvatarUrl;
   final String? postId;
+  final String? authorId;
 
   @override
   ConsumerState<ListenerDiscussionDetailView> createState() =>
@@ -130,12 +132,22 @@ class _ListenerDiscussionDetailViewState
                           onLikeTap: () => controller.toggleDiscussionLike(),
                           onShareTap: () => _sharePost(context, displayTitle),
                           onOptionsTap: () {
+                            final effectiveAuthorId = (post?.authorId != null && post!.authorId.trim().isNotEmpty)
+                                ? post.authorId.trim()
+                                : (widget.authorId != null && widget.authorId!.trim().isNotEmpty
+                                    ? widget.authorId!.trim()
+                                    : null);
+                            final effectivePostId = (widget.postId != null && widget.postId!.trim().isNotEmpty)
+                                ? widget.postId!.trim()
+                                : (post?.id != null ? post!.id.trim() : '');
+
                             ReportBlockHelper.showPostOptionsModal(
                               context,
                               authorName: displayAuthor.isNotEmpty ? displayAuthor : 'User',
-                              postId: widget.postId ?? post?.id ?? '',
-                              authorId: post?.authorId,
+                              postId: effectivePostId,
+                              authorId: effectiveAuthorId,
                               onBlockComplete: () => Navigator.maybePop(context),
+                              onReportComplete: () => Navigator.maybePop(context),
                             );
                           },
                         );

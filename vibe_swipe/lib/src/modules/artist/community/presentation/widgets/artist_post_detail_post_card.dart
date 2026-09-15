@@ -19,6 +19,7 @@ class ArtistPostDetailPostCard extends StatelessWidget {
       postId: post.id,
       authorId: post.authorId,
       onBlockComplete: onBlockComplete,
+      onReportComplete: () => Navigator.maybePop(context),
     );
   }
 

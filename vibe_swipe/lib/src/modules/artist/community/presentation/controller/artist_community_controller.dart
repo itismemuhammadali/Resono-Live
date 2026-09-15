@@ -3,6 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:vibe_swipe/src/core/utils/app_exports.dart';
 import 'package:vibe_swipe/src/core/constants/app_constants.dart';
 import 'package:vibe_swipe/src/core/services/community_firestore_service.dart';
+import 'package:vibe_swipe/src/core/services/safety_service.dart';
 import '../../domain/entities/community_activity_entity.dart';
 import '../../domain/entities/community_discussion_entity.dart';
 import '../../domain/entities/community_post_entity.dart';
@@ -47,6 +48,18 @@ class ArtistCommunityController extends ChangeNotifier with Buffers {
     _fetchAvailablePerformances();
     _listenToMyPosts();
     _listenToAllPosts();
+    SafetyService.safetyNotifier.addListener(_onSafetyChanged);
+  }
+
+  void _onSafetyChanged() {
+    final reported = SafetyService.cachedReportedPostIds;
+    final blocked = SafetyService.cachedBlockedUserIds;
+    _allPosts = _allPosts.where((p) => !reported.contains(p.id) && !blocked.contains(p.authorId)).toList();
+    _yourPosts = _yourPosts.where((p) => !reported.contains(p.id) && !blocked.contains(p.authorId)).toList();
+    _deriveTrendingDiscussions();
+    _deriveTrendingTopics();
+    _deriveRecentActivity();
+    notifyListeners();
   }
 
   Future<void> _fetchAvailableTracks() async {
@@ -308,6 +321,7 @@ class ArtistCommunityController extends ChangeNotifier with Buffers {
 
   @override
   void dispose() {
+    SafetyService.safetyNotifier.removeListener(_onSafetyChanged);
     _postsSubscription?.cancel();
     _allPostsSubscription?.cancel();
     titleController.dispose();

@@ -275,8 +275,10 @@ class ListenerPerformancesController extends ChangeNotifier with Buffers {
           ));
         } else {
           trendingList.add(PerformanceTrendingEntity(
+            id: p['id'] as String? ?? '',
             title: title,
             artist: artistName,
+            artistId: artistId,
             views: formattedViews,
             thumbnailUrl: thumbnailUrl,
           ));

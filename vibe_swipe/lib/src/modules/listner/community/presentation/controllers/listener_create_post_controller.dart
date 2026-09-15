@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:vibe_swipe/src/core/utils/app_exports.dart';
 import 'package:vibe_swipe/src/core/services/community_firestore_service.dart';
+import 'package:vibe_swipe/src/core/services/safety_service.dart';
 import 'package:vibe_swipe/src/modules/artist/community/domain/entities/community_post_entity.dart';
 
 final listenerCommunityControllerProvider =
@@ -72,6 +73,15 @@ class ListenerCommunityController extends ChangeNotifier with Buffers {
     _fetchUsername();
     _listenToAllPosts();
     _listenToRecentPosts();
+    SafetyService.safetyNotifier.addListener(_onSafetyChanged);
+  }
+
+  void _onSafetyChanged() {
+    final reported = SafetyService.cachedReportedPostIds;
+    final blocked = SafetyService.cachedBlockedUserIds;
+    _allPosts = _allPosts.where((p) => !reported.contains(p.id) && !blocked.contains(p.authorId)).toList();
+    _recentPosts = _recentPosts.where((p) => !reported.contains(p.id) && !blocked.contains(p.authorId)).toList();
+    notifyListeners();
   }
 
   Future<void> _fetchUsername() async {
@@ -409,6 +419,7 @@ class ListenerCommunityController extends ChangeNotifier with Buffers {
 
   @override
   void dispose() {
+    SafetyService.safetyNotifier.removeListener(_onSafetyChanged);
     _allPostsSubscription?.cancel();
     _recentPostsSubscription?.cancel();
     _commentsSubscription?.cancel();

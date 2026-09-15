@@ -1,8 +1,6 @@
 // ignore_for_file: strict_top_level_inference
 
 // This is also known as declerative routing
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../utils/app_exports.dart';
 import 'package:vibe_swipe/src/modules/authentication/presentation/views/mode_selection_view.dart';
 import '../../../modules/authentication/presentation/views/onboarding_view.dart';
@@ -68,6 +66,7 @@ import '../../../modules/artist/notifications/presentation/views/artist_notifica
 import '../../../modules/artist/profile/presentation/views/artist_help_support_view.dart';
 import '../../../modules/listner/performances/presentation/views/payment_success_view.dart';
 import '../../../modules/legal/presentation/views/terms_and_policies_view.dart';
+import '../../../modules/authentication/presentation/views/splash_view.dart';
 
 class AppRouterGo {
   static BuildContext get context =>
@@ -75,33 +74,14 @@ class AppRouterGo {
 
   static final appRouter = GoRouter(
     initialLocation: '/',
-    redirect: (context, state) async {
-      if (state.matchedLocation != '/') return null;
-      final fbUser = FirebaseAuth.instance.currentUser;
-      if (fbUser == null) return null; // not logged in → normal flow
-      try {
-        final roleStr = await FirebaseFirestore.instance
-            .collection('users')
-            .doc(fbUser.uid)
-            .get()
-            .timeout(const Duration(seconds: 3))
-            .then((d) => d.data()?['role'] as String?);
-        final role = roleStr?.toLowerCase();
-        if (role == 'artist') {
-          AppConfig.userRole = UserRole.artist;
-          await AuthHandler.ref.init();
-          return artistDashboardView;
-        } else if (role == 'listener') {
-          AppConfig.userRole = UserRole.listener;
-          await AuthHandler.ref.init();
-          return listenerDashboardView;
-        }
-      } catch (_) {}
-      return null; // on any error → fall through to ModeSelectionView
-    },
     routes: [
       GoRoute(
         path: '/',
+        pageBuilder: (context, state) =>
+            NoTransitionPage(key: state.pageKey, child: const SplashView()),
+      ),
+      GoRoute(
+        path: modeSelectionView,
         pageBuilder: (context, state) =>
             NoTransitionPage(key: state.pageKey, child: const ModeSelectionView()),
       ),
@@ -277,6 +257,7 @@ class AppRouterGo {
           final body = extra?['body'] as String? ?? queryParams['body'] ?? '';
           final authorAvatarUrl = extra?['authorAvatarUrl'] as String? ?? queryParams['authorAvatarUrl'];
           final postId = extra?['postId'] as String? ?? queryParams['postId'] ?? '';
+          final authorId = extra?['authorId'] as String? ?? queryParams['authorId'];
 
           return NoTransitionPage(
             key: state.pageKey,
@@ -290,6 +271,7 @@ class AppRouterGo {
               body: body,
               authorAvatarUrl: authorAvatarUrl,
               postId: postId,
+              authorId: authorId,
             ),
           );
         },

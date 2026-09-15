@@ -125,6 +125,7 @@ class ArtistDiscussionDetailPostCard extends StatelessWidget {
                     postId: postId,
                     authorId: authorId,
                     onBlockComplete: onBlockComplete,
+                    onReportComplete: () => Navigator.maybePop(context),
                   );
                 },
                 behavior: HitTestBehavior.opaque,

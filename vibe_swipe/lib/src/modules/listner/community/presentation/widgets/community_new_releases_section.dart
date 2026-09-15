@@ -28,6 +28,7 @@ class CommunityNewReleasesSection extends StatelessWidget {
                 listenerDiscussionDetailView,
                 extra: {
                   'postId': post.id,
+                  'authorId': post.authorId,
                   'title': post.title,
                   'tag': post.category,
                   'author': post.authorName,

@@ -173,10 +173,19 @@ class CommunityFirestoreService {
     return _db
         .collection(_collection)
         .snapshots()
-        .map((snap) {
+        .asyncMap((snap) async {
           final posts = snap.docs.map(CommunityPost.fromDoc).toList();
           posts.sort((a, b) => b.createdAt.compareTo(a.createdAt));
-          return posts;
+          final reportedPosts = await SafetyService.getReportedPostIds();
+          final blockedUsers = await SafetyService.getBlockedUserIds();
+          final restrictedArtists = await SafetyService.getBlockedAndBannedArtistIds();
+          final allBlocked = {...blockedUsers, ...restrictedArtists};
+
+          return posts.where((p) {
+            if (reportedPosts.contains(p.id)) return false;
+            if (allBlocked.contains(p.authorId)) return false;
+            return true;
+          }).toList();
         });
   }
 
@@ -185,10 +194,11 @@ class CommunityFirestoreService {
         .collection(_collection)
         .where('authorId', isEqualTo: authorId)
         .snapshots()
-        .map((snap) {
+        .asyncMap((snap) async {
           final posts = snap.docs.map(CommunityPost.fromDoc).toList();
           posts.sort((a, b) => b.createdAt.compareTo(a.createdAt));
-          return posts;
+          final reportedPosts = await SafetyService.getReportedPostIds();
+          return posts.where((p) => !reportedPosts.contains(p.id)).toList();
         });
   }
 
@@ -196,10 +206,21 @@ class CommunityFirestoreService {
     return _db
         .collection(_collection)
         .snapshots()
-        .map((snap) {
+        .asyncMap((snap) async {
           final posts = snap.docs.map(CommunityPost.fromDoc).toList();
           posts.sort((a, b) => b.createdAt.compareTo(a.createdAt));
-          return posts.take(limit).toList();
+          final reportedPosts = await SafetyService.getReportedPostIds();
+          final blockedUsers = await SafetyService.getBlockedUserIds();
+          final restrictedArtists = await SafetyService.getBlockedAndBannedArtistIds();
+          final allBlocked = {...blockedUsers, ...restrictedArtists};
+
+          final filtered = posts.where((p) {
+            if (reportedPosts.contains(p.id)) return false;
+            if (allBlocked.contains(p.authorId)) return false;
+            return true;
+          }).toList();
+
+          return filtered.take(limit).toList();
         });
   }
 

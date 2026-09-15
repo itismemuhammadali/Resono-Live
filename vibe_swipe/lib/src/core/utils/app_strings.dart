@@ -1,5 +1,5 @@
 class AppStrings {
-  static String vibeSwipe = 'VibeSwipe';
+  static String vibeSwipe = 'Vibe Swipe';
   static String password = "Password";
   static String noData = 'No Data';
   static String signIn = 'Sign In';

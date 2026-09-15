@@ -70,7 +70,6 @@ class AuthHandler {
 
   Future<void> logout() async {
     try {
-      if (didLogOut) return;
       await _authService.signOut();
       await prefs.deleteUser();
       await prefs.deleteToken();

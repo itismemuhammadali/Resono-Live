@@ -16,6 +16,7 @@ class LoginView extends HookConsumerWidget {
     final emailController = useTextEditingController();
     final passwordController = useTextEditingController();
     final authController = ref.watch(authControllerProvider);
+    final selectedRole = useState<UserRole>(AppConfig.userRole);
 
     void onSignIn() async {
       if (formKey.currentState!.validate()) {
@@ -30,10 +31,10 @@ class LoginView extends HookConsumerWidget {
               ? await controller.isProfileCompleted(uid)
               : false;
 
-          final setupTarget = AppConfig.userRole == UserRole.artist
+          final setupTarget = selectedRole.value == UserRole.artist
               ? artistSetupView
               : profileSetupView;
-          final dashboardTarget = AppConfig.userRole == UserRole.artist
+          final dashboardTarget = selectedRole.value == UserRole.artist
               ? artistDashboardView
               : listenerDashboardView;
 
@@ -81,7 +82,13 @@ class LoginView extends HookConsumerWidget {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                   10.ph,
-                  AuthBackButton(onTap: () => AppRouterGo.pushRemoveUntil('/')),
+                  AuthBackButton(onTap: () {
+                    if (Navigator.of(context).canPop()) {
+                      Navigator.of(context).pop();
+                    } else {
+                      AppRouterGo.pushReplacement(modeSelectionView);
+                    }
+                  }),
                   28.ph,
                   const AuthLogoHeader(),
                   28.ph,
@@ -245,7 +252,7 @@ class LoginView extends HookConsumerWidget {
                   PrimaryElevatedButton(
                     onTap: () {
                       authController.clearError();
-                      AppConfig.userRole == UserRole.artist
+                      selectedRole.value == UserRole.artist
                           ? AppRouterGo.push(artistSignupView)
                           : AppRouterGo.push(signupView);
                     },
@@ -270,14 +277,16 @@ class LoginView extends HookConsumerWidget {
                   Center(
                     child: GestureDetector(
                       onTap: () {
-                        AppConfig.userRole = AppConfig.userRole == UserRole.artist
+                        final newRole = selectedRole.value == UserRole.artist
                             ? UserRole.listener
                             : UserRole.artist;
-                        AppRouterGo.pushRemoveUntil('/');
+                        selectedRole.value = newRole;
+                        AppConfig.userRole = newRole;
+                        authController.clearError();
                       },
                       child: Text.rich(
                         TextSpan(
-                          text: AppConfig.userRole == UserRole.artist
+                          text: selectedRole.value == UserRole.artist
                               ? "Not an Artist? "
                               : "Are you an Artist? ",
                           style: TextStyle(
@@ -318,7 +327,7 @@ class LoginView extends HookConsumerWidget {
                               child: GestureDetector(
                                 onTap: () => AppRouterGo.push(
                                   termsAndPoliciesView,
-                                  extra: {'sectionId': 'terms', 'isArtist': AppConfig.userRole == UserRole.artist},
+                                  extra: {'sectionId': 'terms', 'isArtist': selectedRole.value == UserRole.artist},
                                 ),
                                 child: Text(
                                   "Terms of Use (EULA)",
@@ -346,7 +355,7 @@ class LoginView extends HookConsumerWidget {
                               child: GestureDetector(
                                 onTap: () => AppRouterGo.push(
                                   termsAndPoliciesView,
-                                  extra: {'sectionId': 'privacy', 'isArtist': AppConfig.userRole == UserRole.artist},
+                                  extra: {'sectionId': 'privacy', 'isArtist': selectedRole.value == UserRole.artist},
                                 ),
                                 child: Text(
                                   "Privacy Policy",

@@ -1,6 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:vibe_swipe/src/core/services/safety_service.dart';
+import 'package:vibe_swipe/src/core/services/community_firestore_service.dart';
 
 class ReportBlockHelper {
   /// Shows options (Report & 7-Day Ban, or Permanently Block) for a comment
@@ -255,6 +256,32 @@ class ReportBlockHelper {
     bool isArtist = false,
     VoidCallback? onBlockComplete,
   }) {
+    final cleanId = targetUserId.trim();
+    if (cleanId.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Unable to block user: User ID is missing.')),
+      );
+      return;
+    }
+
+    final currentUid = SafetyService.currentUserId;
+    if (currentUid != null && cleanId == currentUid) {
+      showCupertinoDialog(
+        context: context,
+        builder: (ctx) => CupertinoAlertDialog(
+          title: const Text('Action Not Allowed'),
+          content: const Text('You cannot block your own account.'),
+          actions: [
+            CupertinoDialogAction(
+              child: const Text('OK'),
+              onPressed: () => Navigator.pop(ctx),
+            ),
+          ],
+        ),
+      );
+      return;
+    }
+
     showCupertinoDialog(
       context: context,
       builder: (ctx) => CupertinoAlertDialog(
@@ -275,7 +302,7 @@ class ReportBlockHelper {
               Navigator.pop(ctx);
               try {
                 await SafetyService.blockUser(
-                  targetUserId: targetUserId,
+                  targetUserId: cleanId,
                   targetUserName: targetUsername,
                 );
                 if (context.mounted) {
@@ -316,6 +343,9 @@ class ReportBlockHelper {
     BuildContext context, {
     required String contentType,
     required String contentId,
+    String? authorId,
+    String? authorName,
+    VoidCallback? onReportComplete,
   }) {
     showCupertinoModalPopup(
       context: context,
@@ -324,19 +354,51 @@ class ReportBlockHelper {
         message: const Text('Why are you reporting this content?'),
         actions: [
           CupertinoActionSheetAction(
-            onPressed: () => _handleReportSubmitted(ctx, reason: 'Inappropriate Content', contentType: contentType, contentId: contentId),
+            onPressed: () => _handleReportSubmitted(
+              ctx,
+              reason: 'Inappropriate Content',
+              contentType: contentType,
+              contentId: contentId,
+              authorId: authorId,
+              authorName: authorName,
+              onComplete: onReportComplete,
+            ),
             child: const Text('Inappropriate Content'),
           ),
           CupertinoActionSheetAction(
-            onPressed: () => _handleReportSubmitted(ctx, reason: 'Spam or Scam', contentType: contentType, contentId: contentId),
+            onPressed: () => _handleReportSubmitted(
+              ctx,
+              reason: 'Spam or Scam',
+              contentType: contentType,
+              contentId: contentId,
+              authorId: authorId,
+              authorName: authorName,
+              onComplete: onReportComplete,
+            ),
             child: const Text('Spam or Scam'),
           ),
           CupertinoActionSheetAction(
-            onPressed: () => _handleReportSubmitted(ctx, reason: 'Harassment or Bullying', contentType: contentType, contentId: contentId),
+            onPressed: () => _handleReportSubmitted(
+              ctx,
+              reason: 'Harassment or Bullying',
+              contentType: contentType,
+              contentId: contentId,
+              authorId: authorId,
+              authorName: authorName,
+              onComplete: onReportComplete,
+            ),
             child: const Text('Harassment or Bullying'),
           ),
           CupertinoActionSheetAction(
-            onPressed: () => _handleReportSubmitted(ctx, reason: 'Hate Speech', contentType: contentType, contentId: contentId),
+            onPressed: () => _handleReportSubmitted(
+              ctx,
+              reason: 'Hate Speech',
+              contentType: contentType,
+              contentId: contentId,
+              authorId: authorId,
+              authorName: authorName,
+              onComplete: onReportComplete,
+            ),
             child: const Text('Hate Speech'),
           ),
         ],
@@ -354,25 +416,39 @@ class ReportBlockHelper {
     required String reason,
     required String contentType,
     required String contentId,
+    String? authorId,
+    String? authorName,
+    VoidCallback? onComplete,
   }) async {
     Navigator.pop(context);
-    await SafetyService.reportContent(
-      contentType: contentType,
-      contentId: contentId,
-      reason: reason,
-    );
+    try {
+      await SafetyService.reportContent(
+        contentType: contentType,
+        contentId: contentId,
+        reason: reason,
+        authorId: authorId,
+        authorName: authorName,
+      );
+    } catch (e) {
+      debugPrint('[ReportBlockHelper] Report error: $e');
+    }
     if (context.mounted) {
       showCupertinoDialog(
         context: context,
         builder: (ctx) => CupertinoAlertDialog(
           title: const Text('Report Submitted'),
-          content: const Text(
-            'Thank you for bringing this to our attention. Our safety team will review this report within 24 hours.',
+          content: Text(
+            contentType.toLowerCase() == 'post'
+                ? 'Thank you. This post has been reported and hidden from your feed.'
+                : 'Thank you for bringing this to our attention. Our safety team will review this report within 24 hours.',
           ),
           actions: [
             CupertinoDialogAction(
               child: const Text('OK'),
-              onPressed: () => Navigator.pop(ctx),
+              onPressed: () {
+                Navigator.pop(ctx);
+                onComplete?.call();
+              },
             ),
           ],
         ),
@@ -386,9 +462,8 @@ class ReportBlockHelper {
     required String postId,
     String? authorId,
     VoidCallback? onBlockComplete,
+    VoidCallback? onReportComplete,
   }) {
-    final effectiveTargetUserId = (authorId != null && authorId.isNotEmpty) ? authorId : postId;
-
     showCupertinoModalPopup(
       context: context,
       builder: (ctx) => CupertinoActionSheet(
@@ -398,20 +473,54 @@ class ReportBlockHelper {
             isDestructiveAction: true,
             onPressed: () {
               Navigator.pop(ctx);
-              showReportDialog(context, contentType: 'Post', contentId: postId);
+              showReportDialog(
+                context,
+                contentType: 'Post',
+                contentId: postId,
+                authorId: authorId,
+                authorName: authorName,
+                onReportComplete: onReportComplete,
+              );
             },
             child: const Text('Report Post'),
           ),
           CupertinoActionSheetAction(
             isDestructiveAction: true,
-            onPressed: () {
+            onPressed: () async {
               Navigator.pop(ctx);
-              showBlockUserDialog(
-                context,
-                targetUserId: effectiveTargetUserId,
-                targetUsername: authorName,
-                onBlockComplete: onBlockComplete,
-              );
+              final hasValidAuthorId = authorId != null && authorId.trim().isNotEmpty;
+              if (hasValidAuthorId) {
+                showBlockUserDialog(
+                  context,
+                  targetUserId: authorId.trim(),
+                  targetUsername: authorName,
+                  onBlockComplete: onBlockComplete,
+                );
+                return;
+              }
+
+              // If authorId is missing but postId is available, attempt to resolve it
+              if (postId.trim().isNotEmpty) {
+                try {
+                  // Try to fetch post from Firestore
+                  final doc = await CommunityFirestoreService.getPost(postId.trim());
+                  if (context.mounted && doc != null && doc.authorId.trim().isNotEmpty) {
+                    showBlockUserDialog(
+                      context,
+                      targetUserId: doc.authorId.trim(),
+                      targetUsername: doc.authorName.isNotEmpty ? doc.authorName : authorName,
+                      onBlockComplete: onBlockComplete,
+                    );
+                    return;
+                  }
+                } catch (_) {}
+              }
+
+              if (context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('Cannot block $authorName: User information is unavailable.')),
+                );
+              }
             },
             child: Text('Block $authorName'),
           ),

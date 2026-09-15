@@ -1,3 +1,5 @@
+const String splashView = '/';
+const String modeSelectionView = '/mode-selection';
 const String onboardingView = '/onboarding';
 const String loginView = '/login';
 const String forgotPasswordView = '/forgot-password';
