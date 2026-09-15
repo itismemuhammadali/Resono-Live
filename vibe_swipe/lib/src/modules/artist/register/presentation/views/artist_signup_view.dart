@@ -219,7 +219,7 @@ class ArtistSignupView extends HookConsumerWidget {
                                       extra: {'sectionId': 'terms', 'isArtist': true},
                                     ),
                                     child: Text(
-                                      'Terms & Conditions',
+                                      'Terms of Use (EULA)',
                                       style: TextStyle(
                                         fontFamily: 'Roboto',
                                         fontSize: 12.sp,

@@ -15,6 +15,7 @@ class DiscussionOriginalPost extends StatelessWidget {
     this.isLiked = false,
     this.onLikeTap,
     this.onShareTap,
+    this.onOptionsTap,
   });
 
   final String title;
@@ -28,6 +29,7 @@ class DiscussionOriginalPost extends StatelessWidget {
   final bool isLiked;
   final VoidCallback? onLikeTap;
   final VoidCallback? onShareTap;
+  final VoidCallback? onOptionsTap;
 
   @override
   Widget build(BuildContext context) {
@@ -92,6 +94,21 @@ class DiscussionOriginalPost extends StatelessWidget {
                 label: tag,
                 color: AppColors.listenerYellow,
               ),
+              if (onOptionsTap != null) ...[
+                6.pw,
+                GestureDetector(
+                  onTap: onOptionsTap,
+                  behavior: HitTestBehavior.opaque,
+                  child: Padding(
+                    padding: EdgeInsets.all(4.r),
+                    child: Icon(
+                      Icons.more_vert,
+                      size: 22.sp,
+                      color: AppColors.huegrey,
+                    ),
+                  ),
+                ),
+              ],
             ],
           ),
           16.ph,

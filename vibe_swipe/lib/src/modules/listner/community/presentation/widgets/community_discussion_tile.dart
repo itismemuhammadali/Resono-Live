@@ -10,6 +10,7 @@ class CommunityDiscussionTile extends StatelessWidget {
     required this.replies,
     required this.likes,
     this.authorAvatarUrl = '',
+    this.onOptionsTap,
   });
 
   final String title;
@@ -19,6 +20,7 @@ class CommunityDiscussionTile extends StatelessWidget {
   final int replies;
   final int likes;
   final String authorAvatarUrl;
+  final VoidCallback? onOptionsTap;
 
   @override
   Widget build(BuildContext context) {
@@ -124,6 +126,21 @@ class CommunityDiscussionTile extends StatelessWidget {
                   color: AppColors.coolGray,
                 ),
               ),
+              if (onOptionsTap != null) ...[
+                const Spacer(),
+                GestureDetector(
+                  onTap: onOptionsTap,
+                  behavior: HitTestBehavior.opaque,
+                  child: Padding(
+                    padding: EdgeInsets.all(4.r),
+                    child: Icon(
+                      Icons.more_vert,
+                      size: 20.sp,
+                      color: AppColors.coolGray,
+                    ),
+                  ),
+                ),
+              ],
             ],
           ),
         ],
@@ -141,6 +158,7 @@ class CommunityNewReleaseTile extends StatelessWidget {
     required this.replies,
     required this.likes,
     this.authorAvatarUrl = '',
+    this.onOptionsTap,
   });
 
   final String title;
@@ -149,6 +167,7 @@ class CommunityNewReleaseTile extends StatelessWidget {
   final int replies;
   final int likes;
   final String authorAvatarUrl;
+  final VoidCallback? onOptionsTap;
 
   @override
   Widget build(BuildContext context) {
@@ -246,6 +265,21 @@ class CommunityNewReleaseTile extends StatelessWidget {
                   color: AppColors.coolGray,
                 ),
               ),
+              if (onOptionsTap != null) ...[
+                const Spacer(),
+                GestureDetector(
+                  onTap: onOptionsTap,
+                  behavior: HitTestBehavior.opaque,
+                  child: Padding(
+                    padding: EdgeInsets.all(4.r),
+                    child: Icon(
+                      Icons.more_vert,
+                      size: 20.sp,
+                      color: AppColors.coolGray,
+                    ),
+                  ),
+                ),
+              ],
             ],
           ),
         ],

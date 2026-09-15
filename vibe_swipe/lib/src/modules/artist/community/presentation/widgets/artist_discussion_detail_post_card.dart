@@ -1,4 +1,5 @@
 import 'package:vibe_swipe/src/core/utils/app_exports.dart';
+import 'package:vibe_swipe/src/core/utils/report_block_helper.dart';
 
 class ArtistDiscussionDetailPostCard extends StatelessWidget {
   const ArtistDiscussionDetailPostCard({
@@ -8,6 +9,7 @@ class ArtistDiscussionDetailPostCard extends StatelessWidget {
     this.likeCount,
     this.commentCount,
     this.onLikeTap,
+    this.onBlockComplete,
   });
 
   final Map<String, dynamic> discussion;
@@ -15,6 +17,7 @@ class ArtistDiscussionDetailPostCard extends StatelessWidget {
   final int? likeCount;
   final int? commentCount;
   final VoidCallback? onLikeTap;
+  final VoidCallback? onBlockComplete;
 
   @override
   Widget build(BuildContext context) {
@@ -110,6 +113,28 @@ class ArtistDiscussionDetailPostCard extends StatelessWidget {
                       ),
                     ),
                   ],
+                ),
+              ),
+              GestureDetector(
+                onTap: () {
+                  final postId = (discussion['id'] as String?) ?? '';
+                  final authorId = discussion['authorId'] as String?;
+                  ReportBlockHelper.showPostOptionsModal(
+                    context,
+                    authorName: author.isNotEmpty ? author : 'User',
+                    postId: postId,
+                    authorId: authorId,
+                    onBlockComplete: onBlockComplete,
+                  );
+                },
+                behavior: HitTestBehavior.opaque,
+                child: Padding(
+                  padding: EdgeInsets.all(4.r),
+                  child: Icon(
+                    Icons.more_vert,
+                    size: 22.sp,
+                    color: AppColors.huegrey,
+                  ),
                 ),
               ),
             ],

@@ -129,6 +129,15 @@ class _ListenerDiscussionDetailViewState
                           isLiked: controller.isDiscussionLiked,
                           onLikeTap: () => controller.toggleDiscussionLike(),
                           onShareTap: () => _sharePost(context, displayTitle),
+                          onOptionsTap: () {
+                            ReportBlockHelper.showPostOptionsModal(
+                              context,
+                              authorName: displayAuthor.isNotEmpty ? displayAuthor : 'User',
+                              postId: widget.postId ?? post?.id ?? '',
+                              authorId: post?.authorId,
+                              onBlockComplete: () => Navigator.maybePop(context),
+                            );
+                          },
                         );
                       },
                     ),

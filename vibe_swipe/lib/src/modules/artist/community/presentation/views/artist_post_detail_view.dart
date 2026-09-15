@@ -46,7 +46,10 @@ class _ArtistPostDetailViewState extends State<ArtistPostDetailView> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       20.ph,
-                      ArtistPostDetailPostCard(post: widget.post),
+                      ArtistPostDetailPostCard(
+                        post: widget.post,
+                        onBlockComplete: () => Navigator.maybePop(context),
+                      ),
                       24.ph,
                       Text(
                         'Comments (0)',

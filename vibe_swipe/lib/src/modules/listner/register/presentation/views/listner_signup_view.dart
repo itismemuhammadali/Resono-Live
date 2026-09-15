@@ -347,7 +347,7 @@ class ListnerSignupView extends HookConsumerWidget {
                                       extra: {'sectionId': 'terms', 'isArtist': false},
                                     ),
                                     child: Text(
-                                      'Terms & Conditions',
+                                      'Terms of Use (EULA)',
                                       style: TextStyle(
                                         fontFamily: 'Roboto',
                                         fontSize: 12.sp,

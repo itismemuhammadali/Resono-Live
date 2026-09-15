@@ -74,6 +74,7 @@ class _ArtistDiscussionDetailViewState
                         likeCount: controller.likeCount,
                         commentCount: controller.comments.length,
                         onLikeTap: () => controller.toggleLike(),
+                        onBlockComplete: () => Navigator.maybePop(context),
                       ),
                       24.ph,
                       Text(
