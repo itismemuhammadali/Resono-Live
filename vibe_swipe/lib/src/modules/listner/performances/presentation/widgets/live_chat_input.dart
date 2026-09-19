@@ -34,20 +34,22 @@ class _LiveChatInputState extends State<LiveChatInput> {
         top: false,
         child: Row(
           children: [
-            GestureDetector(
-              onTap: widget.onSuperChat,
-              child: Container(
-                padding: EdgeInsets.all(8.r),
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [AppColors.superChatGold, AppColors.superChatGoldDark],
+            if (kIsWeb || !Platform.isIOS) ...[
+              GestureDetector(
+                onTap: widget.onSuperChat,
+                child: Container(
+                  padding: EdgeInsets.all(8.r),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [AppColors.superChatGold, AppColors.superChatGoldDark],
+                    ),
+                    borderRadius: BorderRadius.circular(8.r),
                   ),
-                  borderRadius: BorderRadius.circular(8.r),
+                  child: Icon(Icons.star, color: Colors.white, size: 20.sp),
                 ),
-                child: Icon(Icons.star, color: Colors.white, size: 20.sp),
               ),
-            ),
-            8.pw,
+              8.pw,
+            ],
             Expanded(
               child: TextField(
                 controller: _controller,

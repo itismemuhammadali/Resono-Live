@@ -509,18 +509,21 @@ class AppRouterGo {
       ),
       GoRoute(
         path: artistEarningsView,
+        redirect: (context, state) => (!kIsWeb && Platform.isIOS) ? artistDashboardView : null,
         pageBuilder: (context, state) => const NoTransitionPage(
           child: ArtistEarningsView(),
         ),
       ),
       GoRoute(
         path: artistWalletSetupView,
+        redirect: (context, state) => (!kIsWeb && Platform.isIOS) ? artistDashboardView : null,
         pageBuilder: (context, state) => const NoTransitionPage(
           child: ArtistWalletSetupView(),
         ),
       ),
       GoRoute(
         path: '/payment-success',
+        redirect: (context, state) => (!kIsWeb && Platform.isIOS) ? artistDashboardView : null,
         pageBuilder: (context, state) {
           final sessionId = state.uri.queryParameters['session_id'] ?? '';
           return NoTransitionPage(
@@ -531,6 +534,7 @@ class AppRouterGo {
       ),
       GoRoute(
         path: '/payment-cancelled',
+        redirect: (context, state) => (!kIsWeb && Platform.isIOS) ? artistDashboardView : null,
         pageBuilder: (context, state) => NoTransitionPage(
           key: state.pageKey,
           child: const _PaymentCancelledView(),

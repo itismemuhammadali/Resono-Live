@@ -190,10 +190,15 @@ class ArtistPerformancesController extends ChangeNotifier with Buffers {
 
   double get ticketPrice => double.tryParse(priceController.text) ?? 0.0;
 
-  bool get canContinueSession =>
-      titleController.text.trim().isNotEmpty &&
-      descriptionController.text.trim().isNotEmpty &&
-      (!isPaidPerformance || ticketPrice > 0);
+  bool get canContinueSession {
+    if (!kIsWeb && Platform.isIOS) {
+      return titleController.text.trim().isNotEmpty &&
+          descriptionController.text.trim().isNotEmpty;
+    }
+    return titleController.text.trim().isNotEmpty &&
+        descriptionController.text.trim().isNotEmpty &&
+        (!isPaidPerformance || ticketPrice > 0);
+  }
 
   void onSessionFieldChanged() => notifyListeners();
 
@@ -379,8 +384,8 @@ class ArtistPerformancesController extends ChangeNotifier with Buffers {
         status: 'upcoming',
         type: 'live',
         scheduledAt: _parseScheduledDateTime(),
-        isPaid: isPaidPerformance,
-        ticketPrice: isPaidPerformance ? ticketPrice : null,
+        isPaid: (!kIsWeb && Platform.isIOS) ? false : isPaidPerformance,
+        ticketPrice: (!kIsWeb && Platform.isIOS) ? null : (isPaidPerformance ? ticketPrice : null),
       );
 
       // 2. Upload cover image to Firebase Storage
@@ -435,8 +440,8 @@ class ArtistPerformancesController extends ChangeNotifier with Buffers {
         genres: category != null ? [category] : [],
         status: 'live',
         type: 'live',
-        isPaid: isPaid,
-        ticketPrice: isPaid ? ticketPrice : null,
+        isPaid: (!kIsWeb && Platform.isIOS) ? false : isPaid,
+        ticketPrice: (!kIsWeb && Platform.isIOS) ? null : (isPaid ? ticketPrice : null),
       );
 
       // 2. Upload cover thumbnail if provided

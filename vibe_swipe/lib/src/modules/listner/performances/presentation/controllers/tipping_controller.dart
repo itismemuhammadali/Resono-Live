@@ -40,6 +40,7 @@ class TippingController extends ChangeNotifier with Buffers {
     required String artistId,
     required String artistName,
   }) async {
+    if (!kIsWeb && Platform.isIOS) return false;
     if (_isProcessing) return false;
     _isProcessing = true;
     _paymentError = null;
@@ -110,6 +111,11 @@ class TippingController extends ChangeNotifier with Buffers {
     required String artistId,
     required String performanceId,
   }) async {
+    if (!kIsWeb && Platform.isIOS) {
+      _hasPaid = true;
+      notifyListeners();
+      return true;
+    }
     if (_isProcessing || _hasPaid) return false;
     _isProcessing = true;
     _paymentError = null;
@@ -197,6 +203,11 @@ class TippingController extends ChangeNotifier with Buffers {
     required String userId,
     required String performanceId,
   }) async {
+    if (!kIsWeb && Platform.isIOS) {
+      _hasPaid = true;
+      notifyListeners();
+      return;
+    }
     try {
       final result = await _stripeService.checkAccess(
         userId: userId,

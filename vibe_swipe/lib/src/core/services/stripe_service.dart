@@ -1,3 +1,4 @@
+import 'dart:io' show Platform;
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
@@ -46,6 +47,9 @@ class StripeService {
     required String artistId,
     String? performanceId,
   }) async {
+    if (!kIsWeb && Platform.isIOS) {
+      return false;
+    }
     if (kIsWeb) {
       return _processPaymentWeb(
         amount: amount,
@@ -178,6 +182,9 @@ class StripeService {
     required String userId,
     required String performanceId,
   }) async {
+    if (!kIsWeb && Platform.isIOS) {
+      return {'hasAccess': true, 'isPaid': false, 'price': 0.0};
+    }
     final callable = _functions.httpsCallable('checkAccess');
     final response = await callable.call({
       'userId': userId,

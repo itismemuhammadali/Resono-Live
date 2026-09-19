@@ -338,7 +338,7 @@ class _ArtistLiveBroadcastViewState extends State<ArtistLiveBroadcastView> {
             ),
 
           // Super Chat Ticker (pinned zone at top)
-          if (_isLive && _pinnedSuperChats.isNotEmpty)
+          if (_isLive && _pinnedSuperChats.isNotEmpty && (kIsWeb || !Platform.isIOS))
             Positioned(
               top: 60.h,
               left: 0,

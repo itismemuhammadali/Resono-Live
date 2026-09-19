@@ -1,4 +1,6 @@
 import 'dart:async';
+import 'dart:io' show Platform;
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:vibe_swipe/src/core/theme/app_colors.dart';
@@ -46,7 +48,7 @@ class _SuperChatTickerState extends State<SuperChatTicker>
 
   @override
   Widget build(BuildContext context) {
-    if (widget.pinnedSuperChats.isEmpty) {
+    if ((!kIsWeb && Platform.isIOS) || widget.pinnedSuperChats.isEmpty) {
       return const SizedBox.shrink();
     }
 

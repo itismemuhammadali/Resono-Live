@@ -66,57 +66,59 @@ class ScheduleLiveSessionView extends ConsumerWidget {
                         minLines: 5,
                         textInputType: TextInputType.multiline,
                         textCapitalization: TextCapitalization.sentences,
-                        isLast: !controller.isPaidPerformance,
+                        isLast: (!kIsWeb && Platform.isIOS) ? true : !controller.isPaidPerformance,
                         onChanged: (_) => ref
                             .read(artistPerformancesControllerProvider)
                             .onSessionFieldChanged(),
                       ),
-                      24.ph,
-                      Text(
-                        'Performance Type',
-                        style: TextStyle(
-                          fontFamily: 'Roboto',
-                          color: AppColors.gray300,
-                          fontSize: 16.sp,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                      12.ph,
-                      Row(
-                        children: [
-                          Expanded(
-                            child: _PerformanceTypeChip(
-                              label: 'Free',
-                              isSelected: !controller.isPaidPerformance,
-                              onTap: () => ref
-                                  .read(artistPerformancesControllerProvider.notifier)
-                                  .setPerformanceType(false),
-                            ),
+                      if (kIsWeb || !Platform.isIOS) ...[
+                        24.ph,
+                        Text(
+                          'Performance Type',
+                          style: TextStyle(
+                            fontFamily: 'Roboto',
+                            color: AppColors.gray300,
+                            fontSize: 16.sp,
+                            fontWeight: FontWeight.w500,
                           ),
-                          12.pw,
-                          Expanded(
-                            child: _PerformanceTypeChip(
-                              label: 'Paid',
-                              isSelected: controller.isPaidPerformance,
-                              onTap: () => ref
-                                  .read(artistPerformancesControllerProvider.notifier)
-                                  .setPerformanceType(true),
+                        ),
+                        12.ph,
+                        Row(
+                          children: [
+                            Expanded(
+                              child: _PerformanceTypeChip(
+                                label: 'Free',
+                                isSelected: !controller.isPaidPerformance,
+                                onTap: () => ref
+                                    .read(artistPerformancesControllerProvider.notifier)
+                                    .setPerformanceType(false),
+                              ),
                             ),
+                            12.pw,
+                            Expanded(
+                              child: _PerformanceTypeChip(
+                                label: 'Paid',
+                                isSelected: controller.isPaidPerformance,
+                                onTap: () => ref
+                                    .read(artistPerformancesControllerProvider.notifier)
+                                    .setPerformanceType(true),
+                              ),
+                            ),
+                          ],
+                        ),
+                        if (controller.isPaidPerformance) ...[
+                          20.ph,
+                          ArtistLabeledField(
+                            label: 'Ticket Price (\$)',
+                            hintText: 'e.g. 9.99',
+                            controller: controller.priceController,
+                            textInputType: const TextInputType.numberWithOptions(decimal: true),
+                            isLast: true,
+                            onChanged: (_) => ref
+                                .read(artistPerformancesControllerProvider)
+                                .onSessionFieldChanged(),
                           ),
                         ],
-                      ),
-                      if (controller.isPaidPerformance) ...[
-                        20.ph,
-                        ArtistLabeledField(
-                          label: 'Ticket Price (\$)',
-                          hintText: 'e.g. 9.99',
-                          controller: controller.priceController,
-                          textInputType: const TextInputType.numberWithOptions(decimal: true),
-                          isLast: true,
-                          onChanged: (_) => ref
-                              .read(artistPerformancesControllerProvider)
-                              .onSessionFieldChanged(),
-                        ),
                       ],
                       32.ph,
                       PrimaryElevatedButton(

@@ -23,11 +23,12 @@ class MenuSection extends ConsumerWidget {
         label: 'Analytics',
         onTap: () => dashboard.onTabTapped(3),
       ),
-      _MenuItem(
-        emoji: '💰',
-        label: 'Earnings',
-        onTap: () => AppRouterGo.push(artistEarningsView),
-      ),
+      if (kIsWeb || !Platform.isIOS)
+        _MenuItem(
+          emoji: '💰',
+          label: 'Earnings',
+          onTap: () => AppRouterGo.push(artistEarningsView),
+        ),
       _MenuItem(
         asset: 'assets/icons/png/artist_profile_notification_icn.png',
         label: 'Notification Settings',

@@ -1,3 +1,5 @@
+import 'dart:io' show Platform;
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
@@ -44,7 +46,7 @@ class LiveChatMessagesList extends ConsumerWidget {
       itemCount: chatController.messages.length,
       itemBuilder: (context, index) {
         final message = chatController.messages[index];
-        if (message.isSuperChat) {
+        if ((kIsWeb || !Platform.isIOS) && message.isSuperChat) {
           return SuperChatAnimatedBubble(
             message: message,
             child: LiveChatMessageBubble(message: message),

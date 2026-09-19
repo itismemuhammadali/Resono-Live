@@ -22,6 +22,7 @@ class SuperChatBottomSheet extends ConsumerStatefulWidget {
     required String artistName,
     required String performanceId,
   }) {
+    if (!kIsWeb && Platform.isIOS) return;
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,

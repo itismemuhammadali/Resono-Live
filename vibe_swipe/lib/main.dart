@@ -49,50 +49,86 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
+  // 1. Initialize Firebase first
+  try {
+    await Firebase.initializeApp(
+      options: DefaultFirebaseOptions.currentPlatform,
+    );
+  } catch (e) {
+    appPrint("Warning: Firebase.initializeApp failed: $e");
+  }
 
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
+  // 2. Set up background messaging handler after Firebase is initialized
+  try {
+    FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
+  } catch (e) {
+    appPrint("Warning: FirebaseMessaging.onBackgroundMessage failed: $e");
+  }
 
+  // 3. Load .env file
   try {
     await dotenv.load(fileName: "assets/.env");
   } catch (e) {
     appPrint("Warning: .env file not found, proceeding with RemoteConfig fallbacks");
   }
 
+  // 4. Register services in GetIt
   setupLocator();
 
-  // Initialize Firebase Remote Config (fetches all keys & URLs directly from Firebase Remote Config)
-  final remoteConfig = locator<RemoteConfigService>();
-  await remoteConfig.init();
+  // 5. Initialize Firebase Remote Config (with 3s timeout to prevent startup hangs)
+  try {
+    final remoteConfig = locator<RemoteConfigService>();
+    await remoteConfig.init().timeout(
+      const Duration(seconds: 3),
+      onTimeout: () {
+        appPrint("[RemoteConfig] Init timed out, using fallback values");
+      },
+    );
 
-  final stripeKey = remoteConfig.stripePublishableKey;
-  if (stripeKey.isNotEmpty) {
-    Stripe.publishableKey = stripeKey;
-    appPrint("[Stripe] Initialized from RemoteConfig with key: ${stripeKey.substring(0, stripeKey.length > 8 ? 8 : stripeKey.length)}...");
-  } else {
-    appPrint("[Stripe] Warning: STRIPE_PUBLISHABLE_KEY not found in RemoteConfig or .env");
+    // Initialize Stripe SDK only on non-iOS platforms (Android/Web)
+    if (kIsWeb || !Platform.isIOS) {
+      final stripeKey = remoteConfig.stripePublishableKey;
+      if (stripeKey.isNotEmpty) {
+        Stripe.publishableKey = stripeKey;
+        appPrint("[Stripe] Initialized from RemoteConfig with key: ${stripeKey.substring(0, stripeKey.length > 8 ? 8 : stripeKey.length)}...");
+      } else {
+        appPrint("[Stripe] Warning: STRIPE_PUBLISHABLE_KEY not found in RemoteConfig or .env");
+      }
+    }
+  } catch (e) {
+    appPrint("Warning: RemoteConfig / Stripe init failed: $e");
   }
 
+  // 6. Deep link service (with 2s timeout)
   try {
-    await deepLinkService.init();
+    await deepLinkService.init().timeout(
+      const Duration(seconds: 2),
+      onTimeout: () {
+        appPrint("[DeepLink] Init timed out, continuing");
+      },
+    );
   } catch (e) {
     appPrint("Warning: Deep link init failed: $e");
   }
 
+  // 7. Notification service
   if (!kIsWeb) {
     locator<NotificationService>().requestPermission().then((_) {
       locator<NotificationService>().init();
     }).catchError((_) {});
   }
 
-  SystemChrome.setPreferredOrientations([
-    DeviceOrientation.portraitUp,
-    DeviceOrientation.portraitDown,
-  ]).then((value) {
-    runApp(ProviderScope(child: VibeSwipeApp()));
-  });
+  // 8. Lock device orientations and launch UI unconditionally
+  try {
+    await SystemChrome.setPreferredOrientations([
+      DeviceOrientation.portraitUp,
+      DeviceOrientation.portraitDown,
+    ]);
+  } catch (e) {
+    appPrint("Warning: setPreferredOrientations failed: $e");
+  }
+
+  runApp(const ProviderScope(child: VibeSwipeApp()));
 }
 
 class VibeSwipeApp extends ConsumerWidget with AppSize, AppTheme {

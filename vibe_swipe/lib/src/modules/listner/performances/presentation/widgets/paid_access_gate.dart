@@ -21,6 +21,9 @@ class PaidAccessGate extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    if (!kIsWeb && Platform.isIOS) {
+      return const SizedBox.shrink();
+    }
     final controller = ref.watch(tippingControllerProvider);
 
     return Container(

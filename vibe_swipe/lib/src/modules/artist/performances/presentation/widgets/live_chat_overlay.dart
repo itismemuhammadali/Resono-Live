@@ -1,3 +1,5 @@
+import 'dart:io' show Platform;
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:vibe_swipe/src/core/theme/app_colors.dart';
@@ -64,7 +66,7 @@ class _ChatOverlayMessage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (message.isSuperChat) {
+    if ((kIsWeb || !Platform.isIOS) && message.isSuperChat) {
       final colors = _getTierColors();
       return Container(
         margin: EdgeInsets.only(bottom: 4.h),

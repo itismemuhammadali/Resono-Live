@@ -50,8 +50,10 @@ class _ArtistGoLiveSetupViewState extends ConsumerState<ArtistGoLiveSetupView> {
       return;
     }
 
+    final isIos = !kIsWeb && Platform.isIOS;
+    final effectiveIsPaid = isIos ? false : _isPaid;
     double? price;
-    if (_isPaid) {
+    if (effectiveIsPaid) {
       price = double.tryParse(_priceController.text.trim());
       if (price == null || price <= 0) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -66,8 +68,8 @@ class _ArtistGoLiveSetupViewState extends ConsumerState<ArtistGoLiveSetupView> {
       title: title,
       description: _descriptionController.text.trim(),
       category: _selectedCategory,
-      isPaid: _isPaid,
-      ticketPrice: price,
+      isPaid: effectiveIsPaid,
+      ticketPrice: effectiveIsPaid ? price : null,
       coverBytes: _coverImageBytes,
     );
 
@@ -211,49 +213,51 @@ class _ArtistGoLiveSetupViewState extends ConsumerState<ArtistGoLiveSetupView> {
                         textInputType: TextInputType.multiline,
                         textCapitalization: TextCapitalization.sentences,
                       ),
-                      20.ph,
-                      Text(
-                        'Performance Access',
-                        style: TextStyle(
-                          fontFamily: 'Roboto',
-                          color: AppColors.gray300,
-                          fontSize: 14.sp,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                      10.ph,
-                      Row(
-                        children: [
-                          Expanded(
-                            child: _AccessTypeChip(
-                              label: 'Free',
-                              isSelected: !_isPaid,
-                              onTap: isGoingLive
-                                  ? null
-                                  : () => setState(() => _isPaid = false),
-                            ),
+                      if (kIsWeb || !Platform.isIOS) ...[
+                        20.ph,
+                        Text(
+                          'Performance Access',
+                          style: TextStyle(
+                            fontFamily: 'Roboto',
+                            color: AppColors.gray300,
+                            fontSize: 14.sp,
+                            fontWeight: FontWeight.w500,
                           ),
-                          12.pw,
-                          Expanded(
-                            child: _AccessTypeChip(
-                              label: 'Paid (Ticket)',
-                              isSelected: _isPaid,
-                              onTap: isGoingLive
-                                  ? null
-                                  : () => setState(() => _isPaid = true),
+                        ),
+                        10.ph,
+                        Row(
+                          children: [
+                            Expanded(
+                              child: _AccessTypeChip(
+                                label: 'Free',
+                                isSelected: !_isPaid,
+                                onTap: isGoingLive
+                                    ? null
+                                    : () => setState(() => _isPaid = false),
+                              ),
                             ),
+                            12.pw,
+                            Expanded(
+                              child: _AccessTypeChip(
+                                label: 'Paid (Ticket)',
+                                isSelected: _isPaid,
+                                onTap: isGoingLive
+                                    ? null
+                                    : () => setState(() => _isPaid = true),
+                              ),
+                            ),
+                          ],
+                        ),
+                        if (_isPaid) ...[
+                          16.ph,
+                          ArtistLabeledField(
+                            label: 'Ticket Price (USD)',
+                            hintText: 'e.g. 4.99',
+                            controller: _priceController,
+                            textInputType: const TextInputType.numberWithOptions(decimal: true),
+                            isLast: true,
                           ),
                         ],
-                      ),
-                      if (_isPaid) ...[
-                        16.ph,
-                        ArtistLabeledField(
-                          label: 'Ticket Price (USD)',
-                          hintText: 'e.g. 4.99',
-                          controller: _priceController,
-                          textInputType: const TextInputType.numberWithOptions(decimal: true),
-                          isLast: true,
-                        ),
                       ],
                       22.ph,
                       Text(
