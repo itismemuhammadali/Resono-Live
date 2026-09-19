@@ -1,4 +1,3 @@
-import 'dart:io' show Platform;
 import 'package:flutter/foundation.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -8,14 +7,8 @@ class AppImagePicker {
 
   static Future<XFile?> fromGallery() async {
     try {
-      if (!kIsWeb && Platform.isIOS) {
-        final status = await Permission.photos.request();
-        if (status.isPermanentlyDenied) {
-          await openAppSettings();
-          return null;
-        }
-        if (status.isDenied) return null;
-      }
+      // On iOS, image_picker uses PHPickerViewController which runs out-of-process
+      // and does not require explicit Photo Library permissions.
       return await _picker.pickImage(
         source: ImageSource.gallery,
         imageQuality: 80,
@@ -30,11 +23,11 @@ class AppImagePicker {
     try {
       if (!kIsWeb) {
         final status = await Permission.camera.request();
-        if (status.isPermanentlyDenied) {
-          await openAppSettings();
+        if (!status.isGranted) {
+          // User tapped "Don't Allow" or camera is not granted.
+          // Respect user decision per Apple Guideline 5.1.1(iv) — never redirect to settings automatically.
           return null;
         }
-        if (status.isDenied) return null;
       }
       return await _picker.pickImage(
         source: ImageSource.camera,
@@ -48,14 +41,6 @@ class AppImagePicker {
 
   static Future<XFile?> videoFromGallery() async {
     try {
-      if (!kIsWeb && Platform.isIOS) {
-        final status = await Permission.photos.request();
-        if (status.isPermanentlyDenied) {
-          await openAppSettings();
-          return null;
-        }
-        if (status.isDenied) return null;
-      }
       return await _picker.pickVideo(source: ImageSource.gallery);
     } catch (e) {
       debugPrint('[AppImagePicker] Error picking video from gallery: $e');

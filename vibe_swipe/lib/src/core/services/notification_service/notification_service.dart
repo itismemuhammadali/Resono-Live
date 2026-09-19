@@ -3,9 +3,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
-import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
-import 'package:permission_handler/permission_handler.dart';
 import 'package:vibe_swipe/src/core/utils/app_exports.dart';
 import 'notification_navigation_service.dart';
 
@@ -135,8 +133,8 @@ class NotificationService {
         appPrint("Notification permission: provisional");
         break;
       default:
-        appPrint("Notification permission: denied — opening app settings");
-        await openAppSettings();
+        appPrint("Notification permission: not authorized or denied");
+        break;
     }
 
     return settings;

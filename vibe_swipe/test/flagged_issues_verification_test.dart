@@ -266,15 +266,15 @@ void main() {
   // ISSUE 4: Photo Permissions, Info.plist, and Privacy Manifest
   // ===========================================================================
   group('Issue 4: Photo Permissions, Info.plist, and Privacy Manifest', () {
-    test('app_helpers.dart imports dart:io and requests photos permission on iOS', () {
+    test('app_helpers.dart defines AppImagePicker compliant with Apple Guideline 5.1.1(iv)', () {
       final file = File('lib/src/core/utils/app_helpers.dart');
       expect(file.existsSync(), isTrue);
       final content = file.readAsStringSync();
 
-      expect(content.contains("import 'dart:io' show Platform;"), isTrue);
-      expect(content.contains('Permission.photos.request()'), isTrue);
-      expect(content.contains('status.isPermanentlyDenied'), isTrue);
-      expect(content.contains('status.isDenied'), isTrue);
+      expect(content.contains('class AppImagePicker'), isTrue);
+      expect(content.contains('Permission.camera.request()'), isTrue);
+      // Apple Guideline 5.1.1(iv): Never automatically redirect user to Settings when permission is denied
+      expect(content.contains('openAppSettings()'), isFalse);
     });
 
     test('Info.plist parses as valid XML and contains approved photo descriptions', () {
