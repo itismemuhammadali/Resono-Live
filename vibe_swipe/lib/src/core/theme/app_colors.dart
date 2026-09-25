@@ -201,11 +201,23 @@ class AppColors {
   static const Color superChatNeon = Color(0xFF39FF14);
 
   // Super Chat Tier Colors
-  static const Color superChatTier1Start = Color(0xFF2196F3);
-  static const Color superChatTier1End = Color(0xFF1565C0);
-  static const Color superChatTier2Start = Color(0xFF4CAF50);
-  static const Color superChatTier2End = Color(0xFF2E7D32);
-  static const Color superChatTier3Start = Color(0xFFFF5722);
-  static const Color superChatTier3End = Color(0xFFD84315);
+  static const Color superChatTier1Start = Color(0xFFCD7F32); // Bronze
+  static const Color superChatTier1End = Color(0xFFA0522D);
+  static const Color superChatTier2Start = Color(0xFFE0E0E0); // Silver
+  static const Color superChatTier2End = Color(0xFF9E9E9E);
+  static const Color superChatTier3Start = Color(0xFFFFD700); // Gold
+  static const Color superChatTier3End = Color(0xFFFFA000);
   static const Color superChatTier3Accent = Color(0xFFFF9800);
+  static const Color superChatTier4Start = Color(0xFFE5E4E2); // Platinum
+  static const Color superChatTier4End = Color(0xFF9C27B0);
+
+  // Badge-specific named colors
+  static const Color superChatBronzeStart = Color(0xFFCD7F32);
+  static const Color superChatBronzeEnd = Color(0xFFA0522D);
+  static const Color superChatSilverStart = Color(0xFFE0E0E0);
+  static const Color superChatSilverEnd = Color(0xFF9E9E9E);
+  static const Color superChatGoldStart = Color(0xFFFFD700);
+  static const Color superChatGoldEnd = Color(0xFFFFA000);
+  static const Color superChatPlatinumStart = Color(0xFFE5E4E2);
+  static const Color superChatPlatinumEnd = Color(0xFF9C27B0);
 }

@@ -1,5 +1,6 @@
 import 'package:vibe_swipe/src/core/utils/app_exports.dart';
 import 'package:vibe_swipe/src/components/primary_elevated_button.dart';
+import 'package:vibe_swipe/src/core/services/in_app_purchase_service.dart';
 import 'package:vibe_swipe/src/modules/artist/register/presentation/widgets/artist_labeled_field.dart';
 import '../controllers/artist_performances_controller.dart';
 import '../widgets/cover_image_upload_box.dart';
@@ -14,18 +15,17 @@ class ArtistGoLiveSetupView extends ConsumerStatefulWidget {
 class _ArtistGoLiveSetupViewState extends ConsumerState<ArtistGoLiveSetupView> {
   final TextEditingController _titleController = TextEditingController();
   final TextEditingController _descriptionController = TextEditingController();
-  final TextEditingController _priceController = TextEditingController();
 
   XFile? _coverImage;
   Uint8List? _coverImageBytes;
   String? _selectedCategory;
   bool _isPaid = false;
+  TicketTier _selectedTier = TicketTier.allTiers[1]; // Default to Tier 2 ($5)
 
   @override
   void dispose() {
     _titleController.dispose();
     _descriptionController.dispose();
-    _priceController.dispose();
     super.dispose();
   }
 
@@ -50,26 +50,15 @@ class _ArtistGoLiveSetupViewState extends ConsumerState<ArtistGoLiveSetupView> {
       return;
     }
 
-    final isIos = !kIsWeb && Platform.isIOS;
-    final effectiveIsPaid = isIos ? false : _isPaid;
-    double? price;
-    if (effectiveIsPaid) {
-      price = double.tryParse(_priceController.text.trim());
-      if (price == null || price <= 0) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Please enter a valid ticket price')),
-        );
-        return;
-      }
-    }
-
     final controller = ref.read(artistPerformancesControllerProvider);
     final entity = await controller.startInstantLiveSession(
       title: title,
       description: _descriptionController.text.trim(),
       category: _selectedCategory,
-      isPaid: effectiveIsPaid,
-      ticketPrice: effectiveIsPaid ? price : null,
+      isPaid: _isPaid,
+      ticketPrice: _isPaid ? _selectedTier.price : null,
+      ticketTier: _isPaid ? _selectedTier.tierNumber : null,
+      ticketProductId: _isPaid ? _selectedTier.productId : null,
       coverBytes: _coverImageBytes,
     );
 
@@ -213,51 +202,89 @@ class _ArtistGoLiveSetupViewState extends ConsumerState<ArtistGoLiveSetupView> {
                         textInputType: TextInputType.multiline,
                         textCapitalization: TextCapitalization.sentences,
                       ),
-                      if (kIsWeb || !Platform.isIOS) ...[
-                        20.ph,
-                        Text(
-                          'Performance Access',
-                          style: TextStyle(
-                            fontFamily: 'Roboto',
-                            color: AppColors.gray300,
-                            fontSize: 14.sp,
-                            fontWeight: FontWeight.w500,
-                          ),
+                      20.ph,
+                      Text(
+                        'Performance Access',
+                        style: TextStyle(
+                          fontFamily: 'Roboto',
+                          color: AppColors.gray300,
+                          fontSize: 14.sp,
+                          fontWeight: FontWeight.w500,
                         ),
-                        10.ph,
+                      ),
+                      10.ph,
+                      Row(
+                        children: [
+                          Expanded(
+                            child: _AccessTypeChip(
+                              label: 'Free',
+                              isSelected: !_isPaid,
+                              onTap: isGoingLive
+                                  ? null
+                                  : () => setState(() => _isPaid = false),
+                            ),
+                          ),
+                          12.pw,
+                          Expanded(
+                            child: _AccessTypeChip(
+                              label: 'Paid (Ticket)',
+                              isSelected: _isPaid,
+                              onTap: isGoingLive
+                                  ? null
+                                  : () => setState(() => _isPaid = true),
+                            ),
+                          ),
+                        ],
+                      ),
+                      if (_isPaid) ...[
+                        16.ph,
                         Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Expanded(
-                              child: _AccessTypeChip(
-                                label: 'Free',
-                                isSelected: !_isPaid,
-                                onTap: isGoingLive
-                                    ? null
-                                    : () => setState(() => _isPaid = false),
+                            Text(
+                              'Select Ticket Tier',
+                              style: TextStyle(
+                                fontFamily: 'Roboto',
+                                color: AppColors.gray300,
+                                fontSize: 14.sp,
+                                fontWeight: FontWeight.w500,
                               ),
                             ),
-                            12.pw,
-                            Expanded(
-                              child: _AccessTypeChip(
-                                label: 'Paid (Ticket)',
-                                isSelected: _isPaid,
-                                onTap: isGoingLive
-                                    ? null
-                                    : () => setState(() => _isPaid = true),
+                            Text(
+                              'Price: \$${_selectedTier.price.toStringAsFixed(0)}',
+                              style: TextStyle(
+                                fontFamily: 'Roboto',
+                                color: AppColors.listenerYellow,
+                                fontSize: 13.sp,
+                                fontWeight: FontWeight.w700,
                               ),
                             ),
                           ],
                         ),
-                        if (_isPaid) ...[
-                          16.ph,
-                          ArtistLabeledField(
-                            label: 'Ticket Price (USD)',
-                            hintText: 'e.g. 4.99',
-                            controller: _priceController,
-                            textInputType: const TextInputType.numberWithOptions(decimal: true),
-                            isLast: true,
+                        10.ph,
+                        GridView.builder(
+                          shrinkWrap: true,
+                          physics: const NeverScrollableScrollPhysics(),
+                          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                            crossAxisCount: 2,
+                            crossAxisSpacing: 10.w,
+                            mainAxisSpacing: 10.h,
+                            childAspectRatio: 2.1,
                           ),
-                        ],
+                          itemCount: TicketTier.allTiers.length,
+                          itemBuilder: (context, index) {
+                            final tier = TicketTier.allTiers[index];
+                            final isSelected =
+                                _selectedTier.tierNumber == tier.tierNumber;
+                            return _TicketTierTile(
+                              tier: tier,
+                              isSelected: isSelected,
+                              onTap: isGoingLive
+                                  ? null
+                                  : () => setState(() => _selectedTier = tier),
+                            );
+                          },
+                        ),
                       ],
                       22.ph,
                       Text(
@@ -373,6 +400,79 @@ class _AccessTypeChip extends StatelessWidget {
             fontSize: 15.sp,
             fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
           ),
+        ),
+      ),
+    );
+  }
+}
+
+class _TicketTierTile extends StatelessWidget {
+  const _TicketTierTile({
+    required this.tier,
+    required this.isSelected,
+    this.onTap,
+  });
+
+  final TicketTier tier;
+  final bool isSelected;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 180),
+        padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 6.h),
+        decoration: BoxDecoration(
+          color: isSelected
+              ? AppColors.listenerYellow.withValues(alpha: 0.12)
+              : const Color(0xFF161C26),
+          borderRadius: BorderRadius.circular(12.r),
+          border: Border.all(
+            color: isSelected
+                ? AppColors.listenerYellow
+                : Colors.white.withValues(alpha: 0.1),
+            width: isSelected ? 1.5 : 1,
+          ),
+        ),
+        child: Row(
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    '${tier.name} • \$${tier.price.toStringAsFixed(0)}',
+                    style: TextStyle(
+                      fontFamily: 'Roboto',
+                      color: isSelected ? AppColors.listenerYellow : AppColors.primaryWhite,
+                      fontSize: 12.sp,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  2.ph,
+                  Text(
+                    tier.subtitle,
+                    style: TextStyle(
+                      fontFamily: 'Roboto',
+                      color: AppColors.santagrey,
+                      fontSize: 10.sp,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+              ),
+            ),
+            if (isSelected)
+              Icon(
+                Icons.check_circle_rounded,
+                color: AppColors.listenerYellow,
+                size: 16.sp,
+              ),
+          ],
         ),
       ),
     );

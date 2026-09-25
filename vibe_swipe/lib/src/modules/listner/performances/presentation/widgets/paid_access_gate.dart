@@ -1,3 +1,4 @@
+import 'package:vibe_swipe/src/core/services/in_app_purchase_service.dart';
 import 'package:vibe_swipe/src/core/utils/app_exports.dart';
 import 'package:vibe_swipe/src/components/primary_elevated_button.dart';
 import 'package:vibe_swipe/src/components/in_app_alert.dart';
@@ -11,6 +12,7 @@ class PaidAccessGate extends ConsumerWidget {
     required this.artistId,
     required this.performanceId,
     required this.price,
+    this.tierNumber,
   });
 
   final String title;
@@ -18,13 +20,14 @@ class PaidAccessGate extends ConsumerWidget {
   final String artistId;
   final String performanceId;
   final double price;
+  final int? tierNumber;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    if (!kIsWeb && Platform.isIOS) {
-      return const SizedBox.shrink();
-    }
     final controller = ref.watch(tippingControllerProvider);
+    final tier = tierNumber != null
+        ? TicketTier.fromTierNumber(tierNumber)
+        : TicketTier.fromPrice(price);
 
     return Container(
       decoration: BoxDecoration(
@@ -55,61 +58,78 @@ class PaidAccessGate extends ConsumerWidget {
                   ),
                 ),
                 child: Icon(
-                  Icons.lock_rounded,
+                  Icons.confirmation_number_outlined,
                   color: AppColors.listenerYellow,
                   size: 36.sp,
                 ),
               ),
-              24.ph,
+              20.ph,
               Text(
-                'Paid Performance',
+                'LIVE STREAM TICKET REQUIRED',
                 style: TextStyle(
                   fontFamily: 'Roboto',
-                  fontSize: 14.sp,
-                  fontWeight: FontWeight.w500,
+                  fontSize: 13.sp,
+                  fontWeight: FontWeight.w700,
                   color: AppColors.listenerYellow,
                   letterSpacing: 1.5,
                 ),
               ),
-              12.ph,
+              10.ph,
               Text(
                 title,
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(
                   fontFamily: 'Roboto',
-                  fontSize: 24.sp,
+                  fontSize: 22.sp,
                   fontWeight: FontWeight.w700,
                   color: AppColors.primaryWhite,
                 ),
                 textAlign: TextAlign.center,
               ),
-              8.ph,
+              6.ph,
               Text(
                 'by $artistName',
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(
                   fontFamily: 'Roboto',
-                  fontSize: 16.sp,
+                  fontSize: 15.sp,
                   color: AppColors.santagrey,
                 ),
               ),
-              32.ph,
+              24.ph,
               Container(
-                padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 12.h),
+                padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 12.h),
                 decoration: BoxDecoration(
                   color: AppColors.listenerChipBg,
-                  borderRadius: BorderRadius.circular(12.r),
-                ),
-                child: Text(
-                  '\$${price.toStringAsFixed(2)}',
-                  style: TextStyle(
-                    fontFamily: 'Roboto',
-                    fontSize: 32.sp,
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.listenerYellow,
+                  borderRadius: BorderRadius.circular(14.r),
+                  border: Border.all(
+                    color: AppColors.listenerYellow.withValues(alpha: 0.25),
                   ),
+                ),
+                child: Column(
+                  children: [
+                    Text(
+                      '${tier.name} — ${tier.subtitle}',
+                      style: TextStyle(
+                        fontFamily: 'Roboto',
+                        fontSize: 13.sp,
+                        fontWeight: FontWeight.w500,
+                        color: AppColors.primaryWhite.withValues(alpha: 0.8),
+                      ),
+                    ),
+                    4.ph,
+                    Text(
+                      '\$${tier.price.toStringAsFixed(0)}',
+                      style: TextStyle(
+                        fontFamily: 'Roboto',
+                        fontSize: 32.sp,
+                        fontWeight: FontWeight.w800,
+                        color: AppColors.listenerYellow,
+                      ),
+                    ),
+                  ],
                 ),
               ),
               24.ph,
@@ -120,29 +140,31 @@ class PaidAccessGate extends ConsumerWidget {
                         final success = await ref
                             .read(tippingControllerProvider.notifier)
                             .unlockPerformance(
-                              amount: price,
+                              amount: tier.price,
                               artistId: artistId,
                               performanceId: performanceId,
+                              tierNumber: tier.tierNumber,
                             );
                         if (context.mounted) {
                           if (success) {
                             InAppAlert.show(
                               context,
-                              message: 'Performance unlocked! Enjoy the show.',
+                              message: 'Ticket purchased! Access granted.',
                               isSuccess: true,
                             );
                           } else {
                             InAppAlert.show(
                               context,
-                              message: 'Payment failed. Please try again.',
+                              message: controller.paymentError ??
+                                  'Purchase failed or was cancelled.',
                               isSuccess: false,
                             );
                           }
                         }
                       },
                 text: controller.isProcessing
-                    ? 'Processing...'
-                    : 'Unlock Performance',
+                    ? 'Processing Purchase...'
+                    : 'Get ${tier.name} Ticket (\$${tier.price.toStringAsFixed(0)})',
                 loader: controller.isProcessing,
                 backgroundColor: AppColors.listenerYellow,
                 textColor: AppColors.primaryblack,
@@ -151,10 +173,10 @@ class PaidAccessGate extends ConsumerWidget {
               ),
               12.ph,
               Text(
-                'One-time purchase to access this live performance',
+                'One-time purchase via App Store / Google Play to access this live show',
                 style: TextStyle(
                   fontFamily: 'Roboto',
-                  fontSize: 12.sp,
+                  fontSize: 11.sp,
                   color: AppColors.santagrey,
                 ),
                 textAlign: TextAlign.center,

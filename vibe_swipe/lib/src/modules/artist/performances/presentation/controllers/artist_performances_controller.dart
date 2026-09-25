@@ -420,6 +420,8 @@ class ArtistPerformancesController extends ChangeNotifier with Buffers {
     String? category,
     bool isPaid = false,
     double? ticketPrice,
+    int? ticketTier,
+    String? ticketProductId,
     Uint8List? coverBytes,
   }) async {
     if (_isGoingLive) return null;
@@ -440,8 +442,10 @@ class ArtistPerformancesController extends ChangeNotifier with Buffers {
         genres: category != null ? [category] : [],
         status: 'live',
         type: 'live',
-        isPaid: (!kIsWeb && Platform.isIOS) ? false : isPaid,
-        ticketPrice: (!kIsWeb && Platform.isIOS) ? null : (isPaid ? ticketPrice : null),
+        isPaid: isPaid,
+        ticketPrice: isPaid ? ticketPrice : null,
+        ticketTier: isPaid ? ticketTier : null,
+        ticketProductId: isPaid ? ticketProductId : null,
       );
 
       // 2. Upload cover thumbnail if provided

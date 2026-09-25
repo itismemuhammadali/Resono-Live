@@ -182,9 +182,6 @@ class StripeService {
     required String userId,
     required String performanceId,
   }) async {
-    if (!kIsWeb && Platform.isIOS) {
-      return {'hasAccess': true, 'isPaid': false, 'price': 0.0};
-    }
     final callable = _functions.httpsCallable('checkAccess');
     final response = await callable.call({
       'userId': userId,

@@ -28,3 +28,4 @@ export {
   onPerformanceLike,
   onPerformanceStatusChanged,
 } from "./notification_triggers";
+export { verifyInAppPurchase } from "./iap";

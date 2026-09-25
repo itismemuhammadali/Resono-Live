@@ -1,4 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:vibe_swipe/src/core/services/in_app_purchase_service.dart';
+import 'package:vibe_swipe/src/core/services/registry_service/di.dart';
 import 'package:vibe_swipe/src/core/utils/app_exports.dart';
 
 class TipRecord {
@@ -39,8 +42,10 @@ class TippingController extends ChangeNotifier with Buffers {
     required double amount,
     required String artistId,
     required String artistName,
+    String? performanceId,
+    String? message,
+    SuperChatBadge? badge,
   }) async {
-    if (!kIsWeb && Platform.isIOS) return false;
     if (_isProcessing) return false;
     _isProcessing = true;
     _paymentError = null;
@@ -50,10 +55,38 @@ class TippingController extends ChangeNotifier with Buffers {
       final userId = FirebaseAuth.instance.currentUser?.uid;
       if (userId == null) return false;
 
+      // ── Mobile Flow: Native Apple StoreKit / Google Play IAP ──
+      if (!kIsWeb) {
+        final selectedBadge = badge ?? SuperChatBadge.fromAmount(amount);
+        final success = await locator<InAppPurchaseService>().buySuperChat(
+          badge: selectedBadge,
+          performanceId: performanceId ?? '',
+          artistId: artistId,
+          artistName: artistName,
+          message: message ?? '',
+        );
+
+        if (success) {
+          _tipHistory.insert(
+            0,
+            TipRecord(
+              amount: amount,
+              artistName: artistName,
+              timestamp: DateTime.now(),
+            ),
+          );
+          notifyListeners();
+          return true;
+        }
+        return false;
+      }
+
+      // ── Web Flow: Stripe Checkout ──
       final success = await _stripeService.processPayment(
         amount: amount,
         type: 'tip',
         artistId: artistId,
+        performanceId: performanceId,
       );
 
       if (success) {
@@ -69,30 +102,27 @@ class TippingController extends ChangeNotifier with Buffers {
         return true;
       }
 
-      // Web: processPayment returns false (checkout opened in browser).
-      // Poll checkTipStatus until the webhook confirms payment.
-      if (kIsWeb) {
-        for (var i = 0; i < 30; i++) {
-          await Future.delayed(const Duration(seconds: 2));
-          try {
-            final confirmed = await _stripeService.checkTipStatus(
-              userId: userId,
-              artistId: artistId,
+      // Web: Polling for webhook confirmation
+      for (var i = 0; i < 30; i++) {
+        await Future.delayed(const Duration(seconds: 2));
+        try {
+          final confirmed = await _stripeService.checkTipStatus(
+            userId: userId,
+            artistId: artistId,
+          );
+          if (confirmed) {
+            _tipHistory.insert(
+              0,
+              TipRecord(
+                amount: amount,
+                artistName: artistName,
+                timestamp: DateTime.now(),
+              ),
             );
-            if (confirmed) {
-              _tipHistory.insert(
-                0,
-                TipRecord(
-                  amount: amount,
-                  artistName: artistName,
-                  timestamp: DateTime.now(),
-                ),
-              );
-              notifyListeners();
-              return true;
-            }
-          } catch (_) {}
-        }
+            notifyListeners();
+            return true;
+          }
+        } catch (_) {}
       }
 
       return false;
@@ -110,12 +140,8 @@ class TippingController extends ChangeNotifier with Buffers {
     required double amount,
     required String artistId,
     required String performanceId,
+    int? tierNumber,
   }) async {
-    if (!kIsWeb && Platform.isIOS) {
-      _hasPaid = true;
-      notifyListeners();
-      return true;
-    }
     if (_isProcessing || _hasPaid) return false;
     _isProcessing = true;
     _paymentError = null;
@@ -125,6 +151,27 @@ class TippingController extends ChangeNotifier with Buffers {
       final userId = FirebaseAuth.instance.currentUser?.uid;
       if (userId == null) throw Exception('Not authenticated');
 
+      // ── Mobile Flow: Native Apple StoreKit / Google Play IAP ──
+      if (!kIsWeb) {
+        final tier = tierNumber != null
+            ? TicketTier.fromTierNumber(tierNumber)
+            : TicketTier.fromPrice(amount);
+
+        final success = await locator<InAppPurchaseService>().buyTicket(
+          tier: tier,
+          performanceId: performanceId,
+          artistId: artistId,
+        );
+
+        if (success) {
+          _hasPaid = true;
+          notifyListeners();
+          return true;
+        }
+        return false;
+      }
+
+      // ── Web Flow: Stripe Checkout ──
       final success = await _stripeService.processPayment(
         amount: amount,
         type: 'paid_access',
@@ -135,39 +182,25 @@ class TippingController extends ChangeNotifier with Buffers {
       if (success) {
         _hasPaid = true;
         notifyListeners();
-
-        // Payment sheet completed. On native the webhook fires asynchronously,
-        // so poll checkAccess in the background until Firestore is updated.
-        // This ensures the user won't see the paywall if they leave and re-enter.
-        if (!kIsWeb) {
-          _pollAccessInBackground(userId: userId, performanceId: performanceId);
-        }
-
         return true;
       }
 
-      // On web ONLY: processPayment returns false (checkout launched in browser).
-      // Poll checkAccess until the webhook confirms payment.
-      if (kIsWeb) {
-        for (var i = 0; i < 30; i++) {
-          await Future.delayed(const Duration(seconds: 2));
-          try {
-            final result = await _stripeService.checkAccess(
-              userId: userId,
-              performanceId: performanceId,
-            );
-            if (result['hasAccess'] == true) {
-              _hasPaid = true;
-              notifyListeners();
-              return true;
-            }
-          } catch (_) {
-            // Keep polling
+      // Web: Polling checkAccess until webhook confirms
+      for (var i = 0; i < 30; i++) {
+        await Future.delayed(const Duration(seconds: 2));
+        try {
+          final result = await _stripeService.checkAccess(
+            userId: userId,
+            performanceId: performanceId,
+          );
+          if (result['hasAccess'] == true) {
+            _hasPaid = true;
+            notifyListeners();
+            return true;
           }
-        }
+        } catch (_) {}
       }
 
-      // Native: payment was cancelled or failed — do NOT grant access.
       return false;
     } catch (e) {
       _paymentError = e.toString();
@@ -179,35 +212,10 @@ class TippingController extends ChangeNotifier with Buffers {
     }
   }
 
-  /// Polls the backend until Firestore reflects the payment (webhook may be
-  /// a few seconds behind the PaymentSheet completion on native).
-  void _pollAccessInBackground({
-    required String userId,
-    required String performanceId,
-  }) {
-    Future(() async {
-      for (var i = 0; i < 20; i++) {
-        await Future.delayed(const Duration(seconds: 3));
-        try {
-          final result = await _stripeService.checkAccess(
-            userId: userId,
-            performanceId: performanceId,
-          );
-          if (result['hasAccess'] == true) return; // Firestore is up to date
-        } catch (_) {}
-      }
-    });
-  }
-
   Future<void> checkAccess({
     required String userId,
     required String performanceId,
   }) async {
-    if (!kIsWeb && Platform.isIOS) {
-      _hasPaid = true;
-      notifyListeners();
-      return;
-    }
     try {
       final result = await _stripeService.checkAccess(
         userId: userId,

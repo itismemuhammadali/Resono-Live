@@ -6,7 +6,7 @@
 //
 // Deployment: firebase deploy --only functions
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.onPerformanceStatusChanged = exports.onPerformanceLike = exports.onPostLike = exports.onPostComment = exports.onNewFollower = exports.paymentCancelled = exports.paymentSuccess = exports.stripeConnectWebhook = exports.requestPayout = exports.getConnectAccountStatus = exports.createConnectAccount = exports.getTransactionHistory = exports.checkTipStatus = exports.checkAccess = exports.confirmPayment = exports.createCheckoutSession = exports.createPaymentIntent = exports.stripeWebhook = exports.generateAgoraToken = void 0;
+exports.verifyInAppPurchase = exports.onPerformanceStatusChanged = exports.onPerformanceLike = exports.onPostLike = exports.onPostComment = exports.onNewFollower = exports.paymentCancelled = exports.paymentSuccess = exports.stripeConnectWebhook = exports.requestPayout = exports.getConnectAccountStatus = exports.createConnectAccount = exports.getTransactionHistory = exports.checkTipStatus = exports.checkAccess = exports.confirmPayment = exports.createCheckoutSession = exports.createPaymentIntent = exports.stripeWebhook = exports.generateAgoraToken = void 0;
 var agora_1 = require("./agora");
 Object.defineProperty(exports, "generateAgoraToken", { enumerable: true, get: function () { return agora_1.generateAgoraToken; } });
 var stripe_1 = require("./stripe");
@@ -29,4 +29,6 @@ Object.defineProperty(exports, "onPostComment", { enumerable: true, get: functio
 Object.defineProperty(exports, "onPostLike", { enumerable: true, get: function () { return notification_triggers_1.onPostLike; } });
 Object.defineProperty(exports, "onPerformanceLike", { enumerable: true, get: function () { return notification_triggers_1.onPerformanceLike; } });
 Object.defineProperty(exports, "onPerformanceStatusChanged", { enumerable: true, get: function () { return notification_triggers_1.onPerformanceStatusChanged; } });
+var iap_1 = require("./iap");
+Object.defineProperty(exports, "verifyInAppPurchase", { enumerable: true, get: function () { return iap_1.verifyInAppPurchase; } });
 //# sourceMappingURL=index.js.map

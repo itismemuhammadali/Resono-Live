@@ -16,6 +16,7 @@ class LiveChatService {
     String senderAvatar = '',
     bool isSuperChat = false,
     double donationAmount = 0.0,
+    String? badge,
   }) async {
     await _chatsCollection(performanceId).add({
       'text': text,
@@ -25,6 +26,7 @@ class LiveChatService {
       'createdAt': FieldValue.serverTimestamp(),
       'isSuperChat': isSuperChat,
       'donationAmount': donationAmount,
+      if (badge != null) 'badge': badge,
     });
   }
 

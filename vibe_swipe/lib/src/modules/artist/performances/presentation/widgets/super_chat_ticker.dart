@@ -121,12 +121,14 @@ class _PinnedSuperChatCardState extends State<_PinnedSuperChatCard>
 
   List<Color> _getTierColors() {
     switch (widget.message.tier) {
-      case SuperChatTier.tier3:
-        return [AppColors.superChatTier3Start, AppColors.superChatTier3End];
-      case SuperChatTier.tier2:
-        return [AppColors.superChatTier2Start, AppColors.superChatTier2End];
-      case SuperChatTier.tier1:
-        return [AppColors.superChatTier1Start, AppColors.superChatTier1End];
+      case SuperChatTier.platinum:
+        return [AppColors.superChatPlatinumStart, AppColors.superChatPlatinumEnd];
+      case SuperChatTier.gold:
+        return [AppColors.superChatGoldStart, AppColors.superChatGoldEnd];
+      case SuperChatTier.silver:
+        return [AppColors.superChatSilverStart, AppColors.superChatSilverEnd];
+      case SuperChatTier.bronze:
+        return [AppColors.superChatBronzeStart, AppColors.superChatBronzeEnd];
     }
   }
 

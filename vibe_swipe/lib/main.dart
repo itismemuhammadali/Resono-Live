@@ -6,6 +6,7 @@ import 'dart:convert';
 import 'firebase_options.dart';
 import 'src/core/utils/app_exports.dart';
 import 'src/core/services/deep_link_service.dart';
+import 'src/core/services/in_app_purchase_service.dart';
 
 final deepLinkService = DeepLinkService();
 
@@ -116,6 +117,11 @@ void main() async {
     locator<NotificationService>().requestPermission().then((_) {
       locator<NotificationService>().init();
     }).catchError((_) {});
+
+    // 8. Initialize In-App Purchases on mobile
+    locator<InAppPurchaseService>().initialize().catchError((e) {
+      appPrint("[IAP] Init failed: $e");
+    });
   }
 
   // 8. Lock device orientations and launch UI unconditionally

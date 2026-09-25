@@ -1,6 +1,16 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-enum SuperChatTier { tier1, tier2, tier3 }
+enum SuperChatTier {
+  bronze,
+  silver,
+  gold,
+  platinum;
+
+  static SuperChatTier get tier1 => bronze;
+  static SuperChatTier get tier2 => silver;
+  static SuperChatTier get tier3 => gold;
+  static SuperChatTier get tier4 => platinum;
+}
 
 class LiveChatMessage {
   final String id;
@@ -11,6 +21,7 @@ class LiveChatMessage {
   final DateTime createdAt;
   final bool isSuperChat;
   final double donationAmount;
+  final String? badge;
 
   const LiveChatMessage({
     required this.id,
@@ -21,22 +32,39 @@ class LiveChatMessage {
     required this.createdAt,
     this.isSuperChat = false,
     this.donationAmount = 0.0,
+    this.badge,
   });
 
   SuperChatTier get tier {
-    if (donationAmount >= 25) return SuperChatTier.tier3;
-    if (donationAmount >= 10) return SuperChatTier.tier2;
-    return SuperChatTier.tier1;
+    if (badge != null && badge!.isNotEmpty) {
+      switch (badge!.toLowerCase()) {
+        case 'platinum':
+          return SuperChatTier.platinum;
+        case 'gold':
+          return SuperChatTier.gold;
+        case 'silver':
+          return SuperChatTier.silver;
+        case 'bronze':
+        default:
+          return SuperChatTier.bronze;
+      }
+    }
+    if (donationAmount >= 25) return SuperChatTier.platinum;
+    if (donationAmount >= 10) return SuperChatTier.gold;
+    if (donationAmount >= 5) return SuperChatTier.silver;
+    return SuperChatTier.bronze;
   }
 
   int get tierDurationSeconds {
     switch (tier) {
-      case SuperChatTier.tier3:
-        return 120;
-      case SuperChatTier.tier2:
-        return 60;
-      case SuperChatTier.tier1:
-        return 30;
+      case SuperChatTier.platinum:
+        return 600; // 10 minutes
+      case SuperChatTier.gold:
+        return 300; // 5 minutes
+      case SuperChatTier.silver:
+        return 180; // 3 minutes
+      case SuperChatTier.bronze:
+        return 60; // 1 minute
     }
   }
 
@@ -51,6 +79,7 @@ class LiveChatMessage {
       createdAt: (data['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
       isSuperChat: data['isSuperChat'] ?? false,
       donationAmount: (data['donationAmount'] ?? 0).toDouble(),
+      badge: data['badge'] as String?,
     );
   }
 
@@ -62,5 +91,6 @@ class LiveChatMessage {
     'createdAt': FieldValue.serverTimestamp(),
     'isSuperChat': isSuperChat,
     'donationAmount': donationAmount,
+    if (badge != null) 'badge': badge,
   };
 }

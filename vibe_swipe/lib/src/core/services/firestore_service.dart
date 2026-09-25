@@ -245,6 +245,8 @@ class FirestoreService {
     DateTime? scheduledAt,
     bool? isPaid,
     double? ticketPrice,
+    int? ticketTier,
+    String? ticketProductId,
   }) async {
     try {
       final doc = {
@@ -261,6 +263,8 @@ class FirestoreService {
         'saves_count': 0,
         'isPaid': isPaid ?? false,
         'ticketPrice': ticketPrice ?? 0.0,
+        if (ticketTier != null) 'ticketTier': ticketTier,
+        if (ticketProductId != null) 'ticketProductId': ticketProductId,
         'paidUsers': <String>[],
         'createdAt': FieldValue.serverTimestamp(),
         'updatedAt': FieldValue.serverTimestamp(),

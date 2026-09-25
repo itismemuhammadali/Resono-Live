@@ -1,8 +1,9 @@
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:vibe_swipe/src/core/services/in_app_purchase_service.dart';
+import 'package:vibe_swipe/src/core/services/live_chat_service.dart';
 import 'package:vibe_swipe/src/core/utils/app_exports.dart';
 import 'package:vibe_swipe/src/components/primary_elevated_button.dart';
 import 'package:vibe_swipe/src/components/in_app_alert.dart';
-import 'package:vibe_swipe/src/core/services/live_chat_service.dart';
 import '../controllers/tipping_controller.dart';
 
 class SuperChatBottomSheet extends ConsumerStatefulWidget {
@@ -17,12 +18,12 @@ class SuperChatBottomSheet extends ConsumerStatefulWidget {
     required this.performanceId,
   });
 
-  static void show(BuildContext context, {
+  static void show(
+    BuildContext context, {
     required String artistId,
     required String artistName,
     required String performanceId,
   }) {
-    if (!kIsWeb && Platform.isIOS) return;
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -36,39 +37,90 @@ class SuperChatBottomSheet extends ConsumerStatefulWidget {
   }
 
   @override
-  ConsumerState<SuperChatBottomSheet> createState() => _SuperChatBottomSheetState();
+  ConsumerState<SuperChatBottomSheet> createState() =>
+      _SuperChatBottomSheetState();
 }
 
 class _SuperChatBottomSheetState extends ConsumerState<SuperChatBottomSheet> {
-  double _selectedAmount = 10.0;
+  SuperChatBadge _selectedBadge = SuperChatBadge.allBadges[1]; // Default to Silver ($5)
   final _messageController = TextEditingController();
-  bool _isCustom = false;
-  final _customAmountController = TextEditingController();
-
-  static const _presetAmounts = [5.0, 10.0, 25.0, 50.0];
 
   @override
   void dispose() {
     _messageController.dispose();
-    _customAmountController.dispose();
     super.dispose();
+  }
+
+  bool get _canSend => _messageController.text.trim().isNotEmpty;
+
+  Future<void> _onSend() async {
+    if (!_canSend) return;
+
+    final controller = ref.read(tippingControllerProvider.notifier);
+    final success = await controller.processTip(
+      amount: _selectedBadge.price,
+      artistId: widget.artistId,
+      artistName: widget.artistName,
+      performanceId: widget.performanceId,
+      message: _messageController.text.trim(),
+      badge: _selectedBadge,
+    );
+
+    if (success && mounted) {
+      final userId = FirebaseAuth.instance.currentUser?.uid ?? '';
+      final userName =
+          FirebaseAuth.instance.currentUser?.displayName ?? 'Anonymous';
+
+      await LiveChatService.sendMessage(
+        performanceId: widget.performanceId,
+        text: _messageController.text.trim(),
+        senderId: userId,
+        senderName: userName,
+        isSuperChat: true,
+        donationAmount: _selectedBadge.price,
+        badge: _selectedBadge.id,
+      );
+
+      if (mounted) {
+        Navigator.of(context).pop();
+        InAppAlert.show(
+          context,
+          message:
+              '${_selectedBadge.name} Super Chat sent to ${widget.artistName}!',
+          isSuccess: true,
+        );
+      }
+    } else if (mounted) {
+      Navigator.of(context).pop();
+      InAppAlert.show(
+        context,
+        message: 'Payment was not completed. Please try again.',
+        isSuccess: false,
+      );
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     final controller = ref.watch(tippingControllerProvider);
-
-    final maxHeight = MediaQuery.of(context).size.height * 0.85;
+    final maxHeight = MediaQuery.of(context).size.height * 0.88;
 
     return Container(
       constraints: BoxConstraints(maxHeight: maxHeight),
       decoration: BoxDecoration(
         color: AppColors.listenerDashboardBg,
         borderRadius: BorderRadius.vertical(top: Radius.circular(24.r)),
+        border: Border(
+          top: BorderSide(
+            color: Colors.white.withValues(alpha: 0.1),
+            width: 1,
+          ),
+        ),
       ),
-      padding: EdgeInsets.fromLTRB(24.w, 12.h, 24.w, 32.h),
+      padding: EdgeInsets.fromLTRB(20.w, 12.h, 20.w, 32.h),
       child: SingleChildScrollView(
-        padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+        padding:
+            EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -83,13 +135,17 @@ class _SuperChatBottomSheetState extends ConsumerState<SuperChatBottomSheet> {
                 ),
               ),
             ),
-            20.ph,
+            18.ph,
             Row(
               children: [
-                Icon(Icons.star, color: AppColors.superChatGold, size: 24.sp),
+                Icon(
+                  Icons.stars_rounded,
+                  color: AppColors.superChatGold,
+                  size: 26.sp,
+                ),
                 8.pw,
                 Text(
-                  'Super Chat',
+                  'Super Chat Badges',
                   style: TextStyle(
                     fontFamily: 'Roboto',
                     fontSize: 22.sp,
@@ -99,112 +155,131 @@ class _SuperChatBottomSheetState extends ConsumerState<SuperChatBottomSheet> {
                 ),
               ],
             ),
-            8.ph,
+            6.ph,
             Text(
-              'Send a highlighted message to ${widget.artistName}',
+              'Select a tip badge to send a highlighted message to ${widget.artistName}',
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
               style: TextStyle(
                 fontFamily: 'Roboto',
-                fontSize: 14.sp,
+                fontSize: 13.sp,
                 color: AppColors.santagrey,
               ),
             ),
-            24.ph,
-            Row(
-              children: _presetAmounts.map((amount) {
-                final isSelected = !_isCustom && _selectedAmount == amount;
-                return Expanded(
-                  child: Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 4.w),
-                    child: GestureDetector(
-                      onTap: () => setState(() {
-                        _selectedAmount = amount;
-                        _isCustom = false;
-                        _customAmountController.clear();
-                      }),
-                      child: Container(
-                        padding: EdgeInsets.symmetric(vertical: 14.h),
-                        decoration: BoxDecoration(
-                          gradient: isSelected
-                              ? LinearGradient(
-                                  colors: [
-                                    AppColors.superChatGold,
-                                    AppColors.superChatGoldDark,
-                                  ],
-                                )
-                              : null,
-                          color: isSelected ? null : AppColors.listenerChipBg,
-                          borderRadius: BorderRadius.circular(12.r),
-                          border: Border.all(
-                            color: isSelected
-                                ? AppColors.superChatGold
-                                : AppColors.listenerChipBorder,
-                          ),
-                        ),
-                        child: Center(
-                          child: Text(
-                            '\$${amount.toStringAsFixed(0)}',
-                            style: TextStyle(
-                              fontFamily: 'Roboto',
-                              fontSize: 18.sp,
-                              fontWeight: FontWeight.w600,
-                              color: isSelected
-                                  ? AppColors.primaryblack
-                                  : AppColors.primaryWhite,
-                            ),
-                          ),
-                        ),
+            20.ph,
+
+            // 4 Tip Badges Grid
+            GridView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 2,
+                crossAxisSpacing: 10.w,
+                mainAxisSpacing: 10.h,
+                childAspectRatio: 2.15,
+              ),
+              itemCount: SuperChatBadge.allBadges.length,
+              itemBuilder: (context, index) {
+                final badge = SuperChatBadge.allBadges[index];
+                final isSelected = _selectedBadge.id == badge.id;
+
+                return GestureDetector(
+                  onTap: () => setState(() => _selectedBadge = badge),
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 180),
+                    padding:
+                        EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
+                    decoration: BoxDecoration(
+                      gradient: isSelected
+                          ? LinearGradient(
+                              colors: badge.colors,
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                            )
+                          : null,
+                      color: isSelected ? null : AppColors.listenerChipBg,
+                      borderRadius: BorderRadius.circular(14.r),
+                      border: Border.all(
+                        color: isSelected
+                            ? Colors.white
+                            : AppColors.listenerChipBorder,
+                        width: isSelected ? 1.5 : 1,
                       ),
+                      boxShadow: isSelected
+                          ? [
+                              BoxShadow(
+                                color: badge.colors.first
+                                    .withValues(alpha: 0.35),
+                                blurRadius: 10,
+                                spreadRadius: 1,
+                              ),
+                            ]
+                          : null,
+                    ),
+                    child: Row(
+                      children: [
+                        Container(
+                          width: 32.w,
+                          height: 32.w,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: isSelected
+                                ? Colors.white.withValues(alpha: 0.25)
+                                : badge.colors.first.withValues(alpha: 0.15),
+                          ),
+                          child: Icon(
+                            badge.icon,
+                            color: isSelected ? Colors.white : badge.colors.first,
+                            size: 18.sp,
+                          ),
+                        ),
+                        8.pw,
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Text(
+                                '${badge.name} • \$${badge.price.toStringAsFixed(0)}',
+                                style: TextStyle(
+                                  fontFamily: 'Roboto',
+                                  fontSize: 13.sp,
+                                  fontWeight: FontWeight.w700,
+                                  color: isSelected
+                                      ? Colors.white
+                                      : AppColors.primaryWhite,
+                                ),
+                              ),
+                              2.ph,
+                              Text(
+                                '${badge.pinMinutes} min pin',
+                                style: TextStyle(
+                                  fontFamily: 'Roboto',
+                                  fontSize: 10.sp,
+                                  fontWeight: FontWeight.w500,
+                                  color: isSelected
+                                      ? Colors.white.withValues(alpha: 0.9)
+                                      : AppColors.santagrey,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        if (isSelected)
+                          Icon(
+                            Icons.check_circle_rounded,
+                            color: Colors.white,
+                            size: 16.sp,
+                          ),
+                      ],
                     ),
                   ),
                 );
-              }).toList(),
+              },
             ),
-            16.ph,
-            GestureDetector(
-              onTap: () => setState(() => _isCustom = true),
-              child: Container(
-                padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 4.h),
-                decoration: BoxDecoration(
-                  color: _isCustom ? AppColors.listenerChipBg : Colors.transparent,
-                  borderRadius: BorderRadius.circular(12.r),
-                  border: Border.all(
-                    color: _isCustom
-                        ? AppColors.superChatGold
-                        : AppColors.listenerChipBorder,
-                  ),
-                ),
-                child: TextField(
-                  controller: _customAmountController,
-                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                  style: TextStyle(
-                    fontFamily: 'Roboto',
-                    fontSize: 16.sp,
-                    color: AppColors.primaryWhite,
-                  ),
-                  decoration: InputDecoration(
-                    hintText: 'Custom amount',
-                    hintStyle: TextStyle(
-                      fontFamily: 'Roboto',
-                      fontSize: 16.sp,
-                      color: AppColors.santagrey,
-                    ),
-                    prefixText: '\$ ',
-                    prefixStyle: TextStyle(
-                      fontFamily: 'Roboto',
-                      fontSize: 16.sp,
-                      color: AppColors.primaryWhite,
-                    ),
-                    border: InputBorder.none,
-                    contentPadding: EdgeInsets.symmetric(vertical: 12.h),
-                  ),
-                  onTap: () => setState(() => _isCustom = true),
-                  onChanged: (_) => setState(() => _isCustom = true),
-                ),
-              ),
-            ),
-            16.ph,
+            18.ph,
+
+            // Message TextField
             TextField(
               controller: _messageController,
               maxLength: 100,
@@ -213,84 +288,64 @@ class _SuperChatBottomSheetState extends ConsumerState<SuperChatBottomSheet> {
                 fontSize: 14.sp,
                 color: AppColors.primaryWhite,
               ),
+              onChanged: (_) => setState(() {}),
               decoration: InputDecoration(
-                hintText: 'Add a message (required)',
+                hintText:
+                    'Say something to ${widget.artistName} (required)...',
                 hintStyle: TextStyle(
                   fontFamily: 'Roboto',
+                  fontSize: 13.sp,
                   color: AppColors.santagrey,
                 ),
                 counterStyle: TextStyle(
                   fontFamily: 'Roboto',
+                  fontSize: 11.sp,
                   color: AppColors.santagrey,
                 ),
                 filled: true,
                 fillColor: AppColors.listenerChipBg,
                 border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12.r),
-                  borderSide: BorderSide(color: AppColors.listenerChipBorder),
+                  borderRadius: BorderRadius.circular(14.r),
+                  borderSide:
+                      BorderSide(color: AppColors.listenerChipBorder),
                 ),
                 focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12.r),
-                  borderSide: BorderSide(color: AppColors.superChatGold),
+                  borderRadius: BorderRadius.circular(14.r),
+                  borderSide: BorderSide(
+                    color: _selectedBadge.colors.first,
+                    width: 1.5,
+                  ),
                 ),
               ),
             ),
-            24.ph,
+            20.ph,
+
+            // Buy Super Chat Button
             PrimaryElevatedButton(
-              onTap: _canSend() && !controller.isProcessing ? _onSend : () {},
+              onTap: _canSend && !controller.isProcessing ? _onSend : () {},
               text: controller.isProcessing
-                  ? 'Processing...'
-                  : 'Send \$${_effectiveAmount.toStringAsFixed(2)} Super Chat',
+                  ? 'Processing Purchase...'
+                  : 'Send ${_selectedBadge.name} Super Chat (\$${_selectedBadge.price.toStringAsFixed(0)})',
               loader: controller.isProcessing,
-              backgroundColor: AppColors.superChatGold,
-              textColor: AppColors.primaryblack,
-              radius: 14,
-              enabled: _canSend() && !controller.isProcessing,
+              backgroundColor: _selectedBadge.colors.first,
+              textColor: Colors.white,
+              radius: 14.r,
+              enabled: _canSend && !controller.isProcessing,
+            ),
+            10.ph,
+            Center(
+              child: Text(
+                'Purchased via Apple App Store / Google Play In-App Purchase',
+                style: TextStyle(
+                  fontFamily: 'Roboto',
+                  fontSize: 11.sp,
+                  color: AppColors.santagrey,
+                ),
+              ),
             ),
           ],
         ),
       ),
     );
-  }
-
-  double get _effectiveAmount {
-    if (_isCustom) return double.tryParse(_customAmountController.text) ?? 0;
-    return _selectedAmount;
-  }
-
-  bool _canSend() => _effectiveAmount > 0 && _messageController.text.trim().isNotEmpty;
-
-  Future<void> _onSend() async {
-    final success = await ref.read(tippingControllerProvider.notifier).processTip(
-      amount: _effectiveAmount,
-      artistId: widget.artistId,
-      artistName: widget.artistName,
-    );
-
-    if (success && mounted) {
-      final userId = FirebaseAuth.instance.currentUser?.uid ?? '';
-      final userName = FirebaseAuth.instance.currentUser?.displayName ?? 'Anonymous';
-      await LiveChatService.sendMessage(
-        performanceId: widget.performanceId,
-        text: _messageController.text.trim(),
-        senderId: userId,
-        senderName: userName,
-        isSuperChat: true,
-        donationAmount: _effectiveAmount,
-      );
-      Navigator.of(context).pop();
-      InAppAlert.show(
-        context,
-        message: 'Super Chat sent!',
-        isSuccess: true,
-      );
-    } else if (mounted) {
-      Navigator.of(context).pop();
-      InAppAlert.show(
-        context,
-        message: 'Payment failed. Please try again.',
-        isSuccess: false,
-      );
-    }
   }
 }

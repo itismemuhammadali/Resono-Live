@@ -1,3 +1,4 @@
+import 'package:vibe_swipe/src/core/services/in_app_purchase_service.dart';
 import 'package:vibe_swipe/src/core/utils/app_exports.dart';
 import 'package:vibe_swipe/src/components/primary_elevated_button.dart';
 import 'package:vibe_swipe/src/components/in_app_alert.dart';
@@ -13,7 +14,8 @@ class TipArtistBottomSheet extends ConsumerStatefulWidget {
   final String artistName;
   final String artistId;
 
-  static void show(BuildContext context, {
+  static void show(
+    BuildContext context, {
     required String artistName,
     required String artistId,
   }) {
@@ -34,34 +36,15 @@ class TipArtistBottomSheet extends ConsumerStatefulWidget {
 }
 
 class _TipArtistBottomSheetState extends ConsumerState<TipArtistBottomSheet> {
-  double _selectedAmount = 10.0;
-  final TextEditingController _customAmountController = TextEditingController();
-  bool _isCustom = false;
-
-  static const _presetAmounts = [5.0, 10.0, 20.0];
-
-  @override
-  void dispose() {
-    _customAmountController.dispose();
-    super.dispose();
-  }
-
-  double get _effectiveAmount {
-    if (_isCustom) {
-      return double.tryParse(_customAmountController.text) ?? 0.0;
-    }
-    return _selectedAmount;
-  }
+  SuperChatBadge _selectedBadge = SuperChatBadge.allBadges[1]; // Default to Silver ($5)
 
   Future<void> _onTip() async {
-    final amount = _effectiveAmount;
-    if (amount <= 0) return;
-
     final ctrl = ref.read(tippingControllerProvider.notifier);
     final success = await ctrl.processTip(
-      amount: amount,
+      amount: _selectedBadge.price,
       artistId: widget.artistId,
       artistName: widget.artistName,
+      badge: _selectedBadge,
     );
 
     if (mounted) {
@@ -69,13 +52,14 @@ class _TipArtistBottomSheetState extends ConsumerState<TipArtistBottomSheet> {
       if (success) {
         InAppAlert.show(
           context,
-          message: 'Tip of \$${amount.toStringAsFixed(2)} sent successfully!',
+          message:
+              '${_selectedBadge.name} tip of \$${_selectedBadge.price.toStringAsFixed(0)} sent to ${widget.artistName}!',
           isSuccess: true,
         );
       } else if (ctrl.paymentError != null) {
         InAppAlert.show(
           context,
-          message: 'Payment failed. Please try again.',
+          message: ctrl.paymentError ?? 'Payment failed. Please try again.',
           isSuccess: false,
         );
       }
@@ -90,8 +74,14 @@ class _TipArtistBottomSheetState extends ConsumerState<TipArtistBottomSheet> {
       decoration: BoxDecoration(
         color: AppColors.listenerDashboardBg,
         borderRadius: BorderRadius.vertical(top: Radius.circular(24.r)),
+        border: Border(
+          top: BorderSide(
+            color: Colors.white.withValues(alpha: 0.1),
+            width: 1,
+          ),
+        ),
       ),
-      padding: EdgeInsets.fromLTRB(24.w, 12.h, 24.w, 32.h),
+      padding: EdgeInsets.fromLTRB(20.w, 12.h, 20.w, 32.h),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -106,128 +96,152 @@ class _TipArtistBottomSheetState extends ConsumerState<TipArtistBottomSheet> {
               ),
             ),
           ),
-          20.ph,
-          Text(
-            'Tip ${widget.artistName}',
-            style: TextStyle(
-              fontFamily: 'Roboto',
-              fontSize: 22.sp,
-              fontWeight: FontWeight.w700,
-              color: AppColors.primaryWhite,
-            ),
+          18.ph,
+          Row(
+            children: [
+              Icon(
+                Icons.volunteer_activism_rounded,
+                color: AppColors.listenerYellow,
+                size: 24.sp,
+              ),
+              8.pw,
+              Text(
+                'Tip ${widget.artistName}',
+                style: TextStyle(
+                  fontFamily: 'Roboto',
+                  fontSize: 22.sp,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.primaryWhite,
+                ),
+              ),
+            ],
           ),
-          8.ph,
+          6.ph,
           Text(
-            'Show your support with a tip',
+            'Support ${widget.artistName} with an in-app tip badge',
             style: TextStyle(
               fontFamily: 'Roboto',
-              fontSize: 14.sp,
+              fontSize: 13.sp,
               color: AppColors.santagrey,
             ),
           ),
-          24.ph,
-          Row(
-            children: _presetAmounts.map((amount) {
-              final isSelected = !_isCustom && _selectedAmount == amount;
-              return Expanded(
-                child: Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 4.w),
-                  child: GestureDetector(
-                    onTap: () => setState(() {
-                      _selectedAmount = amount;
-                      _isCustom = false;
-                      _customAmountController.clear();
-                    }),
-                    child: Container(
-                      padding: EdgeInsets.symmetric(vertical: 14.h),
-                      decoration: BoxDecoration(
-                        color: isSelected
-                            ? AppColors.listenerYellow
-                            : AppColors.listenerChipBg,
-                        borderRadius: BorderRadius.circular(12.r),
-                        border: Border.all(
-                          color: isSelected
-                              ? AppColors.listenerYellow
-                              : AppColors.listenerChipBorder,
-                        ),
-                      ),
-                      child: Center(
-                        child: Text(
-                          '\$${amount.toStringAsFixed(0)}',
-                          style: TextStyle(
-                            fontFamily: 'Roboto',
-                            fontSize: 18.sp,
-                            fontWeight: FontWeight.w600,
-                            color: isSelected
-                                ? AppColors.primaryblack
-                                : AppColors.primaryWhite,
-                          ),
-                        ),
-                      ),
+          20.ph,
+
+          // Badges Grid
+          GridView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 2,
+              crossAxisSpacing: 10.w,
+              mainAxisSpacing: 10.h,
+              childAspectRatio: 2.15,
+            ),
+            itemCount: SuperChatBadge.allBadges.length,
+            itemBuilder: (context, index) {
+              final badge = SuperChatBadge.allBadges[index];
+              final isSelected = _selectedBadge.id == badge.id;
+
+              return GestureDetector(
+                onTap: () => setState(() => _selectedBadge = badge),
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 180),
+                  padding:
+                      EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
+                  decoration: BoxDecoration(
+                    gradient: isSelected
+                        ? LinearGradient(
+                            colors: badge.colors,
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                          )
+                        : null,
+                    color: isSelected ? null : AppColors.listenerChipBg,
+                    borderRadius: BorderRadius.circular(14.r),
+                    border: Border.all(
+                      color: isSelected
+                          ? Colors.white
+                          : AppColors.listenerChipBorder,
+                      width: isSelected ? 1.5 : 1,
                     ),
+                  ),
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 32.w,
+                        height: 32.w,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: isSelected
+                              ? Colors.white.withValues(alpha: 0.25)
+                              : badge.colors.first.withValues(alpha: 0.15),
+                        ),
+                        child: Icon(
+                          badge.icon,
+                          color: isSelected ? Colors.white : badge.colors.first,
+                          size: 18.sp,
+                        ),
+                      ),
+                      8.pw,
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text(
+                              '${badge.name} • \$${badge.price.toStringAsFixed(0)}',
+                              style: TextStyle(
+                                fontFamily: 'Roboto',
+                                fontSize: 13.sp,
+                                fontWeight: FontWeight.w700,
+                                color: isSelected
+                                    ? Colors.white
+                                    : AppColors.primaryWhite,
+                              ),
+                            ),
+                            2.ph,
+                            Text(
+                              '${badge.pinMinutes} min alert',
+                              style: TextStyle(
+                                fontFamily: 'Roboto',
+                                fontSize: 10.sp,
+                                color: isSelected
+                                    ? Colors.white.withValues(alpha: 0.9)
+                                    : AppColors.santagrey,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               );
-            }).toList(),
-          ),
-          16.ph,
-          GestureDetector(
-            onTap: () => setState(() => _isCustom = true),
-            child: Container(
-              padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 4.h),
-              decoration: BoxDecoration(
-                color: _isCustom
-                    ? AppColors.listenerChipBg
-                    : Colors.transparent,
-                borderRadius: BorderRadius.circular(12.r),
-                border: Border.all(
-                  color: _isCustom
-                      ? AppColors.listenerYellow
-                      : AppColors.listenerChipBorder,
-                ),
-              ),
-              child: TextField(
-                controller: _customAmountController,
-                keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                style: TextStyle(
-                  fontFamily: 'Roboto',
-                  fontSize: 16.sp,
-                  color: AppColors.primaryWhite,
-                ),
-                decoration: InputDecoration(
-                  hintText: 'Custom amount',
-                  hintStyle: TextStyle(
-                    fontFamily: 'Roboto',
-                    fontSize: 16.sp,
-                    color: AppColors.santagrey,
-                  ),
-                  prefixText: '\$ ',
-                  prefixStyle: TextStyle(
-                    fontFamily: 'Roboto',
-                    fontSize: 16.sp,
-                    color: AppColors.primaryWhite,
-                  ),
-                  border: InputBorder.none,
-                  contentPadding: EdgeInsets.symmetric(vertical: 12.h),
-                ),
-                onTap: () => setState(() => _isCustom = true),
-                onChanged: (_) => setState(() => _isCustom = true),
-              ),
-            ),
+            },
           ),
           24.ph,
           PrimaryElevatedButton(
-            onTap: _effectiveAmount > 0 ? _onTip : () {},
+            onTap: !controller.isProcessing ? _onTip : () {},
             text: controller.isProcessing
-                ? 'Processing...'
-                : 'Send \$${_effectiveAmount.toStringAsFixed(2)} Tip',
+                ? 'Processing Tip...'
+                : 'Send ${_selectedBadge.name} Tip (\$${_selectedBadge.price.toStringAsFixed(0)})',
             loader: controller.isProcessing,
-            backgroundColor: AppColors.listenerYellow,
-            textColor: AppColors.primaryblack,
-            radius: 14,
-            enabled: _effectiveAmount > 0 && !controller.isProcessing,
+            backgroundColor: _selectedBadge.colors.first,
+            textColor: Colors.white,
+            radius: 14.r,
+            enabled: !controller.isProcessing,
           ),
           12.ph,
+          Center(
+            child: Text(
+              'Secure purchase via App Store / Google Play',
+              style: TextStyle(
+                fontFamily: 'Roboto',
+                fontSize: 11.sp,
+                color: AppColors.santagrey,
+              ),
+            ),
+          ),
         ],
       ),
     );

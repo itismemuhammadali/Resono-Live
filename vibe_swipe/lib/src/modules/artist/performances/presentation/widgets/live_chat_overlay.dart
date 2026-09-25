@@ -1,5 +1,3 @@
-import 'dart:io' show Platform;
-import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:vibe_swipe/src/core/theme/app_colors.dart';
@@ -55,18 +53,20 @@ class _ChatOverlayMessage extends StatelessWidget {
 
   List<Color> _getTierColors() {
     switch (message.tier) {
-      case SuperChatTier.tier3:
-        return [AppColors.superChatTier3Start, AppColors.superChatTier3End];
-      case SuperChatTier.tier2:
-        return [AppColors.superChatTier2Start, AppColors.superChatTier2End];
-      case SuperChatTier.tier1:
-        return [AppColors.superChatTier1Start, AppColors.superChatTier1End];
+      case SuperChatTier.platinum:
+        return [AppColors.superChatPlatinumStart, AppColors.superChatPlatinumEnd];
+      case SuperChatTier.gold:
+        return [AppColors.superChatGoldStart, AppColors.superChatGoldEnd];
+      case SuperChatTier.silver:
+        return [AppColors.superChatSilverStart, AppColors.superChatSilverEnd];
+      case SuperChatTier.bronze:
+        return [AppColors.superChatBronzeStart, AppColors.superChatBronzeEnd];
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    if ((kIsWeb || !Platform.isIOS) && message.isSuperChat) {
+    if (message.isSuperChat) {
       final colors = _getTierColors();
       return Container(
         margin: EdgeInsets.only(bottom: 4.h),

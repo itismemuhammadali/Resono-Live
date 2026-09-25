@@ -171,20 +171,6 @@ class _ListenerLivePerformanceViewState extends ConsumerState<ListenerLivePerfor
   }
 
   Future<void> _checkAccess() async {
-    // On iOS, bypass payment verification so all streams are immediately accessible without Stripe
-    if (!kIsWeb && Platform.isIOS) {
-      if (mounted) {
-        setState(() {
-          _isPaidPerformance = false;
-          _accessCheckCompleted = true;
-          _accessCheckFailed = false;
-        });
-        _joinLivePerformance();
-        _initAgora();
-      }
-      return;
-    }
-
     final userId = FirebaseAuth.instance.currentUser?.uid;
     if (userId == null) return;
 
@@ -333,7 +319,7 @@ class _ListenerLivePerformanceViewState extends ConsumerState<ListenerLivePerfor
             '${widget.featured.genre.toLowerCase()} music session '
             'featuring tracks from the latest album and unreleased material.';
 
-    final showStream = (!kIsWeb && Platform.isIOS) ? true : (!_isPaidPerformance || tipping.hasPaid);
+    final showStream = !_isPaidPerformance || tipping.hasPaid;
 
     return Scaffold(
       backgroundColor: AppColors.listenerDashboardBg,
@@ -600,7 +586,7 @@ class _ListenerLivePerformanceViewState extends ConsumerState<ListenerLivePerfor
             ),
 
           // 4. Active Super Chat Ticker (pinned under top row)
-          if (showStream && !_streamEnded && _pinnedSuperChats.isNotEmpty && (kIsWeb || !Platform.isIOS))
+          if (showStream && !_streamEnded && _pinnedSuperChats.isNotEmpty)
             Positioned(
               top: MediaQuery.of(context).padding.top + 64.h,
               left: 0,
@@ -612,7 +598,7 @@ class _ListenerLivePerformanceViewState extends ConsumerState<ListenerLivePerfor
             ),
 
           // 5. Celebration alerts (floats below Ticker)
-          if (showStream && !_streamEnded && _latestSuperChatForAlert != null && (kIsWeb || !Platform.isIOS))
+          if (showStream && !_streamEnded && _latestSuperChatForAlert != null)
             Positioned(
               top: MediaQuery.of(context).padding.top + (_pinnedSuperChats.isNotEmpty ? 140.h : 64.h),
               left: 16.w,
@@ -781,7 +767,6 @@ class _ListenerLivePerformanceViewState extends ConsumerState<ListenerLivePerfor
   }
 
   void _showSuperChatSheet() {
-    if (!kIsWeb && Platform.isIOS) return;
     SuperChatBottomSheet.show(
       context,
       artistId: widget.featured.artistId,
@@ -799,15 +784,18 @@ class _SuperChatCelebrationAlert extends StatelessWidget {
   Widget build(BuildContext context) {
     List<Color> colors;
     switch (message.tier) {
-      case SuperChatTier.tier3:
-        colors = [AppColors.superChatTier3Start, AppColors.superChatTier3End];
+      case SuperChatTier.platinum:
+        colors = [AppColors.superChatPlatinumStart, AppColors.superChatPlatinumEnd];
         break;
-      case SuperChatTier.tier2:
-        colors = [AppColors.superChatTier2Start, AppColors.superChatTier2End];
+      case SuperChatTier.gold:
+        colors = [AppColors.superChatGoldStart, AppColors.superChatGoldEnd];
         break;
-      case SuperChatTier.tier1:
+      case SuperChatTier.silver:
+        colors = [AppColors.superChatSilverStart, AppColors.superChatSilverEnd];
+        break;
+      case SuperChatTier.bronze:
       default:
-        colors = [AppColors.superChatTier1Start, AppColors.superChatTier1End];
+        colors = [AppColors.superChatBronzeStart, AppColors.superChatBronzeEnd];
         break;
     }
 
