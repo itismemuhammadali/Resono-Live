@@ -1,4 +1,7 @@
+import 'dart:convert' show utf8;
 import 'dart:io' show Platform;
+import 'dart:math';
+import 'package:crypto/crypto.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
@@ -147,8 +150,27 @@ class FirebaseAuthService {
   String? _lastAppleFullName;
   String? get lastAppleFullName => _lastAppleFullName;
 
+  String _generateNonce([int length = 32]) {
+    const charset =
+        '0123456789ABCDEFGHIJKLMNOPQRSTUVXYZabcdefghijklmnopqrstuvwxyz-._';
+    final random = Random.secure();
+    return List.generate(
+      length,
+      (_) => charset[random.nextInt(charset.length)],
+    ).join();
+  }
+
+  String _sha256ofString(String input) {
+    final bytes = utf8.encode(input);
+    final digest = sha256.convert(bytes);
+    return digest.toString();
+  }
+
   Future<UserCredential> signInWithApple() async {
     try {
+      final rawNonce = _generateNonce();
+      final nonce = _sha256ofString(rawNonce);
+
       WebAuthenticationOptions? webOptions;
       if (!kIsWeb && Platform.isAndroid) {
         webOptions = WebAuthenticationOptions(
@@ -164,11 +186,21 @@ class FirebaseAuthService {
           AppleIDAuthorizationScopes.email,
           AppleIDAuthorizationScopes.fullName,
         ],
+        nonce: nonce,
         webAuthenticationOptions: webOptions,
       );
 
+      final idToken = appleCredential.identityToken;
+      if (idToken == null || idToken.isEmpty) {
+        throw FirebaseAuthException(
+          code: 'invalid-credential',
+          message: 'Apple Sign-In failed to return an identity token.',
+        );
+      }
+
       final OAuthCredential credential = OAuthProvider('apple.com').credential(
-        idToken: appleCredential.identityToken,
+        idToken: idToken,
+        rawNonce: rawNonce,
         accessToken: appleCredential.authorizationCode,
       );
 

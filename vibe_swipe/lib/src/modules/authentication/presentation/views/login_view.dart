@@ -31,10 +31,11 @@ class LoginView extends HookConsumerWidget {
               ? await controller.isProfileCompleted(uid)
               : false;
 
-          final setupTarget = selectedRole.value == UserRole.artist
+          final effectiveRole = AppConfig.userRole;
+          final setupTarget = effectiveRole == UserRole.artist
               ? artistSetupView
               : profileSetupView;
-          final dashboardTarget = selectedRole.value == UserRole.artist
+          final dashboardTarget = effectiveRole == UserRole.artist
               ? artistDashboardView
               : listenerDashboardView;
 

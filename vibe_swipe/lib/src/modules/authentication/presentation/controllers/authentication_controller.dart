@@ -1,4 +1,5 @@
 import 'package:firebase_auth/firebase_auth.dart' as fb;
+import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 import 'package:vibe_swipe/src/core/utils/app_exports.dart';
 import 'package:vibe_swipe/main.dart' show deepLinkService;
 
@@ -203,15 +204,14 @@ class AuthController extends ChangeNotifier with Buffers {
     }
   }
 
-  bool _validateRole(String? roleStr) {
-    if (roleStr == null || roleStr.isEmpty) return true;
-    final expectedRoleStr = AppConfig.userRole == UserRole.artist ? 'artist' : 'listener';
-    if (roleStr.toLowerCase() != expectedRoleStr) {
-      final actualRoleName = roleStr.toLowerCase() == 'artist' ? 'an Artist' : 'a Listener';
-      _setError('This account is registered as $actualRoleName. Please log in through the $actualRoleName mode.');
-      return false;
+  void _syncUserRole(String? roleStr) {
+    if (roleStr == null || roleStr.isEmpty) return;
+    final normalized = roleStr.toLowerCase().trim();
+    if (normalized == 'artist') {
+      AppConfig.userRole = UserRole.artist;
+    } else if (normalized == 'listener') {
+      AppConfig.userRole = UserRole.listener;
     }
-    return true;
   }
 
   Future<bool> signIn({
@@ -228,11 +228,7 @@ class AuthController extends ChangeNotifier with Buffers {
 
       final uid = credential.user!.uid;
       final roleStr = await _firestoreService.getUserRole(uid);
-      if (!_validateRole(roleStr)) {
-        await _authHandler.logout();
-        _setLoading(false);
-        return false;
-      }
+      _syncUserRole(roleStr);
 
       await _authHandler.setupUser(credential.user, true);
       final token = await credential.user!.getIdToken();
@@ -298,11 +294,7 @@ class AuthController extends ChangeNotifier with Buffers {
 
       final uid = credential.user!.uid;
       final roleStr = await _firestoreService.getUserRole(uid);
-      if (!_validateRole(roleStr)) {
-        await _authHandler.logout();
-        _setLoading(false);
-        return false;
-      }
+      _syncUserRole(roleStr);
 
       await _authHandler.setupUser(credential.user, true);
       final token = await credential.user!.getIdToken();
@@ -350,11 +342,7 @@ class AuthController extends ChangeNotifier with Buffers {
       final uid = credential.user!.uid;
 
       final roleStr = await _firestoreService.getUserRole(uid);
-      if (!_validateRole(roleStr)) {
-        await _authHandler.logout();
-        _setLoading(false);
-        return false;
-      }
+      _syncUserRole(roleStr);
       if (roleStr == null) {
         await _firestoreService.createUserData(
           uid: uid,
@@ -392,11 +380,7 @@ class AuthController extends ChangeNotifier with Buffers {
       final uid = credential.user!.uid;
 
       final roleStr = await _firestoreService.getUserRole(uid);
-      if (!_validateRole(roleStr)) {
-        await _authHandler.logout();
-        _setLoading(false);
-        return false;
-      }
+      _syncUserRole(roleStr);
       final appleName = _authService.lastAppleFullName;
       final existingName = credential.user!.displayName;
       final resolvedName = (appleName != null && appleName.isNotEmpty)
@@ -425,6 +409,15 @@ class AuthController extends ChangeNotifier with Buffers {
 
       _setLoading(false);
       return true;
+    } on SignInWithAppleAuthorizationException catch (e) {
+      _setLoading(false);
+      if (e.code == AuthorizationErrorCode.canceled) {
+        appPrint('[Auth] Apple Sign-In cancelled by user');
+        return false;
+      }
+      appPrint('[Auth] Apple Sign-In authorization error: ${e.code} - ${e.message}');
+      _setError('Apple Sign-In could not be completed. Please try again.');
+      return false;
     } on fb.FirebaseAuthException catch (e) {
       _setLoading(false);
       if (e.code == 'ERROR_ABORTED_BY_USER') return false;

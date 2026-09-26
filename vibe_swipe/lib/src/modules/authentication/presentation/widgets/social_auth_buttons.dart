@@ -146,6 +146,7 @@ class SocialAuthButtons extends ConsumerWidget {
           children: [
             Expanded(
               child: PrimaryElevatedButton(
+                enabled: !authController.isLoading,
                 onTap: () async {
                   onAuthStarted?.call();
                   authController.clearError();
@@ -192,6 +193,7 @@ class SocialAuthButtons extends ConsumerWidget {
             16.pw,
             Expanded(
               child: PrimaryElevatedButton(
+                enabled: !authController.isLoading,
                 onTap: () async {
                   onAuthStarted?.call();
                   authController.clearError();
@@ -199,9 +201,22 @@ class SocialAuthButtons extends ConsumerWidget {
                     _showAppleIosOnlyBottomSheet(context);
                     return;
                   }
-                  final success = await ref.read(authControllerProvider).signInWithApple();
-                  if (success && context.mounted) {
-                    await _handlePostAuthNavigation(context, ref);
+                  try {
+                    final success = await ref.read(authControllerProvider).signInWithApple();
+                    if (success && context.mounted) {
+                      await _handlePostAuthNavigation(context, ref);
+                    }
+                  } on PlatformException catch (e) {
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text('Apple Sign-In failed: ${e.message ?? 'Please try again.'}'),
+                          backgroundColor: Colors.red.shade800,
+                        ),
+                      );
+                    }
+                  } catch (_) {
+                    // Auth controller already sets errorMessage for exceptions
                   }
                 },
                 text: "Apple",
