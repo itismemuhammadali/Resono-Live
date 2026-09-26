@@ -101,6 +101,10 @@ class ArtistPerformancesController extends ChangeNotifier with Buffers {
           category: p['genres'] is List && (p['genres'] as List).isNotEmpty ? p['genres'][0] : null,
           videoUrl: videoUrl,
           type: type,
+          isPaid: p['isPaid'] == true,
+          ticketPrice: (p['ticketPrice'] as num?)?.toDouble() ?? (p['price'] as num?)?.toDouble() ?? 0.0,
+          ticketTier: (p['ticketTier'] ?? p['tierNumber']) as int?,
+          ticketProductId: p['ticketProductId'] as String?,
         );
         allItems.add(entity);
         switch (entity.status) {
@@ -111,7 +115,7 @@ class ArtistPerformancesController extends ChangeNotifier with Buffers {
             }
             break;
           case PerformanceStatus.live:
-            upcomingItems.add(entity);
+            // Active live stream stays in allItems and can be viewed
             break;
           case PerformanceStatus.past:
             pastItems.add(entity);
@@ -135,11 +139,14 @@ class ArtistPerformancesController extends ChangeNotifier with Buffers {
   }
 
   PerformanceStatus _parseStatus(String status) {
-    switch (status) {
+    switch (status.toLowerCase()) {
       case 'live':
         return PerformanceStatus.live;
       case 'upcoming':
+      case 'scheduled':
         return PerformanceStatus.upcoming;
+      case 'ended':
+      case 'completed':
       case 'past':
         return PerformanceStatus.past;
       case 'draft':
@@ -147,6 +154,23 @@ class ArtistPerformancesController extends ChangeNotifier with Buffers {
         return PerformanceStatus.pending;
       default:
         return PerformanceStatus.upcoming;
+    }
+  }
+
+  Future<bool> deletePerformance(String performanceId) async {
+    try {
+      await locator<FirestoreService>().deletePerformance(performanceId);
+      allItems.removeWhere((item) => item.id == performanceId);
+      upcomingItems.removeWhere((item) => item.id == performanceId);
+      pastItems.removeWhere((item) => item.id == performanceId);
+      recordedItems.removeWhere((item) => item.id == performanceId);
+      draftItems.removeWhere((item) => item.id == performanceId);
+      notifyListeners();
+      appPrint('[Performances] Successfully deleted performance: $performanceId');
+      return true;
+    } catch (e) {
+      appPrint('[Performances] Error deleting performance: $e');
+      return false;
     }
   }
 
@@ -220,12 +244,18 @@ class ArtistPerformancesController extends ChangeNotifier with Buffers {
     required String? category,
     required List<String> tags,
     String? coverImageUrl,
+    bool isPaid = false,
+    TicketTier? tier,
   }) {
     titleController.text = title;
     descriptionController.text = description;
     dateController.text = date;
     timeController.text = time;
     selectedCategory = category;
+    isPaidPerformance = isPaid;
+    if (tier != null) {
+      selectedTier = tier;
+    }
     this.tags
       ..clear()
       ..addAll(tags);
@@ -233,6 +263,41 @@ class ArtistPerformancesController extends ChangeNotifier with Buffers {
     coverImage = null;
     coverImageBytes = null;
     notifyListeners();
+  }
+
+  Future<bool> updatePerformanceDetails(String performanceId) async {
+    try {
+      final data = <String, dynamic>{
+        'title': titleController.text.trim(),
+        'description': descriptionController.text.trim(),
+        'genres': selectedCategory != null ? [selectedCategory!] : [],
+        'isPaid': isPaidPerformance,
+        'ticketPrice': isPaidPerformance ? selectedTier.price : 0.0,
+        'ticketTier': isPaidPerformance ? selectedTier.tierNumber : null,
+        'ticketProductId': isPaidPerformance ? selectedTier.productId : null,
+      };
+
+      if (dateController.text.isNotEmpty && timeController.text.isNotEmpty) {
+        final parsedDate = _parseScheduledDateTime();
+        if (parsedDate != null) {
+          data['scheduledAt'] = Timestamp.fromDate(parsedDate);
+        }
+      }
+
+      if (coverImageBytes != null) {
+        final thumbnailUrl = await locator<FirestoreService>()
+            .uploadPerformanceThumbnail(performanceId, coverImageBytes!);
+        data['thumbnailUrl'] = thumbnailUrl;
+      }
+
+      await locator<FirestoreService>().updatePerformance(performanceId, data);
+      await fetchPerformances();
+      appPrint('[Performances] Successfully updated performance $performanceId');
+      return true;
+    } catch (e) {
+      appPrint('[Performances] Error updating performance: $e');
+      return false;
+    }
   }
 
   // Schedule Live Session – Step 2

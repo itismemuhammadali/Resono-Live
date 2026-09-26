@@ -3,7 +3,8 @@ import * as admin from "firebase-admin";
 import { db } from "./firebase-admin";
 import { sendNotification } from "./notifications";
 
-const PLATFORM_FEE_PERCENT = 15;
+const PLATFORM_FEE_PERCENT = 10;
+const STORE_FEE_PERCENT = 15;
 
 /**
  * verifyInAppPurchase — onCall Function
@@ -54,8 +55,10 @@ export const verifyInAppPurchase = functions.https.onCall(
     }
 
     const amountCents = Math.floor(numAmount * 100);
+    const storeSource = source === "google_play" ? "google_play" : "apple_iap";
+    const storeFee = Math.floor(amountCents * (STORE_FEE_PERCENT / 100));
     const platformFee = Math.floor(amountCents * (PLATFORM_FEE_PERCENT / 100));
-    const netAmount = amountCents - platformFee;
+    const netAmount = amountCents - storeFee - platformFee;
     const resolvedType =
       type === "ticket" || type === "paid_access" ? "paid_access" : "tip";
 
@@ -101,12 +104,13 @@ export const verifyInAppPurchase = functions.https.onCall(
       userId,
       artistId: artistId || "",
       amount: amountCents,
+      storeFee,
       platformFee,
       netAmount,
       type: resolvedType,
       performanceId: performanceId || "",
       productId,
-      purchaseSource: source || "iap",
+      purchaseSource: storeSource,
       transactionId: finalTxId,
       badge: badge || null,
       message: message || null,

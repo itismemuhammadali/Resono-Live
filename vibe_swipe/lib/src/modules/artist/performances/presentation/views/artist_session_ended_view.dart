@@ -94,14 +94,20 @@ class ArtistSessionEndedView extends StatelessWidget {
                               size: 18.sp,
                             ),
                             8.pw,
-                            Text(
-                              '${item.viewCount}',
-                              style: TextStyle(
-                                fontFamily: 'Roboto',
-                                fontSize: 16.sp,
-                                fontWeight: FontWeight.w400,
-                                color: AppColors.primaryWhite,
-                              ),
+                            FutureBuilder<int>(
+                              future: locator<FirestoreService>().getPerformanceUniqueViewerCount(item.id),
+                              builder: (context, snapshot) {
+                                final count = snapshot.data ?? item.viewCount;
+                                return Text(
+                                  '$count',
+                                  style: TextStyle(
+                                    fontFamily: 'Roboto',
+                                    fontSize: 16.sp,
+                                    fontWeight: FontWeight.w400,
+                                    color: AppColors.primaryWhite,
+                                  ),
+                                );
+                              },
                             ),
                           ],
                         ),

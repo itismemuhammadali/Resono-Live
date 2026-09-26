@@ -1,6 +1,7 @@
 import 'package:vibe_swipe/src/core/services/in_app_purchase_service.dart';
 import 'package:vibe_swipe/src/core/utils/app_exports.dart';
 import 'package:vibe_swipe/src/components/primary_elevated_button.dart';
+import 'package:vibe_swipe/src/modules/artist/earnings/presentation/widgets/payout_required_dialog.dart';
 import 'package:vibe_swipe/src/modules/artist/register/presentation/widgets/artist_labeled_field.dart';
 import '../controllers/artist_performances_controller.dart';
 import '../widgets/schedule_app_bar.dart';
@@ -99,9 +100,20 @@ class ScheduleLiveSessionView extends ConsumerWidget {
                             child: _PerformanceTypeChip(
                               label: 'Paid (Ticket)',
                               isSelected: controller.isPaidPerformance,
-                              onTap: () => ref
-                                  .read(artistPerformancesControllerProvider.notifier)
-                                  .setPerformanceType(true),
+                              onTap: () async {
+                                final uid = locator<FirebaseAuthService>().getUid();
+                                if (uid != null) {
+                                  final userData = await locator<FirestoreService>().getUserData(uid);
+                                  final isPayoutSetup = userData?['stripeOnboardingComplete'] == true;
+                                  if (!isPayoutSetup && context.mounted) {
+                                    PayoutRequiredDialog.show(context);
+                                    return;
+                                  }
+                                }
+                                ref
+                                    .read(artistPerformancesControllerProvider.notifier)
+                                    .setPerformanceType(true);
+                              },
                             ),
                           ),
                         ],
@@ -121,7 +133,7 @@ class ScheduleLiveSessionView extends ConsumerWidget {
                               ),
                             ),
                             Text(
-                              'Price: \$${controller.selectedTier.price.toStringAsFixed(0)}',
+                              'Price: ${controller.selectedTier.formattedPrice}',
                               style: TextStyle(
                                 fontFamily: 'Roboto',
                                 color: AppColors.listenerYellow,
@@ -271,7 +283,7 @@ class _TicketTierTile extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Text(
-                    '${tier.name}: ${tier.passName} • \$${tier.price.toStringAsFixed(0)}',
+                    '${tier.name}: ${tier.passName} • ${tier.formattedPrice}',
                     style: TextStyle(
                       fontFamily: 'Roboto',
                       color: isSelected ? AppColors.listenerYellow : AppColors.primaryWhite,

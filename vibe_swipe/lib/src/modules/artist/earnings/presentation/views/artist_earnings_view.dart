@@ -44,7 +44,7 @@ class ArtistEarningsView extends ConsumerWidget {
               20.ph,
               _WalletStatusCard(controller: controller),
               24.ph,
-              _SectionTitle(title: 'Earnings by Performance'),
+              const _SectionTitle(title: 'Earnings by Performance'),
             12.ph,
             ...controller.performanceEarnings.map(
               (e) => Padding(
@@ -53,10 +53,10 @@ class ArtistEarningsView extends ConsumerWidget {
               ),
             ),
             24.ph,
-            _SectionTitle(title: 'Pending Payouts'),
+            const _SectionTitle(title: 'Pending Payouts'),
             12.ph,
             if (controller.pendingPayouts.isEmpty)
-              _EmptyPayouts(message: 'No pending payouts')
+              const _EmptyPayouts(message: 'No pending payouts')
             else
               ...controller.pendingPayouts.map(
                 (p) => Padding(
@@ -65,10 +65,10 @@ class ArtistEarningsView extends ConsumerWidget {
                 ),
               ),
             24.ph,
-            _SectionTitle(title: 'Paid Out'),
+            const _SectionTitle(title: 'Paid Out'),
             12.ph,
             if (controller.paidPayouts.isEmpty)
-              _EmptyPayouts(message: 'No paid payouts yet')
+              const _EmptyPayouts(message: 'No paid payouts yet')
             else
               ...controller.paidPayouts.map(
                 (p) => Padding(
@@ -107,7 +107,13 @@ class _MetricsPanel extends StatelessWidget {
           ),
           12.ph,
           _MetricRow(
-            label: 'Platform Fee (15%)',
+            label: 'Store Fee (Apple / Google)',
+            value: '-\$${controller.storeFee.toStringAsFixed(2)}',
+            valueColor: AppColors.eventRed,
+          ),
+          12.ph,
+          _MetricRow(
+            label: 'Platform Fee (10%)',
             value: '-\$${controller.platformFee.toStringAsFixed(2)}',
             valueColor: AppColors.eventRed,
           ),
@@ -433,7 +439,7 @@ class _WithdrawSection extends ConsumerWidget {
                 ? SizedBox(
                     width: 20.w,
                     height: 20.w,
-                    child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primaryblack),
+                    child: const CircularProgressIndicator(strokeWidth: 2, color: AppColors.primaryblack),
                   )
                 : Text(
                     'Withdraw Funds',
@@ -523,6 +529,7 @@ class _WithdrawSection extends ConsumerWidget {
                       onPressed: () async {
                         Navigator.pop(context);
                         final success = await ref.read(artistEarningsControllerProvider.notifier).requestWithdrawal(amount);
+                        if (!context.mounted) return;
                         if (success) {
                           InAppAlert.show(context, message: 'Withdrawal initiated successfully!', isSuccess: true);
                         } else {

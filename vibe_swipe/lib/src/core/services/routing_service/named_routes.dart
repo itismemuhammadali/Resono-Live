@@ -403,7 +403,9 @@ class AppRouterGo {
         path: artistEditPerformanceView,
         pageBuilder: (context, state) => NoTransitionPage(
           key: state.pageKey,
-          child: const EditPerformanceView(),
+          child: EditPerformanceView(
+            item: state.extra as PerformanceEntity?,
+          ),
         ),
       ),
       GoRoute(

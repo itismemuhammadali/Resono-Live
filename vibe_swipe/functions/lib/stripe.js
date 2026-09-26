@@ -606,11 +606,13 @@ exports.getTransactionHistory = functions
             ...doc.data(),
         }));
         const grossEarnings = txList.reduce((sum, tx) => sum + (tx.amount || 0), 0);
+        const storeFee = txList.reduce((sum, tx) => sum + (tx.storeFee || 0), 0);
         const platformFee = txList.reduce((sum, tx) => sum + (tx.platformFee || 0), 0);
         const netEarnings = txList.reduce((sum, tx) => sum + (tx.netAmount || 0), 0);
         return {
             transactions: txList,
             grossEarnings,
+            storeFee,
             platformFee,
             netEarnings,
         };

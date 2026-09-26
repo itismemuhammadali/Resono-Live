@@ -1,6 +1,7 @@
 import 'package:vibe_swipe/src/core/utils/app_exports.dart';
 import 'package:vibe_swipe/src/components/primary_elevated_button.dart';
 import 'package:vibe_swipe/src/core/services/in_app_purchase_service.dart';
+import 'package:vibe_swipe/src/modules/artist/earnings/presentation/widgets/payout_required_dialog.dart';
 import 'package:vibe_swipe/src/modules/artist/register/presentation/widgets/artist_labeled_field.dart';
 import '../controllers/artist_performances_controller.dart';
 import '../widgets/cover_image_upload_box.dart';
@@ -41,6 +42,21 @@ class _ArtistGoLiveSetupViewState extends ConsumerState<ArtistGoLiveSetupView> {
     });
   }
 
+  Future<void> _handleSelectPaidAccess() async {
+    final uid = locator<FirebaseAuthService>().getUid();
+    if (uid != null) {
+      final userData = await locator<FirestoreService>().getUserData(uid);
+      final isPayoutSetup = userData?['stripeOnboardingComplete'] == true;
+      if (!isPayoutSetup && mounted) {
+        PayoutRequiredDialog.show(context);
+        return;
+      }
+    }
+    if (mounted) {
+      setState(() => _isPaid = true);
+    }
+  }
+
   Future<void> _onGoLive() async {
     final title = _titleController.text.trim();
     if (title.isEmpty) {
@@ -48,6 +64,18 @@ class _ArtistGoLiveSetupViewState extends ConsumerState<ArtistGoLiveSetupView> {
         const SnackBar(content: Text('Please enter a performance title')),
       );
       return;
+    }
+
+    if (_isPaid) {
+      final uid = locator<FirebaseAuthService>().getUid();
+      if (uid != null) {
+        final userData = await locator<FirestoreService>().getUserData(uid);
+        final isPayoutSetup = userData?['stripeOnboardingComplete'] == true;
+        if (!isPayoutSetup && mounted) {
+          PayoutRequiredDialog.show(context);
+          return;
+        }
+      }
     }
 
     final controller = ref.read(artistPerformancesControllerProvider);
@@ -229,9 +257,7 @@ class _ArtistGoLiveSetupViewState extends ConsumerState<ArtistGoLiveSetupView> {
                             child: _AccessTypeChip(
                               label: 'Paid (Ticket)',
                               isSelected: _isPaid,
-                              onTap: isGoingLive
-                                  ? null
-                                  : () => setState(() => _isPaid = true),
+                              onTap: isGoingLive ? null : _handleSelectPaidAccess,
                             ),
                           ),
                         ],
@@ -444,7 +470,7 @@ class _TicketTierTile extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Text(
-                    '${tier.name} • \$${tier.price.toStringAsFixed(0)}',
+                    '${tier.name} • ${tier.formattedPrice}',
                     style: TextStyle(
                       fontFamily: 'Roboto',
                       color: isSelected ? AppColors.listenerYellow : AppColors.primaryWhite,

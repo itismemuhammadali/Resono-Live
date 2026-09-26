@@ -291,6 +291,16 @@ class FirestoreService {
     }
   }
 
+  Future<void> deletePerformance(String performanceId) async {
+    try {
+      await FirebaseFirestore.instance.collection('performances').doc(performanceId).delete();
+      appPrint('[Firestore] Performance deleted: $performanceId');
+    } catch (e) {
+      appPrint('[Firestore] Error deleting performance: $e');
+      rethrow;
+    }
+  }
+
   Future<void> startLivePerformance({
     required String performanceId,
     required String channelName,
@@ -644,17 +654,42 @@ class FirestoreService {
       } catch (e) {
         appPrint('[Firestore] Error adding viewer to subcollection: $e');
       }
-    }
 
-    // 2. Increment active live viewers and cumulative total views
-    try {
-      await FirebaseFirestore.instance.collection('performances').doc(performanceId).update({
-        'current_live_viewers': FieldValue.increment(1),
-        'viewers_count': FieldValue.increment(1),
-      });
-      appPrint('[Firestore] Incremented viewer count for $performanceId');
-    } catch (e) {
-      appPrint('[Firestore] Error incrementing viewer count: $e');
+      // 2. Track unique attendee (idempotent: does not double count on re-joins)
+      try {
+        final attendeeRef = FirebaseFirestore.instance
+            .collection('performances')
+            .doc(performanceId)
+            .collection('attendees')
+            .doc(uid);
+
+        final attendeeSnap = await attendeeRef.get();
+        if (!attendeeSnap.exists) {
+          await attendeeRef.set({
+            'userId': uid,
+            'firstJoinedAt': FieldValue.serverTimestamp(),
+          });
+          await FirebaseFirestore.instance
+              .collection('performances')
+              .doc(performanceId)
+              .update({
+            'current_live_viewers': FieldValue.increment(1),
+            'viewers_count': FieldValue.increment(1),
+            'unique_viewers_count': FieldValue.increment(1),
+          });
+          appPrint('[Firestore] New unique attendee recorded for $performanceId: $uid');
+        } else {
+          await FirebaseFirestore.instance
+              .collection('performances')
+              .doc(performanceId)
+              .update({
+            'current_live_viewers': FieldValue.increment(1),
+          });
+          appPrint('[Firestore] Existing attendee rejoined $performanceId: $uid');
+        }
+      } catch (e) {
+        appPrint('[Firestore] Error tracking unique attendee: $e');
+      }
     }
 
     // 3. Notify backend API
@@ -664,6 +699,30 @@ class FirestoreService {
     } catch (e) {
       appPrint('[API] Error joining performance: $e');
     }
+  }
+
+  Future<int> getPerformanceUniqueViewerCount(String performanceId) async {
+    try {
+      final attendeesSnap = await FirebaseFirestore.instance
+          .collection('performances')
+          .doc(performanceId)
+          .collection('attendees')
+          .get();
+      if (attendeesSnap.docs.isNotEmpty) {
+        return attendeesSnap.docs.length;
+      }
+      final doc = await FirebaseFirestore.instance
+          .collection('performances')
+          .doc(performanceId)
+          .get();
+      final data = doc.data();
+      if (data != null) {
+        return ((data['unique_viewers_count'] ?? data['viewers_count'] ?? 0) as num).toInt();
+      }
+    } catch (e) {
+      appPrint('[Firestore] Error getting unique viewer count: $e');
+    }
+    return 0;
   }
 
   Future<void> leavePerformance({required String performanceId}) async {

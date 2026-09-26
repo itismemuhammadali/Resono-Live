@@ -13,6 +13,9 @@ class ArtistEarningsController extends ChangeNotifier with Buffers {
   double _grossEarnings = 0.0;
   double get grossEarnings => _grossEarnings;
 
+  double _storeFee = 0.0;
+  double get storeFee => _storeFee;
+
   double _platformFee = 0.0;
   double get platformFee => _platformFee;
 
@@ -25,10 +28,10 @@ class ArtistEarningsController extends ChangeNotifier with Buffers {
   List<PerformanceEarning> _performanceEarnings = [];
   List<PerformanceEarning> get performanceEarnings => _performanceEarnings;
 
-  List<PayoutRecord> _pendingPayouts = [];
+  final List<PayoutRecord> _pendingPayouts = [];
   List<PayoutRecord> get pendingPayouts => _pendingPayouts;
 
-  List<PayoutRecord> _paidPayouts = [];
+  final List<PayoutRecord> _paidPayouts = [];
   List<PayoutRecord> get paidPayouts => _paidPayouts;
 
   List<Map<String, dynamic>> _recentTips = [];
@@ -71,6 +74,7 @@ class ArtistEarningsController extends ChangeNotifier with Buffers {
       final data = await _stripeService.getTransactionHistory(userId);
 
       _grossEarnings = (data['grossEarnings'] ?? 0).toDouble() / 100;
+      _storeFee = (data['storeFee'] ?? 0).toDouble() / 100;
       _platformFee = (data['platformFee'] ?? 0).toDouble() / 100;
       _netEarnings = (data['netEarnings'] ?? 0).toDouble() / 100;
 

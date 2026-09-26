@@ -31,6 +31,14 @@ Build IPA and Upload to TestFlight
 
 Upload existing build to TestFlight
 
+### ios check_build
+
+```sh
+[bundle exec] fastlane ios check_build
+```
+
+Check latest build number
+
 ----
 
 This README.md is auto-generated and will be re-generated every time [_fastlane_](https://fastlane.tools) is run.

@@ -67,6 +67,21 @@ class ArtistHomeAppBar extends StatelessWidget {
             ),
             16.pw,
             GestureDetector(
+              onTap: () => AppRouterGo.push(artistEarningsView),
+              child: SizedBox(
+                width: 40.w,
+                height: 40.w,
+                child: Center(
+                  child: Icon(
+                    Icons.account_balance_wallet_outlined,
+                    color: AppColors.primaryWhite,
+                    size: 24.sp,
+                  ),
+                ),
+              ),
+            ),
+            8.pw,
+            GestureDetector(
               onTap: () => AppRouterGo.push(artistNotificationsView),
               child: const _NotificationBell(),
             ),

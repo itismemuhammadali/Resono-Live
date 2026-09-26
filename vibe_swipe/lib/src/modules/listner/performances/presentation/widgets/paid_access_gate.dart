@@ -121,7 +121,7 @@ class PaidAccessGate extends ConsumerWidget {
                     ),
                     4.ph,
                     Text(
-                      '\$${tier.price.toStringAsFixed(0)}',
+                      price > 0 ? '\$${price.toStringAsFixed(2)}' : tier.formattedPrice,
                       style: TextStyle(
                         fontFamily: 'Roboto',
                         fontSize: 32.sp,
@@ -140,7 +140,7 @@ class PaidAccessGate extends ConsumerWidget {
                         final success = await ref
                             .read(tippingControllerProvider.notifier)
                             .unlockPerformance(
-                              amount: tier.price,
+                              amount: price > 0 ? price : tier.price,
                               artistId: artistId,
                               performanceId: performanceId,
                               tierNumber: tier.tierNumber,

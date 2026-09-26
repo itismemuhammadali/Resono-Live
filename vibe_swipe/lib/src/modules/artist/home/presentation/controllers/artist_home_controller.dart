@@ -12,6 +12,12 @@ class ArtistHomeController extends ChangeNotifier with Buffers {
   String _artistName = '';
   String get artistName => _artistName;
 
+  bool _stripePayoutsEnabled = false;
+  bool get stripePayoutsEnabled => _stripePayoutsEnabled;
+
+  bool _hasCheckedPayouts = false;
+  bool get hasCheckedPayouts => _hasCheckedPayouts;
+
   List<ArtistStatEntity> _stats = const [
     ArtistStatEntity(
       iconAsset: 'assets/icons/png/music-icon.png',
@@ -99,6 +105,8 @@ class ArtistHomeController extends ChangeNotifier with Buffers {
       final data = await locator<FirestoreService>().getUserData(uid);
       if (data != null) {
         _artistName = (data['artistName'] ?? data['name'] ?? '').toString();
+        _stripePayoutsEnabled = data['stripeOnboardingComplete'] == true;
+        _hasCheckedPayouts = true;
         notifyListeners();
       }
     } catch (e) {

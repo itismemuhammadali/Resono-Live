@@ -82,7 +82,7 @@ class TicketTier {
     TicketTier(
       tierNumber: 1,
       productId: IapProductIds.ticketTier1,
-      price: 2.0,
+      price: 1.99,
       name: 'Tier 1',
       passName: 'Standard Pass',
       subtitle: 'Standard Pass',
@@ -91,7 +91,7 @@ class TicketTier {
     TicketTier(
       tierNumber: 2,
       productId: IapProductIds.ticketTier2,
-      price: 5.0,
+      price: 4.99,
       name: 'Tier 2',
       passName: 'Fan Pass',
       subtitle: 'Fan Pass',
@@ -100,7 +100,7 @@ class TicketTier {
     TicketTier(
       tierNumber: 3,
       productId: IapProductIds.ticketTier3,
-      price: 10.0,
+      price: 9.99,
       name: 'Tier 3',
       passName: 'Supporter Pass',
       subtitle: 'Supporter Pass',
@@ -109,7 +109,7 @@ class TicketTier {
     TicketTier(
       tierNumber: 4,
       productId: IapProductIds.ticketTier4,
-      price: 15.0,
+      price: 14.99,
       name: 'Tier 4',
       passName: 'VIP Pass',
       subtitle: 'VIP Pass',
@@ -118,7 +118,7 @@ class TicketTier {
     TicketTier(
       tierNumber: 5,
       productId: IapProductIds.ticketTier5,
-      price: 20.0,
+      price: 19.99,
       name: 'Tier 5',
       passName: 'All Access Pass',
       subtitle: 'All Access Pass',
@@ -127,13 +127,15 @@ class TicketTier {
     TicketTier(
       tierNumber: 6,
       productId: IapProductIds.ticketTier6,
-      price: 25.0,
+      price: 24.99,
       name: 'Tier 6',
       passName: 'Backstage Pass',
       subtitle: 'Backstage Pass',
       fullName: 'Ticket Tier 6 Backstage Pass',
     ),
   ];
+
+  String get formattedPrice => '\$${price.toStringAsFixed(2)}';
 
   static TicketTier fromPrice(double? price) {
     if (price == null) return allTiers.first;

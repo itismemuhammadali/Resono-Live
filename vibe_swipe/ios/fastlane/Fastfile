@@ -49,9 +49,17 @@ platform :ios do
   desc "Upload existing build to TestFlight"
   lane :upload do
     api_key
+    ipa_file = Dir[File.expand_path("../../build/ios/ipa/*.ipa", __dir__)].first
     upload_to_testflight(
-      ipa: "../build/ios/ipa/vibe_swipe.ipa",
+      ipa: ipa_file,
       skip_waiting_for_build_processing: true
     )
+  end
+
+  desc "Check latest build number"
+  lane :check_build do
+    api_key
+    num = latest_testflight_build_number(app_identifier: "com.vibeswipellc.vibeswipe")
+    UI.message("LATEST_BUILD_NUMBER: #{num}")
   end
 end

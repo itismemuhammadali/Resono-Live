@@ -709,12 +709,14 @@ export const getTransactionHistory = functions
     }));
 
     const grossEarnings = txList.reduce((sum: number, tx: any) => sum + (tx.amount || 0), 0);
+    const storeFee = txList.reduce((sum: number, tx: any) => sum + (tx.storeFee || 0), 0);
     const platformFee = txList.reduce((sum: number, tx: any) => sum + (tx.platformFee || 0), 0);
     const netEarnings = txList.reduce((sum: number, tx: any) => sum + (tx.netAmount || 0), 0);
 
     return {
       transactions: txList,
       grossEarnings,
+      storeFee,
       platformFee,
       netEarnings,
     };

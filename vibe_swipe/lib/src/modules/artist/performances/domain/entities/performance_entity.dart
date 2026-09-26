@@ -15,6 +15,10 @@ class PerformanceEntity {
     this.newFansCount = 0,
     this.videoUrl = '',
     this.type = 'live',
+    this.isPaid = false,
+    this.ticketPrice = 0.0,
+    this.ticketTier,
+    this.ticketProductId,
   });
 
   final String id;
@@ -30,6 +34,10 @@ class PerformanceEntity {
   final int newFansCount;
   final String videoUrl;
   final String type;
+  final bool isPaid;
+  final double ticketPrice;
+  final int? ticketTier;
+  final String? ticketProductId;
 
   bool get isRecorded => type == 'recorded';
   bool get isLive => type == 'live';

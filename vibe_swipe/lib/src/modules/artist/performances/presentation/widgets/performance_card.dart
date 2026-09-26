@@ -1,5 +1,7 @@
 import 'package:vibe_swipe/src/core/utils/app_exports.dart';
+import 'package:vibe_swipe/src/components/in_app_alert.dart';
 import '../../domain/entities/performance_entity.dart';
+import '../controllers/artist_performances_controller.dart';
 import 'delete_performance_modal.dart';
 
 class PerformanceCard extends StatelessWidget {
@@ -127,21 +129,40 @@ class _Title extends StatelessWidget {
   }
 }
 
-class _MenuButton extends StatelessWidget {
+class _MenuButton extends ConsumerWidget {
   const _MenuButton({required this.status, required this.item});
   final PerformanceStatus status;
   final PerformanceEntity item;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return PopupMenuButton<PerformanceMenuAction>(
       onSelected: (action) {
         if (action == PerformanceMenuAction.edit) {
-          AppRouterGo.push(artistEditPerformanceView);
+          AppRouterGo.push(artistEditPerformanceView, extra: item);
         } else if (action == PerformanceMenuAction.startLive) {
           AppRouterGo.push(artistLiveBroadcastView, extra: item);
         } else if (action == PerformanceMenuAction.delete) {
-          DeletePerformanceModal.show(context, () {});
+          DeletePerformanceModal.show(context, () async {
+            final success = await ref
+                .read(artistPerformancesControllerProvider.notifier)
+                .deletePerformance(item.id);
+            if (context.mounted) {
+              if (success) {
+                InAppAlert.show(
+                  context,
+                  message: 'Performance deleted successfully',
+                  isSuccess: true,
+                );
+              } else {
+                InAppAlert.show(
+                  context,
+                  message: 'Failed to delete performance',
+                  isSuccess: false,
+                );
+              }
+            }
+          });
         }
       },
       color: AppColors.listenerPopupMenuBg,

@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:agora_rtc_engine/agora_rtc_engine.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:vibe_swipe/src/core/services/in_app_purchase_service.dart';
 import 'package:vibe_swipe/src/core/utils/app_exports.dart';
 import 'package:vibe_swipe/src/components/primary_elevated_button.dart';
 import '../../domain/entities/performance_featured_entity.dart';
@@ -35,7 +36,7 @@ class _ListenerLivePerformanceViewState extends ConsumerState<ListenerLivePerfor
   // ignore: unused_field
   bool _isJoined = false;
   bool _isPaidPerformance = false;
-  double _ticketPrice = 9.99;
+  double? _ticketPrice;
   int? _ticketTier;
   bool _streamEnded = false;
   bool _agoraInitialized = false;
@@ -150,13 +151,16 @@ class _ListenerLivePerformanceViewState extends ConsumerState<ListenerLivePerfor
 
       if (data.containsKey('isPaid')) {
         final isPaid = data['isPaid'] == true;
-        final price = (data['ticketPrice'] as num?)?.toDouble() ?? (data['price'] as num?)?.toDouble() ?? _ticketPrice;
-        final tier = (data['ticketTier'] ?? data['tierNumber']) as int? ?? _ticketTier;
+        final rawPrice = (data['ticketPrice'] as num?)?.toDouble() ??
+            (data['price'] as num?)?.toDouble();
+        final tier = (data['ticketTier'] ?? data['tierNumber']) as int?;
+        final price = rawPrice ??
+            (tier != null ? TicketTier.fromTierNumber(tier).price : null);
         if (isPaid != _isPaidPerformance || price != _ticketPrice || tier != _ticketTier) {
           setState(() {
             _isPaidPerformance = isPaid;
-            _ticketPrice = price;
-            _ticketTier = tier;
+            if (price != null) _ticketPrice = price;
+            if (tier != null) _ticketTier = tier;
           });
         }
       }
@@ -190,63 +194,50 @@ class _ListenerLivePerformanceViewState extends ConsumerState<ListenerLivePerfor
     if (userId == null) return;
 
     try {
-      final result = await StripeService().checkAccess(
-        userId: userId,
-        performanceId: widget.featured.id,
-      );
-      if (mounted) {
+      final doc = await FirebaseFirestore.instance
+          .collection('performances')
+          .doc(widget.featured.id)
+          .get();
+      final data = doc.data();
+      if (data != null && mounted) {
+        final isPaid = data['isPaid'] == true;
+        final rawPrice = (data['ticketPrice'] as num?)?.toDouble() ??
+            (data['price'] as num?)?.toDouble();
+        final tier = (data['ticketTier'] ?? data['tierNumber']) as int?;
+        final price = rawPrice ??
+            (tier != null ? TicketTier.fromTierNumber(tier).price : null);
+        final paidUsers = List<String>.from(data['paidUsers'] ?? []);
+        final artistId = (data['artist_id'] ?? data['artistId']) as String?;
+        final isArtist = artistId != null && artistId == userId;
+        final hasAccess = !isPaid || isArtist || paidUsers.contains(userId);
+
         setState(() {
-          _isPaidPerformance = result['isPaid'] == true;
-          _ticketPrice = (result['price'] ?? 9.99).toDouble();
-          _ticketTier = (result['ticketTier'] ?? result['tierNumber']) as int?;
+          _isPaidPerformance = isPaid;
+          _ticketPrice = price;
+          _ticketTier = tier ?? (price != null ? TicketTier.fromPrice(price).tierNumber : null);
           _accessCheckCompleted = true;
+          _accessCheckFailed = false;
         });
-        if (_isPaidPerformance && result['hasAccess'] == true) {
+
+        if (hasAccess) {
           ref.read(tippingControllerProvider.notifier).checkAccess(
             userId: userId,
             performanceId: widget.featured.id,
           );
           _joinLivePerformance();
           _initAgora();
-        } else if (!_isPaidPerformance) {
-          _joinLivePerformance();
-          _initAgora();
         }
+        return;
       }
     } catch (e) {
-      appPrint('[Tipping] _checkAccess error: $e');
-      // Direct Firestore check fallback in case Cloud Function is unreachable
-      try {
-        final doc = await FirebaseFirestore.instance.collection('performances').doc(widget.featured.id).get();
-        final data = doc.data();
-        if (data != null && mounted) {
-          final isPaid = data['isPaid'] == true;
-          final price = (data['ticketPrice'] as num?)?.toDouble() ?? (data['price'] as num?)?.toDouble() ?? 9.99;
-          final tier = (data['ticketTier'] ?? data['tierNumber']) as int?;
-          final paidUsers = List<String>.from(data['paidUsers'] ?? []);
-          final hasAccess = !isPaid || paidUsers.contains(userId);
-          setState(() {
-            _isPaidPerformance = isPaid;
-            _ticketPrice = price;
-            _ticketTier = tier;
-            _accessCheckCompleted = true;
-            _accessCheckFailed = false;
-          });
-          if (hasAccess) {
-            _joinLivePerformance();
-            _initAgora();
-          }
-          return;
-        }
-      } catch (fbErr) {
-        appPrint('[Tipping] Fallback checkAccess error: $fbErr');
-      }
-      if (mounted) {
-        setState(() {
-          _accessCheckCompleted = true;
-          _accessCheckFailed = true;
-        });
-      }
+      appPrint('[LivePerformance] Direct checkAccess error: $e');
+    }
+
+    if (mounted) {
+      setState(() {
+        _accessCheckCompleted = true;
+        _accessCheckFailed = true;
+      });
     }
   }
 
@@ -355,7 +346,7 @@ class _ListenerLivePerformanceViewState extends ConsumerState<ListenerLivePerfor
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          CircularProgressIndicator(
+                          const CircularProgressIndicator(
                             color: AppColors.listenerYellow,
                             strokeWidth: 2,
                           ),
@@ -456,7 +447,7 @@ class _ListenerLivePerformanceViewState extends ConsumerState<ListenerLivePerfor
                         artistName: widget.featured.artist,
                         artistId: widget.featured.artistId,
                         performanceId: widget.featured.id,
-                        price: _ticketPrice,
+                        price: _ticketPrice ?? 0.0,
                         tierNumber: _ticketTier,
                       ),
           ),
@@ -813,7 +804,6 @@ class _SuperChatCelebrationAlert extends StatelessWidget {
         colors = [AppColors.superChatSilverStart, AppColors.superChatSilverEnd];
         break;
       case SuperChatTier.bronze:
-      default:
         colors = [AppColors.superChatBronzeStart, AppColors.superChatBronzeEnd];
         break;
     }

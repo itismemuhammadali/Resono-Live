@@ -28,7 +28,8 @@ const functions = __importStar(require("firebase-functions"));
 const admin = __importStar(require("firebase-admin"));
 const firebase_admin_1 = require("./firebase-admin");
 const notifications_1 = require("./notifications");
-const PLATFORM_FEE_PERCENT = 15;
+const PLATFORM_FEE_PERCENT = 10;
+const STORE_FEE_PERCENT = 15;
 /**
  * verifyInAppPurchase — onCall Function
  *
@@ -57,8 +58,10 @@ exports.verifyInAppPurchase = functions.https.onCall(async (data, context) => {
         throw new functions.https.HttpsError("invalid-argument", "Valid amount is required.");
     }
     const amountCents = Math.floor(numAmount * 100);
+    const storeSource = source === "google_play" ? "google_play" : "apple_iap";
+    const storeFee = Math.floor(amountCents * (STORE_FEE_PERCENT / 100));
     const platformFee = Math.floor(amountCents * (PLATFORM_FEE_PERCENT / 100));
-    const netAmount = amountCents - platformFee;
+    const netAmount = amountCents - storeFee - platformFee;
     const resolvedType = type === "ticket" || type === "paid_access" ? "paid_access" : "tip";
     functions.logger.info(`verifyInAppPurchase: user=${userId} artist=${artistId} type=${resolvedType} prod=${productId} tx=${transactionId}`);
     // Deduplication check if transactionId provided
@@ -93,12 +96,13 @@ exports.verifyInAppPurchase = functions.https.onCall(async (data, context) => {
         userId,
         artistId: artistId || "",
         amount: amountCents,
+        storeFee,
         platformFee,
         netAmount,
         type: resolvedType,
         performanceId: performanceId || "",
         productId,
-        purchaseSource: source || "iap",
+        purchaseSource: storeSource,
         transactionId: finalTxId,
         badge: badge || null,
         message: message || null,
