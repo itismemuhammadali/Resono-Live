@@ -64,14 +64,18 @@ class TicketTier {
   final String productId;
   final double price;
   final String name;
+  final String passName;
   final String subtitle;
+  final String fullName;
 
   const TicketTier({
     required this.tierNumber,
     required this.productId,
     required this.price,
     required this.name,
+    required this.passName,
     required this.subtitle,
+    required this.fullName,
   });
 
   static const List<TicketTier> allTiers = [
@@ -80,42 +84,54 @@ class TicketTier {
       productId: IapProductIds.ticketTier1,
       price: 2.0,
       name: 'Tier 1',
+      passName: 'Standard Pass',
       subtitle: 'Standard Pass',
+      fullName: 'Ticket Tier 1 Standard Pass',
     ),
     TicketTier(
       tierNumber: 2,
       productId: IapProductIds.ticketTier2,
       price: 5.0,
       name: 'Tier 2',
+      passName: 'Fan Pass',
       subtitle: 'Fan Pass',
+      fullName: 'Ticket Tier 2 Fan Pass',
     ),
     TicketTier(
       tierNumber: 3,
       productId: IapProductIds.ticketTier3,
       price: 10.0,
       name: 'Tier 3',
+      passName: 'Supporter Pass',
       subtitle: 'Supporter Pass',
+      fullName: 'Ticket Tier 3 Supporter Pass',
     ),
     TicketTier(
       tierNumber: 4,
       productId: IapProductIds.ticketTier4,
       price: 15.0,
       name: 'Tier 4',
+      passName: 'VIP Pass',
       subtitle: 'VIP Pass',
+      fullName: 'Ticket Tier 4 VIP Pass',
     ),
     TicketTier(
       tierNumber: 5,
       productId: IapProductIds.ticketTier5,
       price: 20.0,
       name: 'Tier 5',
-      subtitle: 'All-Access Pass',
+      passName: 'All Access Pass',
+      subtitle: 'All Access Pass',
+      fullName: 'Ticket Tier 5 All Access Pass',
     ),
     TicketTier(
       tierNumber: 6,
       productId: IapProductIds.ticketTier6,
       price: 25.0,
       name: 'Tier 6',
+      passName: 'Backstage Pass',
       subtitle: 'Backstage Pass',
+      fullName: 'Ticket Tier 6 Backstage Pass',
     ),
   ];
 
@@ -144,6 +160,7 @@ class SuperChatBadge {
   final String productId;
   final double price;
   final String name;
+  final String fullName;
   final int pinMinutes;
   final List<Color> colors;
   final IconData icon;
@@ -153,6 +170,7 @@ class SuperChatBadge {
     required this.productId,
     required this.price,
     required this.name,
+    required this.fullName,
     required this.pinMinutes,
     required this.colors,
     required this.icon,
@@ -164,6 +182,7 @@ class SuperChatBadge {
       productId: IapProductIds.tipBronze,
       price: 2.0,
       name: 'Bronze',
+      fullName: 'Super Chat Tip Bronze',
       pinMinutes: 1,
       colors: [AppColors.superChatBronzeStart, AppColors.superChatBronzeEnd],
       icon: Icons.shield_outlined,
@@ -173,6 +192,7 @@ class SuperChatBadge {
       productId: IapProductIds.tipSilver,
       price: 5.0,
       name: 'Silver',
+      fullName: 'Super Chat Tip Silver',
       pinMinutes: 3,
       colors: [AppColors.superChatSilverStart, AppColors.superChatSilverEnd],
       icon: Icons.verified_outlined,
@@ -182,6 +202,7 @@ class SuperChatBadge {
       productId: IapProductIds.tipGold,
       price: 10.0,
       name: 'Gold',
+      fullName: 'Super Chat Tip Gold',
       pinMinutes: 5,
       colors: [AppColors.superChatGoldStart, AppColors.superChatGoldEnd],
       icon: Icons.star_rounded,
@@ -191,6 +212,7 @@ class SuperChatBadge {
       productId: IapProductIds.tipPlatinum,
       price: 25.0,
       name: 'Platinum',
+      fullName: 'Super Chat Tip Platinum',
       pinMinutes: 10,
       colors: [AppColors.superChatPlatinumStart, AppColors.superChatPlatinumEnd],
       icon: Icons.diamond_rounded,

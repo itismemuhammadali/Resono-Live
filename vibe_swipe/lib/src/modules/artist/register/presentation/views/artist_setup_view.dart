@@ -27,7 +27,16 @@ class ArtistSetupView extends HookConsumerWidget {
     useEffect(() {
       final user = FirebaseAuth.instance.currentUser;
       if (user != null) {
-        String defaultName = user.displayName ?? '';
+        final appleName = locator<FirebaseAuthService>().lastAppleFullName;
+        final googleName = user.displayName;
+        final existingCtrlName = registerController.artistName;
+        String defaultName = existingCtrlName.isNotEmpty
+            ? existingCtrlName
+            : (appleName != null && appleName.trim().isNotEmpty)
+                ? appleName.trim()
+                : (googleName != null && googleName.trim().isNotEmpty)
+                    ? googleName.trim()
+                    : '';
         if (defaultName.isEmpty && user.email != null && user.email!.isNotEmpty) {
           defaultName = user.email!.split('@').first;
         }

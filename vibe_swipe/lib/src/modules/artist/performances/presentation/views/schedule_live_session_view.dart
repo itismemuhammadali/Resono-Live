@@ -271,7 +271,7 @@ class _TicketTierTile extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Text(
-                    '${tier.name} • \$${tier.price.toStringAsFixed(0)}',
+                    '${tier.name}: ${tier.passName} • \$${tier.price.toStringAsFixed(0)}',
                     style: TextStyle(
                       fontFamily: 'Roboto',
                       color: isSelected ? AppColors.listenerYellow : AppColors.primaryWhite,
@@ -281,7 +281,7 @@ class _TicketTierTile extends StatelessWidget {
                   ),
                   2.ph,
                   Text(
-                    tier.subtitle,
+                    tier.fullName,
                     style: TextStyle(
                       fontFamily: 'Roboto',
                       color: AppColors.santagrey,

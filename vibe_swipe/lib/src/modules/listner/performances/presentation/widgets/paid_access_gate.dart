@@ -111,12 +111,12 @@ class PaidAccessGate extends ConsumerWidget {
                 child: Column(
                   children: [
                     Text(
-                      '${tier.name} — ${tier.subtitle}',
+                      tier.fullName,
                       style: TextStyle(
                         fontFamily: 'Roboto',
-                        fontSize: 13.sp,
-                        fontWeight: FontWeight.w500,
-                        color: AppColors.primaryWhite.withValues(alpha: 0.8),
+                        fontSize: 14.sp,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.primaryWhite.withValues(alpha: 0.9),
                       ),
                     ),
                     4.ph,

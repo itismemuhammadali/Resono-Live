@@ -7,10 +7,12 @@ import '../../../artist/register/presentation/controllers/artist_register_contro
 
 class SocialAuthButtons extends ConsumerWidget {
   final VoidCallback? onAuthStarted;
+  final bool isSignUp;
 
   const SocialAuthButtons({
     super.key,
     this.onAuthStarted,
+    this.isSignUp = false,
   });
 
   void _showAppleIosOnlyBottomSheet(BuildContext context) {
@@ -83,28 +85,40 @@ class SocialAuthButtons extends ConsumerWidget {
 
     if (!context.mounted) return;
 
-    if (isCompleted) {
-      final target = AppConfig.userRole == UserRole.artist
-          ? artistDashboardView
-          : listenerDashboardView;
-      AppRouterGo.pushReplacement(target);
-    } else {
+    // When signing up, ALWAYS guide the user through profile onboarding.
+    // Also, if logging in with an incomplete profile, route to onboarding as well.
+    if (isSignUp || !isCompleted) {
+      final user = FirebaseAuth.instance.currentUser;
+      final appleName = locator<FirebaseAuthService>().lastAppleFullName;
+      final googleName = user?.displayName;
+      final emailFallback = (user?.email != null && user!.email!.isNotEmpty)
+          ? user.email!.split('@').first
+          : '';
+      final resolvedName = (appleName != null && appleName.trim().isNotEmpty)
+          ? appleName.trim()
+          : (googleName != null && googleName.trim().isNotEmpty)
+              ? googleName.trim()
+              : emailFallback;
+
       if (AppConfig.userRole == UserRole.artist) {
-        final user = FirebaseAuth.instance.currentUser;
-        final name = user?.displayName ?? locator<FirebaseAuthService>().lastAppleFullName;
-        if (name != null && name.isNotEmpty) {
-          ref.read(artistRegisterControllerProvider).setArtistName(name);
+        if (resolvedName.isNotEmpty) {
+          ref.read(artistRegisterControllerProvider).setArtistName(resolvedName);
         }
         AppRouterGo.pushReplacement(artistSetupView);
       } else {
-        final user = FirebaseAuth.instance.currentUser;
-        final name = user?.displayName ?? locator<FirebaseAuthService>().lastAppleFullName;
-        if (name != null && name.isNotEmpty) {
-          ref.read(listenerRegisterControllerProvider).setUsername(name);
+        if (resolvedName.isNotEmpty) {
+          ref.read(listenerRegisterControllerProvider).setUsername(resolvedName);
         }
         AppRouterGo.pushReplacement(profileSetupView);
       }
+      return;
     }
+
+    // User logging in from Login screen with profile already completed:
+    final target = AppConfig.userRole == UserRole.artist
+        ? artistDashboardView
+        : listenerDashboardView;
+    AppRouterGo.pushReplacement(target);
   }
 
   @override
@@ -151,7 +165,7 @@ class SocialAuthButtons extends ConsumerWidget {
                   onAuthStarted?.call();
                   authController.clearError();
                   try {
-                    final success = await ref.read(authControllerProvider).signInWithGoogle();
+                    final success = await ref.read(authControllerProvider).signInWithGoogle(isSignUp: isSignUp);
                     if (success && context.mounted) {
                       await _handlePostAuthNavigation(context, ref);
                     }
@@ -202,7 +216,7 @@ class SocialAuthButtons extends ConsumerWidget {
                     return;
                   }
                   try {
-                    final success = await ref.read(authControllerProvider).signInWithApple();
+                    final success = await ref.read(authControllerProvider).signInWithApple(isSignUp: isSignUp);
                     if (success && context.mounted) {
                       await _handlePostAuthNavigation(context, ref);
                     }

@@ -65,7 +65,7 @@ class ReviewCard extends StatelessWidget {
           ReviewRow(
             label: 'Access',
             value: controller.isPaidPerformance
-                ? 'Paid (\$${controller.selectedTier.price.toStringAsFixed(0)} - ${controller.selectedTier.name})'
+                ? 'Paid (\$${controller.selectedTier.price.toStringAsFixed(0)} - ${controller.selectedTier.passName})'
                 : 'Free',
           ),
           10.ph,

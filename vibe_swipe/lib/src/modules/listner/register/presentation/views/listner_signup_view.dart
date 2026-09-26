@@ -409,6 +409,7 @@ class ListnerSignupView extends HookConsumerWidget {
                   ),
                   24.ph,
                   SocialAuthButtons(
+                    isSignUp: true,
                     onAuthStarted: () {
                       authController.clearError();
                     },

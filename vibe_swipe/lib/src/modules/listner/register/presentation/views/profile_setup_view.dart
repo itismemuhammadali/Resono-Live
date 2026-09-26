@@ -22,7 +22,16 @@ class ProfileSetupView extends HookConsumerWidget {
     useEffect(() {
       final user = FirebaseAuth.instance.currentUser;
       if (user != null) {
-        String defaultUsername = user.displayName ?? '';
+        final appleName = locator<FirebaseAuthService>().lastAppleFullName;
+        final googleName = user.displayName;
+        final existingCtrlName = controller.username;
+        String defaultUsername = existingCtrlName.isNotEmpty
+            ? existingCtrlName
+            : (appleName != null && appleName.trim().isNotEmpty)
+                ? appleName.trim()
+                : (googleName != null && googleName.trim().isNotEmpty)
+                    ? googleName.trim()
+                    : '';
         if (defaultUsername.isEmpty && user.email != null && user.email!.isNotEmpty) {
           defaultUsername = user.email!.split('@').first;
         }

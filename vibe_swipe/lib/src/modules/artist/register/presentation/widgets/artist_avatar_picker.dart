@@ -1,4 +1,4 @@
-import 'dart:typed_data';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:vibe_swipe/src/core/utils/app_exports.dart';
 
 class ArtistAvatarPicker extends StatelessWidget {
@@ -39,11 +39,26 @@ class ArtistAvatarPicker extends StatelessWidget {
                         fit: BoxFit.cover,
                       ),
                     )
-                  : Icon(
-                      Icons.camera_alt_outlined,
-                      color: AppColors.gray500,
-                      size: 48.sp,
-                    ),
+                  : (FirebaseAuth.instance.currentUser?.photoURL != null &&
+                          FirebaseAuth.instance.currentUser!.photoURL!.isNotEmpty)
+                      ? ClipOval(
+                          child: Image.network(
+                            FirebaseAuth.instance.currentUser!.photoURL!,
+                            width: 128.w,
+                            height: 128.h,
+                            fit: BoxFit.cover,
+                            errorBuilder: (_, __, ___) => Icon(
+                              Icons.camera_alt_outlined,
+                              color: AppColors.gray500,
+                              size: 48.sp,
+                            ),
+                          ),
+                        )
+                      : Icon(
+                          Icons.camera_alt_outlined,
+                          color: AppColors.gray500,
+                          size: 48.sp,
+                        ),
             ),
             Positioned(
               bottom: 0,

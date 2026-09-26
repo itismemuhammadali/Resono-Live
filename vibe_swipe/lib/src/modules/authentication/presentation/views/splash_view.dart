@@ -55,13 +55,15 @@ class _SplashViewState extends State<SplashView> with SingleTickerProviderStateM
             .get()
             .timeout(const Duration(seconds: 4));
 
-        final roleStr = (doc.data()?['role'] as String?)?.toLowerCase();
+        final data = doc.data();
+        final roleStr = (data?['role'] as String?)?.toLowerCase();
+        final profileCompleted = data?['profileCompleted'] == true;
         if (roleStr == 'artist') {
           roleToSet = UserRole.artist;
-          targetRoute = artistDashboardView;
+          targetRoute = profileCompleted ? artistDashboardView : artistSetupView;
         } else if (roleStr == 'listener') {
           roleToSet = UserRole.listener;
-          targetRoute = listenerDashboardView;
+          targetRoute = profileCompleted ? listenerDashboardView : profileSetupView;
         }
       }
     } catch (e) {

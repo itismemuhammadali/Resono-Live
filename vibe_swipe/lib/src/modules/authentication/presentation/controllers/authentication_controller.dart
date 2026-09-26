@@ -334,7 +334,7 @@ class AuthController extends ChangeNotifier with Buffers {
     }
   }
 
-  Future<bool> signInWithGoogle() async {
+  Future<bool> signInWithGoogle({bool isSignUp = false}) async {
     _setLoading(true);
     _setError(null);
     try {
@@ -342,11 +342,21 @@ class AuthController extends ChangeNotifier with Buffers {
       final uid = credential.user!.uid;
 
       final roleStr = await _firestoreService.getUserRole(uid);
-      _syncUserRole(roleStr);
-      if (roleStr == null) {
+      if (!isSignUp) {
+        _syncUserRole(roleStr);
+      }
+
+      final googleName = credential.user!.displayName;
+      final resolvedName = (googleName != null && googleName.trim().isNotEmpty)
+          ? googleName.trim()
+          : (credential.user!.email != null && credential.user!.email!.isNotEmpty
+              ? credential.user!.email!.split('@').first
+              : (AppConfig.userRole == UserRole.artist ? 'Artist' : 'Music Lover'));
+
+      if (roleStr == null || isSignUp) {
         await _firestoreService.createUserData(
           uid: uid,
-          name: credential.user!.displayName ?? 'User',
+          name: resolvedName,
           email: credential.user!.email ?? '',
           role: AppConfig.userRole,
           profileImageUrl: credential.user!.photoURL,
@@ -372,7 +382,7 @@ class AuthController extends ChangeNotifier with Buffers {
     }
   }
 
-  Future<bool> signInWithApple() async {
+  Future<bool> signInWithApple({bool isSignUp = false}) async {
     _setLoading(true);
     _setError(null);
     try {
@@ -380,18 +390,21 @@ class AuthController extends ChangeNotifier with Buffers {
       final uid = credential.user!.uid;
 
       final roleStr = await _firestoreService.getUserRole(uid);
-      _syncUserRole(roleStr);
+      if (!isSignUp) {
+        _syncUserRole(roleStr);
+      }
+
       final appleName = _authService.lastAppleFullName;
       final existingName = credential.user!.displayName;
-      final resolvedName = (appleName != null && appleName.isNotEmpty)
-          ? appleName
-          : (existingName != null && existingName.isNotEmpty)
-              ? existingName
+      final resolvedName = (appleName != null && appleName.trim().isNotEmpty)
+          ? appleName.trim()
+          : (existingName != null && existingName.trim().isNotEmpty)
+              ? existingName.trim()
               : (credential.user!.email != null && credential.user!.email!.isNotEmpty
                   ? credential.user!.email!.split('@').first
                   : (AppConfig.userRole == UserRole.artist ? 'Artist' : 'Music Lover'));
 
-      if (roleStr == null) {
+      if (roleStr == null || isSignUp) {
         await _firestoreService.createUserData(
           uid: uid,
           name: resolvedName,
