@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:vibe_swipe/src/core/services/in_app_purchase_service.dart';
 import 'package:vibe_swipe/src/core/utils/app_exports.dart';
 import '../../domain/entities/performance_entity.dart';
 
@@ -180,24 +181,30 @@ class ArtistPerformancesController extends ChangeNotifier with Buffers {
 
   // Paid performance state
   bool isPaidPerformance = false;
+  TicketTier selectedTier = TicketTier.allTiers[1]; // Default to Tier 2 ($5)
   final TextEditingController priceController = TextEditingController();
 
   void setPerformanceType(bool isPaid) {
     isPaidPerformance = isPaid;
-    if (!isPaid) priceController.clear();
+    if (!isPaid) {
+      priceController.clear();
+    } else {
+      priceController.text = selectedTier.price.toStringAsFixed(0);
+    }
     notifyListeners();
   }
 
-  double get ticketPrice => double.tryParse(priceController.text) ?? 0.0;
+  void selectTicketTier(TicketTier tier) {
+    selectedTier = tier;
+    priceController.text = tier.price.toStringAsFixed(0);
+    notifyListeners();
+  }
+
+  double get ticketPrice => isPaidPerformance ? selectedTier.price : 0.0;
 
   bool get canContinueSession {
-    if (!kIsWeb && Platform.isIOS) {
-      return titleController.text.trim().isNotEmpty &&
-          descriptionController.text.trim().isNotEmpty;
-    }
     return titleController.text.trim().isNotEmpty &&
-        descriptionController.text.trim().isNotEmpty &&
-        (!isPaidPerformance || ticketPrice > 0);
+        descriptionController.text.trim().isNotEmpty;
   }
 
   void onSessionFieldChanged() => notifyListeners();
@@ -384,8 +391,10 @@ class ArtistPerformancesController extends ChangeNotifier with Buffers {
         status: 'upcoming',
         type: 'live',
         scheduledAt: _parseScheduledDateTime(),
-        isPaid: (!kIsWeb && Platform.isIOS) ? false : isPaidPerformance,
-        ticketPrice: (!kIsWeb && Platform.isIOS) ? null : (isPaidPerformance ? ticketPrice : null),
+        isPaid: isPaidPerformance,
+        ticketPrice: isPaidPerformance ? selectedTier.price : null,
+        ticketTier: isPaidPerformance ? selectedTier.tierNumber : null,
+        ticketProductId: isPaidPerformance ? selectedTier.productId : null,
       );
 
       // 2. Upload cover image to Firebase Storage
@@ -511,6 +520,7 @@ class ArtistPerformancesController extends ChangeNotifier with Buffers {
     selectedCategory = null;
     tags.clear();
     isPaidPerformance = false;
+    selectedTier = TicketTier.allTiers[1];
     priceController.clear();
   }
 

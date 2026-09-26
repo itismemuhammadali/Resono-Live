@@ -506,7 +506,9 @@ exports.checkAccess = functions
         return {
             hasAccess,
             isPaid: true,
-            price: perfData.price || 9.99,
+            price: perfData.ticketPrice ?? perfData.price ?? 9.99,
+            ticketTier: perfData.ticketTier ?? null,
+            ticketProductId: perfData.ticketProductId ?? null,
         };
     }
     catch (err) {

@@ -53,19 +53,17 @@ class LivePerformanceActionBar extends StatelessWidget {
               onTap: onSave,
             ),
           ),
-          if (kIsWeb || !Platform.isIOS) ...[
-            12.pw,
-            Expanded(
-              child: _SolidActionBtn(
-                icon: Icons.attach_money_rounded,
-                label: 'Tip',
-                bgColor: AppColors.listenerYellow,
-                iconColor: AppColors.primaryblack,
-                labelColor: AppColors.primaryblack,
-                onTap: onTip,
-              ),
+          12.pw,
+          Expanded(
+            child: _SolidActionBtn(
+              icon: Icons.attach_money_rounded,
+              label: 'Tip',
+              bgColor: AppColors.listenerYellow,
+              iconColor: AppColors.primaryblack,
+              labelColor: AppColors.primaryblack,
+              onTap: onTip,
             ),
-          ],
+          ),
           12.pw,
           Expanded(
             child: _SolidActionBtn(

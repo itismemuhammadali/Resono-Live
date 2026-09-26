@@ -32,9 +32,11 @@ class _ListenerLivePerformanceViewState extends ConsumerState<ListenerLivePerfor
   final AgoraService _agoraService = locator<AgoraService>();
   bool _isAgoraLive = false;
   int? _remoteUid;
+  // ignore: unused_field
   bool _isJoined = false;
   bool _isPaidPerformance = false;
   double _ticketPrice = 9.99;
+  int? _ticketTier;
   bool _streamEnded = false;
   bool _agoraInitialized = false;
   bool _accessCheckCompleted = false;
@@ -146,6 +148,19 @@ class _ListenerLivePerformanceViewState extends ConsumerState<ListenerLivePerfor
         });
       }
 
+      if (data.containsKey('isPaid')) {
+        final isPaid = data['isPaid'] == true;
+        final price = (data['ticketPrice'] as num?)?.toDouble() ?? (data['price'] as num?)?.toDouble() ?? _ticketPrice;
+        final tier = (data['ticketTier'] ?? data['tierNumber']) as int? ?? _ticketTier;
+        if (isPaid != _isPaidPerformance || price != _ticketPrice || tier != _ticketTier) {
+          setState(() {
+            _isPaidPerformance = isPaid;
+            _ticketPrice = price;
+            _ticketTier = tier;
+          });
+        }
+      }
+
       if (status == 'ended' && !_streamEnded) {
         _handleStreamEnded();
       } else if (status == 'live' && !_isAgoraLive && !_agoraInitialized) {
@@ -183,6 +198,7 @@ class _ListenerLivePerformanceViewState extends ConsumerState<ListenerLivePerfor
         setState(() {
           _isPaidPerformance = result['isPaid'] == true;
           _ticketPrice = (result['price'] ?? 9.99).toDouble();
+          _ticketTier = (result['ticketTier'] ?? result['tierNumber']) as int?;
           _accessCheckCompleted = true;
         });
         if (_isPaidPerformance && result['hasAccess'] == true) {
@@ -205,12 +221,14 @@ class _ListenerLivePerformanceViewState extends ConsumerState<ListenerLivePerfor
         final data = doc.data();
         if (data != null && mounted) {
           final isPaid = data['isPaid'] == true;
-          final price = (data['ticketPrice'] as num?)?.toDouble() ?? 9.99;
+          final price = (data['ticketPrice'] as num?)?.toDouble() ?? (data['price'] as num?)?.toDouble() ?? 9.99;
+          final tier = (data['ticketTier'] ?? data['tierNumber']) as int?;
           final paidUsers = List<String>.from(data['paidUsers'] ?? []);
           final hasAccess = !isPaid || paidUsers.contains(userId);
           setState(() {
             _isPaidPerformance = isPaid;
             _ticketPrice = price;
+            _ticketTier = tier;
             _accessCheckCompleted = true;
             _accessCheckFailed = false;
           });
@@ -439,6 +457,7 @@ class _ListenerLivePerformanceViewState extends ConsumerState<ListenerLivePerfor
                         artistId: widget.featured.artistId,
                         performanceId: widget.featured.id,
                         price: _ticketPrice,
+                        tierNumber: _ticketTier,
                       ),
           ),
 

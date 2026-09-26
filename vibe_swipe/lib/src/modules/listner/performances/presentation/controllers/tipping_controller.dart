@@ -1,7 +1,5 @@
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:vibe_swipe/src/core/services/in_app_purchase_service.dart';
-import 'package:vibe_swipe/src/core/services/registry_service/di.dart';
 import 'package:vibe_swipe/src/core/utils/app_exports.dart';
 
 class TipRecord {

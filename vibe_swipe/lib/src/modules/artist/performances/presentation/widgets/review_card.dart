@@ -63,6 +63,13 @@ class ReviewCard extends StatelessWidget {
           ),
           10.ph,
           ReviewRow(
+            label: 'Access',
+            value: controller.isPaidPerformance
+                ? 'Paid (\$${controller.selectedTier.price.toStringAsFixed(0)} - ${controller.selectedTier.name})'
+                : 'Free',
+          ),
+          10.ph,
+          ReviewRow(
             label: 'Discoverable',
             value: controller.isDiscoverable ? 'Yes' : 'No',
           ),
