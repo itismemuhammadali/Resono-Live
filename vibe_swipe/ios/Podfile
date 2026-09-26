@@ -47,5 +47,10 @@ post_install do |installer|
         'PERMISSION_NOTIFICATIONS=1',
       ]
     end
+    target.build_phases.each do |phase|
+      if phase.is_a?(Xcodeproj::Project::Object::PBXShellScriptBuildPhase)
+        phase.always_out_of_date = "1"
+      end
+    end
   end
 end
