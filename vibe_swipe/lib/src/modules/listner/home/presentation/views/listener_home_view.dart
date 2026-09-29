@@ -81,8 +81,8 @@ class _ListenerHomeViewState extends ConsumerState<ListenerHomeView> {
     }
 
     void onCardTap(int index) {
+      if (index >= controller.cards.length) return;
       final card = controller.cards[index];
-      if (card.videoUrl.isEmpty) return;
 
       if (card.status == 'upcoming') {
         AppRouterGo.push(
@@ -101,22 +101,102 @@ class _ListenerHomeViewState extends ConsumerState<ListenerHomeView> {
             type: card.type,
           ),
         );
-      } else {
-        AppRouterGo.push(
-          listenerLivePerformanceView,
-          extra: PerformanceFeaturedEntity(
-            id: card.performanceId,
-            title: card.title.isNotEmpty ? card.title : card.caption,
-            artist: card.name,
-            genre: card.song,
-            viewCount: card.likes,
-            isLive: card.status == 'live',
-            thumbnailUrl: card.imageUrl,
-            videoUrl: card.videoUrl,
-            artistId: card.artistId,
-            description: card.caption,
+      } else if (card.status == 'live') {
+        showDialog(
+          context: context,
+          builder: (dialogCtx) => AlertDialog(
+            backgroundColor: AppColors.listenerDashboardBg,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(20.r),
+              side: const BorderSide(
+                color: AppColors.listenerChipBorder,
+                width: 1,
+              ),
+            ),
+            title: Row(
+              children: [
+                Container(
+                  width: 10.w,
+                  height: 10.w,
+                  decoration: const BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: Colors.redAccent,
+                  ),
+                ),
+                8.pw,
+                Expanded(
+                  child: Text(
+                    '${card.name} is Live',
+                    style: TextStyle(
+                      fontFamily: 'Roboto',
+                      fontSize: 18.sp,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.primaryWhite,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            content: Text(
+              'Would you like to tune in to this live stream performance?',
+              style: TextStyle(
+                fontFamily: 'Roboto',
+                fontSize: 14.sp,
+                color: AppColors.huegrey,
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(dialogCtx),
+                child: Text(
+                  'Cancel',
+                  style: TextStyle(
+                    fontFamily: 'Roboto',
+                    color: AppColors.huegrey,
+                    fontSize: 14.sp,
+                  ),
+                ),
+              ),
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.listenerYellow,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10.r),
+                  ),
+                ),
+                onPressed: () {
+                  Navigator.pop(dialogCtx);
+                  AppRouterGo.push(
+                    listenerLivePerformanceView,
+                    extra: PerformanceFeaturedEntity(
+                      id: card.performanceId,
+                      title: card.title.isNotEmpty ? card.title : card.caption,
+                      artist: card.name,
+                      genre: card.song,
+                      viewCount: card.likes,
+                      isLive: true,
+                      thumbnailUrl: card.imageUrl,
+                      videoUrl: card.videoUrl,
+                      artistId: card.artistId,
+                      description: card.caption,
+                    ),
+                  );
+                },
+                child: Text(
+                  'Join Live',
+                  style: TextStyle(
+                    fontFamily: 'Roboto',
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.primaryblack,
+                    fontSize: 14.sp,
+                  ),
+                ),
+              ),
+            ],
           ),
         );
+      } else {
+        notifier.togglePlay();
       }
     }
 
@@ -162,7 +242,7 @@ class _ListenerHomeViewState extends ConsumerState<ListenerHomeView> {
               child: LikeConfettiOverlay(
                 showConfetti: _showConfetti,
                 child: controller.isLoading
-                    ? Center(
+                    ? const Center(
                         child: CircularProgressIndicator(
                           color: AppColors.listenerYellow,
                         ),

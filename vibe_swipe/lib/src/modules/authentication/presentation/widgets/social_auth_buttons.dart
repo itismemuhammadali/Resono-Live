@@ -15,68 +15,6 @@ class SocialAuthButtons extends ConsumerWidget {
     this.isSignUp = false,
   });
 
-  void _showAppleIosOnlyBottomSheet(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: AppColors.listenerDashboardBg,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24.r)),
-      ),
-      builder: (ctx) {
-        return Padding(
-          padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 28.h),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                width: 64.w,
-                height: 64.w,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: AppColors.listenerChipBorder.withValues(alpha: 0.3),
-                ),
-                child: Icon(
-                  Icons.apple,
-                  size: 36.sp,
-                  color: AppColors.primaryWhite,
-                ),
-              ),
-              16.ph,
-              Text(
-                "Apple Sign-In is iOS Only",
-                style: TextStyle(
-                  fontFamily: 'Roboto',
-                  fontSize: 20.sp,
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.primaryWhite,
-                ),
-                textAlign: TextAlign.center,
-              ),
-              12.ph,
-              Text(
-                "Apple Sign-In is designed for Apple devices. On Android, please sign in using Google or your Email address.",
-                style: TextStyle(
-                  fontFamily: 'Roboto',
-                  fontSize: 14.sp,
-                  color: AppColors.santagrey,
-                  height: 1.4,
-                ),
-                textAlign: TextAlign.center,
-              ),
-              24.ph,
-              PrimaryElevatedButton(
-                onTap: () => Navigator.pop(ctx),
-                text: "Got It",
-                backgroundColor: AppColors.listenerYellow,
-                textColor: AppColors.primaryblack,
-                radius: 12,
-              ),
-            ],
-          ),
-        );
-      },
-    );
-  }
 
   Future<void> _handlePostAuthNavigation(BuildContext context, WidgetRef ref) async {
     final uid = locator<FirebaseAuthService>().getUid();
@@ -130,7 +68,7 @@ class SocialAuthButtons extends ConsumerWidget {
       children: [
         Row(
           children: [
-            Expanded(
+            const Expanded(
               child: Divider(
                 color: AppColors.listenerChipBorder,
                 thickness: 1,
@@ -147,7 +85,7 @@ class SocialAuthButtons extends ConsumerWidget {
                 ),
               ),
             ),
-            Expanded(
+            const Expanded(
               child: Divider(
                 color: AppColors.listenerChipBorder,
                 thickness: 1,
@@ -156,106 +94,134 @@ class SocialAuthButtons extends ConsumerWidget {
           ],
         ),
         24.ph,
-        Row(
-          children: [
-            Expanded(
-              child: PrimaryElevatedButton(
-                enabled: !authController.isLoading,
-                onTap: () async {
-                  onAuthStarted?.call();
-                  authController.clearError();
-                  try {
-                    final success = await ref.read(authControllerProvider).signInWithGoogle(isSignUp: isSignUp);
-                    if (success && context.mounted) {
-                      await _handlePostAuthNavigation(context, ref);
-                    }
-                  } on PlatformException catch (e) {
-                    if (context.mounted) {
+        Builder(
+          builder: (context) {
+            final showApple = !kIsWeb && Platform.isIOS;
+            final googleButton = PrimaryElevatedButton(
+              enabled: !authController.isLoading,
+              onTap: () async {
+                onAuthStarted?.call();
+                authController.clearError();
+                try {
+                  final success = await ref.read(authControllerProvider).signInWithGoogle(isSignUp: isSignUp);
+                  if (success && context.mounted) {
+                    await _handlePostAuthNavigation(context, ref);
+                  } else if (!success && context.mounted) {
+                    final error = ref.read(authControllerProvider).errorMessage;
+                    if (error != null && error.isNotEmpty) {
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
-                          content: Text('Google Sign-In failed: ${e.message ?? 'Please try again.'}'),
+                          content: Text(error),
                           backgroundColor: Colors.red.shade800,
                         ),
                       );
                     }
-                  } catch (_) {
-                    // Auth controller already sets errorMessage for FirebaseAuthExceptions
                   }
-                },
-                text: "Google",
+                } on PlatformException catch (e) {
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('Google Sign-In failed: ${e.message ?? 'Please try again.'}'),
+                        backgroundColor: Colors.red.shade800,
+                      ),
+                    );
+                  }
+                } catch (_) {
+                  // Auth controller already sets errorMessage for FirebaseAuthExceptions
+                }
+              },
+              text: "Google",
+              backgroundColor: AppColors.transparent,
+              textColor: AppColors.primaryWhite,
+              radius: 12,
+              buttonStyle: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.transparent,
-                textColor: AppColors.primaryWhite,
-                radius: 12,
-                buttonStyle: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.transparent,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12.r),
-                    side: BorderSide(
-                      color: AppColors.listenerBackButtonBorder,
-                    ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12.r),
+                  side: const BorderSide(
+                    color: AppColors.listenerBackButtonBorder,
                   ),
-                  elevation: 0,
                 ),
-                style: TextStyle(
-                  fontFamily: 'Roboto',
-                  color: AppColors.primaryWhite,
-                  fontSize: 14.sp,
-                  fontWeight: FontWeight.w600,
-                ),
+                elevation: 0,
               ),
-            ),
-            16.pw,
-            Expanded(
-              child: PrimaryElevatedButton(
-                enabled: !authController.isLoading,
-                onTap: () async {
-                  onAuthStarted?.call();
-                  authController.clearError();
-                  if (Platform.isAndroid) {
-                    _showAppleIosOnlyBottomSheet(context);
-                    return;
-                  }
-                  try {
-                    final success = await ref.read(authControllerProvider).signInWithApple(isSignUp: isSignUp);
-                    if (success && context.mounted) {
-                      await _handlePostAuthNavigation(context, ref);
-                    }
-                  } on PlatformException catch (e) {
-                    if (context.mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text('Apple Sign-In failed: ${e.message ?? 'Please try again.'}'),
-                          backgroundColor: Colors.red.shade800,
+              style: TextStyle(
+                fontFamily: 'Roboto',
+                color: AppColors.primaryWhite,
+                fontSize: 14.sp,
+                fontWeight: FontWeight.w600,
+              ),
+            );
+
+            if (!showApple) {
+              return SizedBox(
+                width: double.infinity,
+                child: googleButton,
+              );
+            }
+
+            return Row(
+              children: [
+                Expanded(child: googleButton),
+                16.pw,
+                Expanded(
+                  child: PrimaryElevatedButton(
+                    enabled: !authController.isLoading,
+                    onTap: () async {
+                      onAuthStarted?.call();
+                      authController.clearError();
+                      try {
+                        final success = await ref.read(authControllerProvider).signInWithApple(isSignUp: isSignUp);
+                        if (success && context.mounted) {
+                          await _handlePostAuthNavigation(context, ref);
+                        } else if (!success && context.mounted) {
+                          final error = ref.read(authControllerProvider).errorMessage;
+                          if (error != null && error.isNotEmpty) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(error),
+                                backgroundColor: Colors.red.shade800,
+                              ),
+                            );
+                          }
+                        }
+                      } on PlatformException catch (e) {
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text('Apple Sign-In failed: ${e.message ?? 'Please try again.'}'),
+                              backgroundColor: Colors.red.shade800,
+                            ),
+                          );
+                        }
+                      } catch (_) {
+                        // Auth controller already sets errorMessage for exceptions
+                      }
+                    },
+                    text: "Apple",
+                    backgroundColor: AppColors.transparent,
+                    textColor: AppColors.primaryWhite,
+                    radius: 12,
+                    buttonStyle: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.transparent,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12.r),
+                        side: const BorderSide(
+                          color: AppColors.listenerBackButtonBorder,
                         ),
-                      );
-                    }
-                  } catch (_) {
-                    // Auth controller already sets errorMessage for exceptions
-                  }
-                },
-                text: "Apple",
-                backgroundColor: AppColors.transparent,
-                textColor: AppColors.primaryWhite,
-                radius: 12,
-                buttonStyle: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.transparent,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12.r),
-                    side: BorderSide(
-                      color: AppColors.listenerBackButtonBorder,
+                      ),
+                      elevation: 0,
+                    ),
+                    style: TextStyle(
+                      fontFamily: 'Roboto',
+                      color: AppColors.primaryWhite,
+                      fontSize: 14.sp,
+                      fontWeight: FontWeight.w600,
                     ),
                   ),
-                  elevation: 0,
                 ),
-                style: TextStyle(
-                  fontFamily: 'Roboto',
-                  color: AppColors.primaryWhite,
-                  fontSize: 14.sp,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ),
-          ],
+              ],
+            );
+          },
         ),
       ],
     );

@@ -7,42 +7,6 @@
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:367306858996:android:527dede5a1759419fc59a1",
-        "android_client_info": {
-          "package_name": "com.sliconsystems.vibe_swipe"
-        }
-      },
-      "oauth_client": [
-        {
-          "client_id": "367306858996-l8k5q7fsg6g8f0honpm1od0gocshpd8d.apps.googleusercontent.com",
-          "client_type": 3
-        }
-      ],
-      "api_key": [
-        {
-          "current_key": "AIzaSyCKH-WWt_6KzINZmLfrfpZE3fHY0-nSjm0"
-        }
-      ],
-      "services": {
-        "appinvite_service": {
-          "other_platform_oauth_client": [
-            {
-              "client_id": "367306858996-l8k5q7fsg6g8f0honpm1od0gocshpd8d.apps.googleusercontent.com",
-              "client_type": 3
-            },
-            {
-              "client_id": "367306858996-oepl42avutap73h38qejqco3klqo40vp.apps.googleusercontent.com",
-              "client_type": 2,
-              "ios_info": {
-                "bundle_id": "com.vibeswipellc.vibeswipe"
-              }
-            }
-          ]
-        }
-      }
-    },
-    {
-      "client_info": {
         "mobilesdk_app_id": "1:367306858996:android:89d0f80bc55fb426fc59a1",
         "android_client_info": {
           "package_name": "com.vibeswipellc.vibeswipe"
@@ -50,11 +14,19 @@
       },
       "oauth_client": [
         {
-          "client_id": "367306858996-1nl4dd8me0ho1qcieet4sakjub3li44m.apps.googleusercontent.com",
+          "client_id": "367306858996-642j3dv5kquvdpngitkjv406ngquhsem.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {
             "package_name": "com.vibeswipellc.vibeswipe",
-            "certificate_hash": "026b1beda504fa922d407e5511e6da3e4653e1d6"
+            "certificate_hash": "c0649cf24f582bf1b10c67c3c15ea5d2b66b552c"
+          }
+        },
+        {
+          "client_id": "367306858996-tmbs10ob7s1v43ft1mkgshrf65jjbu6b.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.vibeswipellc.vibeswipe",
+            "certificate_hash": "755b83f9ed4054cbbcf377d227842794d7950b12"
           }
         },
         {

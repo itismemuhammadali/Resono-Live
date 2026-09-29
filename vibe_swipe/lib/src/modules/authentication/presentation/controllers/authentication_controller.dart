@@ -377,7 +377,7 @@ class AuthController extends ChangeNotifier with Buffers {
     } catch (e) {
       appPrint('[Auth] Google Sign-In error: $e');
       _setLoading(false);
-      _setError('Google Sign-In failed. Please try again.');
+      _setError('Google sign in failed. Please try again.');
       return false;
     }
   }
