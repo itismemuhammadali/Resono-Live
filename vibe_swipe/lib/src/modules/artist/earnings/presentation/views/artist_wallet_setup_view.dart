@@ -35,7 +35,7 @@ class ArtistWalletSetupView extends ConsumerWidget {
         centerTitle: true,
       ),
       body: SafeArea(
-        child: Padding(
+        child: SingleChildScrollView(
           padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 24.h),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -87,7 +87,52 @@ class ArtistWalletSetupView extends ConsumerWidget {
                   ],
                 ),
               ),
-              32.ph,
+              20.ph,
+              Container(
+                padding: EdgeInsets.all(18.w),
+                decoration: BoxDecoration(
+                  color: AppColors.listenerChipBg,
+                  borderRadius: BorderRadius.circular(16.r),
+                  border: Border.all(color: AppColors.listenerChipBorder),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(Icons.receipt_long_rounded, color: AppColors.listenerYellow, size: 20.sp),
+                        8.pw,
+                        Text(
+                          'Fee Breakdown',
+                          style: TextStyle(
+                            fontFamily: 'Roboto',
+                            fontSize: 16.sp,
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.primaryWhite,
+                          ),
+                        ),
+                      ],
+                    ),
+                    14.ph,
+                    const _FeeRow(label: 'Store Fee (Apple / Google)', percentage: '15%'),
+                    10.ph,
+                    const _FeeRow(label: 'VibeSwipe Platform Fee', percentage: '10%'),
+                    10.ph,
+                    const _FeeRow(label: 'Stripe Payout Fee', percentage: '2.5% – 3%'),
+                    14.ph,
+                    Text(
+                      'Store and platform fees are deducted automatically from in-app tickets and tips. Standard Stripe processing fees apply upon transferring funds to your bank.',
+                      style: TextStyle(
+                        fontFamily: 'Roboto',
+                        fontSize: 11.sp,
+                        color: AppColors.santagrey,
+                        height: 1.35,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              24.ph,
               if (!controller.stripePayoutsEnabled)
                 PrimaryElevatedButton(
                   onTap: () {
@@ -127,6 +172,38 @@ class ArtistWalletSetupView extends ConsumerWidget {
           ),
         ),
       ),
+    );
+  }
+}
+
+class _FeeRow extends StatelessWidget {
+  const _FeeRow({required this.label, required this.percentage});
+  final String label;
+  final String percentage;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(
+          label,
+          style: TextStyle(
+            fontFamily: 'Roboto',
+            fontSize: 13.sp,
+            color: AppColors.santagrey,
+          ),
+        ),
+        Text(
+          percentage,
+          style: TextStyle(
+            fontFamily: 'Roboto',
+            fontSize: 13.sp,
+            fontWeight: FontWeight.w600,
+            color: AppColors.primaryWhite,
+          ),
+        ),
+      ],
     );
   }
 }

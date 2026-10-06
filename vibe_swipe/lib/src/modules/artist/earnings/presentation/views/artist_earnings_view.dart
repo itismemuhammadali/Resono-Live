@@ -107,7 +107,7 @@ class _MetricsPanel extends StatelessWidget {
           ),
           12.ph,
           _MetricRow(
-            label: 'Store Fee (Apple / Google)',
+            label: 'Store Fee (Apple / Google) (15%)',
             value: '-\$${controller.storeFee.toStringAsFixed(2)}',
             valueColor: AppColors.eventRed,
           ),
@@ -123,6 +123,37 @@ class _MetricsPanel extends StatelessWidget {
             value: '\$${controller.netEarnings.toStringAsFixed(2)}',
             valueColor: AppColors.primaryGreen,
             isBold: true,
+          ),
+          14.ph,
+          Container(
+            padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 10.h),
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.04),
+              borderRadius: BorderRadius.circular(10.r),
+              border: Border.all(color: Colors.white.withValues(alpha: 0.06)),
+            ),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Icon(
+                  Icons.info_outline_rounded,
+                  color: AppColors.santagrey,
+                  size: 15.sp,
+                ),
+                8.pw,
+                Expanded(
+                  child: Text(
+                    '15% Store fee and 10% VibeSwipe platform fee are deducted on in-app purchases. Standard Stripe payout fees (approx. 2.5% - 3%) apply upon bank withdrawal.',
+                    style: TextStyle(
+                      fontFamily: 'Roboto',
+                      fontSize: 11.sp,
+                      color: AppColors.santagrey,
+                      height: 1.35,
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
         ],
       ),
@@ -497,7 +528,7 @@ class _WithdrawSection extends ConsumerWidget {
               ),
               16.ph,
               Text(
-                'You are about to withdraw \$${amount.toStringAsFixed(2)} to your connected Stripe account. This transfer is typically processed within a few business days.',
+                'You are about to withdraw \$${amount.toStringAsFixed(2)} to your connected Stripe account. Standard Stripe processing fees (approx. 2.5% – 3%) apply upon transfer. Funds are typically processed within a few business days.',
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontFamily: 'Roboto',
