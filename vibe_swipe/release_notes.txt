@@ -1,8 +1,8 @@
 <en-US>
-What is new in this build:
+What's new in this release:
 
-* Fixed Google Sign In authentication across Android devices.
-* Added live stream confirmation dialog to ensure users choose when to tune into live performances.
-* Streamlined Android sign in options with dedicated Google authentication.
-* Performance optimizations and playback stability improvements.
+• Added transparent fee breakdown for artists across earnings and payout screens (Store, Platform, and Stripe fees).
+• Enhanced live streaming stability and audio synchronization.
+• Optimized Stripe Connect wallet setup and bank withdrawal flows.
+• General UI responsiveness improvements and bug fixes.
 </en-US>
