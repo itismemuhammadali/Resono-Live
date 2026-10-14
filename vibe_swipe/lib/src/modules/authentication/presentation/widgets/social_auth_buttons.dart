@@ -1,7 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 import '../../../../core/utils/app_exports.dart';
-import '../../../../components/primary_elevated_button.dart';
 import '../controllers/authentication_controller.dart';
 import '../../../listner/register/presentation/controllers/listener_register_controller.dart';
 import '../../../artist/register/presentation/controllers/artist_register_controller.dart';
@@ -108,62 +108,83 @@ class SocialAuthButtons extends ConsumerWidget {
         Builder(
           builder: (context) {
             final showApple = !kIsWeb && Platform.isIOS;
-            final googleButton = PrimaryElevatedButton(
-              enabled: !authController.isLoading,
-              onTap: () async {
-                onAuthStarted?.call();
-                authController.clearError();
-                try {
-                  final success = await ref.read(authControllerProvider).signInWithGoogle(isSignUp: isSignUp);
-                  if (success && context.mounted) {
-                    await _handlePostAuthNavigation(context, ref);
-                  } else if (!success && context.mounted) {
-                    final error = ref.read(authControllerProvider).errorMessage;
-                    if (error != null && error.isNotEmpty) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text(error),
-                          backgroundColor: Colors.red.shade800,
+            final googleButton = SizedBox(
+              height: 44,
+              child: CupertinoButton(
+                borderRadius: BorderRadius.circular(12.r),
+                padding: EdgeInsets.zero,
+                color: Colors.white,
+                onPressed: authController.isLoading
+                    ? null
+                    : () async {
+                        onAuthStarted?.call();
+                        authController.clearError();
+                        try {
+                          final success = await ref
+                              .read(authControllerProvider)
+                              .signInWithGoogle(isSignUp: isSignUp);
+                          if (success && context.mounted) {
+                            await _handlePostAuthNavigation(context, ref);
+                          } else if (!success && context.mounted) {
+                            final error =
+                                ref.read(authControllerProvider).errorMessage;
+                            if (error != null && error.isNotEmpty) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text(error),
+                                  backgroundColor: Colors.red.shade800,
+                                ),
+                              );
+                            }
+                          }
+                        } on PlatformException catch (e) {
+                          if (context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(
+                                    'Google Sign-In failed: ${e.message ?? 'Please try again.'}'),
+                                backgroundColor: Colors.red.shade800,
+                              ),
+                            );
+                          }
+                        } catch (_) {
+                          // Auth controller already sets errorMessage for FirebaseAuthExceptions
+                        }
+                      },
+                child: Container(
+                  height: 44,
+                  padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Container(
+                        width: 28,
+                        height: 30,
+                        padding: const EdgeInsets.only(bottom: 4),
+                        child: Center(
+                          child: SvgPicture.string(
+                            _googleLogoSvg,
+                            width: 18.92 * (25 / 31),
+                            height: 18.92,
+                          ),
                         ),
-                      );
-                    }
-                  }
-                } on PlatformException catch (e) {
-                  if (context.mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text('Google Sign-In failed: ${e.message ?? 'Please try again.'}'),
-                        backgroundColor: Colors.red.shade800,
                       ),
-                    );
-                  }
-                } catch (_) {
-                  // Auth controller already sets errorMessage for FirebaseAuthExceptions
-                }
-              },
-              text: isSignUp ? "Sign up with Google" : "Sign in with Google",
-              backgroundColor: Colors.white,
-              textColor: const Color(0xFF1F1F1F),
-              radius: 12,
-              height: 48.h,
-              leadingWidget: SvgPicture.string(
-                _googleLogoSvg,
-                width: 18.w,
-                height: 18.w,
-              ),
-              buttonStyle: ElevatedButton.styleFrom(
-                backgroundColor: Colors.white,
-                foregroundColor: const Color(0xFF1F1F1F),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12.r),
+                      Flexible(
+                        child: Text(
+                          isSignUp ? "Sign up with Google" : "Sign in with Google",
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(
+                            inherit: false,
+                            fontSize: 18.92,
+                            color: Colors.black,
+                            fontFamily: '.SF Pro Text',
+                            letterSpacing: -0.41,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-                elevation: 0,
-              ),
-              style: TextStyle(
-                fontFamily: 'Roboto',
-                color: const Color(0xFF1F1F1F),
-                fontSize: 15.sp,
-                fontWeight: FontWeight.w600,
               ),
             );
 
@@ -175,18 +196,21 @@ class SocialAuthButtons extends ConsumerWidget {
             }
 
             final appleButton = SizedBox(
-              height: 48.h,
+              height: 44,
               child: SignInWithAppleButton(
                 onPressed: () async {
                   if (authController.isLoading) return;
                   onAuthStarted?.call();
                   authController.clearError();
                   try {
-                    final success = await ref.read(authControllerProvider).signInWithApple(isSignUp: isSignUp);
+                    final success = await ref
+                        .read(authControllerProvider)
+                        .signInWithApple(isSignUp: isSignUp);
                     if (success && context.mounted) {
                       await _handlePostAuthNavigation(context, ref);
                     } else if (!success && context.mounted) {
-                      final error = ref.read(authControllerProvider).errorMessage;
+                      final error =
+                          ref.read(authControllerProvider).errorMessage;
                       if (error != null && error.isNotEmpty) {
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
@@ -200,7 +224,8 @@ class SocialAuthButtons extends ConsumerWidget {
                     if (context.mounted) {
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
-                          content: Text('Apple Sign-In failed: ${e.message ?? 'Please try again.'}'),
+                          content: Text(
+                              'Apple Sign-In failed: ${e.message ?? 'Please try again.'}'),
                           backgroundColor: Colors.red.shade800,
                         ),
                       );
@@ -210,7 +235,7 @@ class SocialAuthButtons extends ConsumerWidget {
                   }
                 },
                 text: isSignUp ? 'Sign up with Apple' : 'Sign in with Apple',
-                height: 48.h,
+                height: 44,
                 style: SignInWithAppleButtonStyle.white,
                 borderRadius: BorderRadius.circular(12.r),
               ),
