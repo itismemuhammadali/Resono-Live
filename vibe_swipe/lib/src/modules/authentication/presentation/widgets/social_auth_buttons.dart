@@ -1,4 +1,5 @@
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 import '../../../../core/utils/app_exports.dart';
 import '../../../../components/primary_elevated_button.dart';
 import '../controllers/authentication_controller.dart';
@@ -130,10 +131,11 @@ class SocialAuthButtons extends ConsumerWidget {
                   // Auth controller already sets errorMessage for FirebaseAuthExceptions
                 }
               },
-              text: "Google",
+              text: isSignUp ? "Sign up with Google" : "Sign in with Google",
               backgroundColor: AppColors.transparent,
               textColor: AppColors.primaryWhite,
               radius: 12,
+              height: 48.h,
               buttonStyle: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.transparent,
                 shape: RoundedRectangleBorder(
@@ -159,65 +161,58 @@ class SocialAuthButtons extends ConsumerWidget {
               );
             }
 
-            return Row(
-              children: [
-                Expanded(child: googleButton),
-                16.pw,
-                Expanded(
-                  child: PrimaryElevatedButton(
-                    enabled: !authController.isLoading,
-                    onTap: () async {
-                      onAuthStarted?.call();
-                      authController.clearError();
-                      try {
-                        final success = await ref.read(authControllerProvider).signInWithApple(isSignUp: isSignUp);
-                        if (success && context.mounted) {
-                          await _handlePostAuthNavigation(context, ref);
-                        } else if (!success && context.mounted) {
-                          final error = ref.read(authControllerProvider).errorMessage;
-                          if (error != null && error.isNotEmpty) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text(error),
-                                backgroundColor: Colors.red.shade800,
-                              ),
-                            );
-                          }
-                        }
-                      } on PlatformException catch (e) {
-                        if (context.mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text('Apple Sign-In failed: ${e.message ?? 'Please try again.'}'),
-                              backgroundColor: Colors.red.shade800,
-                            ),
-                          );
-                        }
-                      } catch (_) {
-                        // Auth controller already sets errorMessage for exceptions
+            final appleButton = SizedBox(
+              height: 48.h,
+              child: SignInWithAppleButton(
+                onPressed: () async {
+                  if (authController.isLoading) return;
+                  onAuthStarted?.call();
+                  authController.clearError();
+                  try {
+                    final success = await ref.read(authControllerProvider).signInWithApple(isSignUp: isSignUp);
+                    if (success && context.mounted) {
+                      await _handlePostAuthNavigation(context, ref);
+                    } else if (!success && context.mounted) {
+                      final error = ref.read(authControllerProvider).errorMessage;
+                      if (error != null && error.isNotEmpty) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(error),
+                            backgroundColor: Colors.red.shade800,
+                          ),
+                        );
                       }
-                    },
-                    text: "Apple",
-                    backgroundColor: AppColors.transparent,
-                    textColor: AppColors.primaryWhite,
-                    radius: 12,
-                    buttonStyle: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.transparent,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12.r),
-                        side: const BorderSide(
-                          color: AppColors.listenerBackButtonBorder,
+                    }
+                  } on PlatformException catch (e) {
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text('Apple Sign-In failed: ${e.message ?? 'Please try again.'}'),
+                          backgroundColor: Colors.red.shade800,
                         ),
-                      ),
-                      elevation: 0,
-                    ),
-                    style: TextStyle(
-                      fontFamily: 'Roboto',
-                      color: AppColors.primaryWhite,
-                      fontSize: 14.sp,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
+                      );
+                    }
+                  } catch (_) {
+                    // Auth controller already sets errorMessage for exceptions
+                  }
+                },
+                text: isSignUp ? 'Sign up with Apple' : 'Sign in with Apple',
+                height: 48.h,
+                style: SignInWithAppleButtonStyle.white,
+                borderRadius: BorderRadius.circular(12.r),
+              ),
+            );
+
+            return Column(
+              children: [
+                SizedBox(
+                  width: double.infinity,
+                  child: appleButton,
+                ),
+                12.ph,
+                SizedBox(
+                  width: double.infinity,
+                  child: googleButton,
                 ),
               ],
             );
