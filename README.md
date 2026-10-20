@@ -1,6 +1,12 @@
 <div align="center">
 
-<img src="./assets/branding/logo.jpg" alt="Resono Live Logo" width="150" style="border-radius: 24px; box-shadow: 0 8px 32px rgba(110, 86, 207, 0.35);" />
+<p align="center">
+  <img src="assets/branding/vibeswipe_original_logo.png" alt="VibeSwipe Original Production Logo" width="140" style="border-radius: 20px; box-shadow: 0 8px 24px rgba(255, 212, 38, 0.25); margin: 0 12px;" />
+  <img src="assets/branding/logo.jpg" alt="Resono Live Platform Architectural Logo" width="140" style="border-radius: 20px; box-shadow: 0 8px 24px rgba(110, 86, 207, 0.35); margin: 0 12px;" />
+</p>
+<p align="center">
+  <em>Left: Production Consumer App Mark (VibeSwipe) &bull; Right: Architectural Platform Identity (Resono Live)</em>
+</p>
 
 # Resono Live
 
